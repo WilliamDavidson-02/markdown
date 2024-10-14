@@ -1,1 +1,5 @@
-<h1>Markdown</h1>
+<script>
+	import { Editor } from '$lib/components/editor'
+</script>
+
+<Editor />
