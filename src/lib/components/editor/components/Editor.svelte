@@ -12,11 +12,26 @@
 	import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 	import { languages } from '@codemirror/language-data'
-	import { bracketMatching, indentOnInput } from '@codemirror/language'
+	import {
+		bracketMatching,
+		indentOnInput,
+		defaultHighlightStyle,
+		syntaxHighlighting
+	} from '@codemirror/language'
 	import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 	import { onMount } from 'svelte'
 
+	import { resizeTable } from '../assistance'
+
 	let parent: HTMLDivElement
+	const initDoc = `
+|First Header|Second Header|
+|-----------:|:-----------:|
+|1 col 1 row |2 col 1 row  |
+|1 col 2 row |2 col 2 row  |
+|1 col 2 row |2 col 2 row  |
+|1 col 2 row |2 col 2 row  |
+`
 
 	const theme = EditorView.theme({
 		'&': {
@@ -25,12 +40,13 @@
 	})
 
 	let state = EditorState.create({
-		doc: '',
+		doc: initDoc,
 		extensions: [
 			EditorView.lineWrapping,
 			EditorState.allowMultipleSelections.of(true),
 			keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, indentWithTab]),
 			theme,
+			resizeTable,
 			history(),
 			bracketMatching(),
 			closeBrackets(),
@@ -44,12 +60,14 @@
 				base: markdownLanguage,
 				codeLanguages: languages,
 				addKeymap: true
-			})
+			}),
+			syntaxHighlighting(defaultHighlightStyle, { fallback: true })
 		]
 	})
 
 	onMount(() => {
 		const view = new EditorView({ state, parent })
+		view.focus()
 
 		return () => {
 			view.destroy()
