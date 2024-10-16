@@ -45,15 +45,19 @@
 		"@codemirror/view": "^6.34.1",
 		"@lucia-auth/adapter-drizzle": "^1.1.0",
 		"@neondatabase/serverless": "^0.10.1",
+		"@node-rs/argon2": "^2.0.0",
 		"arctic": "^1.9.2",
 		"codemirror": "^6.0.1",
 		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.34.1",
+		"oslo": "^1.2.1",
 		"rehype-stringify": "^10.0.1",
 		"remark-frontmatter": "^5.0.0",
 		"remark-gfm": "^4.0.0",
 		"remark-parse": "^11.0.0",
 		"remark-rehype": "^11.1.1",
-		"unified": "^11.0.5"
+		"sveltekit-superforms": "^2.19.1",
+		"unified": "^11.0.5",
+		"zod": "^3.23.8"
 	}
 }

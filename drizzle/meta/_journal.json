@@ -8,6 +8,20 @@
       "when": 1729062190437,
       "tag": "0000_foamy_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1729068380645,
+      "tag": "0001_normal_photon",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1729068975304,
+      "tag": "0002_chunky_lethal_legion",
+      "breakpoints": true
     }
   ]
 }
