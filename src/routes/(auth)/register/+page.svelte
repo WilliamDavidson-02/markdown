@@ -37,6 +37,7 @@
 		<p class="error-message">{form.error}</p>
 	{/if}
 	<button type="submit">Create account</button>
+	<p>Already have an account? <a href="/login">Login</a></p>
 </form>
 
 <style>
