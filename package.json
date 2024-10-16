@@ -9,7 +9,11 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"lint": "prettier --check . && eslint .",
-		"format": "prettier --write ."
+		"format": "prettier --write .",
+		"db:push": "drizzle-kit push:pg",
+		"db:generate": "drizzle-kit generate",
+		"db:check": "drizzle-kit check",
+		"db:studio": "drizzle-kit studio"
 	},
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^3.0.0",
@@ -41,6 +45,7 @@
 		"@neondatabase/serverless": "^0.10.1",
 		"arctic": "^1.9.2",
 		"codemirror": "^6.0.1",
+		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.34.1",
 		"rehype-stringify": "^10.0.1",
 		"remark-frontmatter": "^5.0.0",
