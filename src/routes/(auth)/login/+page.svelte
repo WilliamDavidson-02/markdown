@@ -8,6 +8,7 @@
 	const { form: formData, enhance, errors } = superForm(data.form)
 </script>
 
+<a href="/login/github">Sign in with GitHub</a>
 <form method="POST" use:enhance>
 	<label for="email">Email</label>
 	<input

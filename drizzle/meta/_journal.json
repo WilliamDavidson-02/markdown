@@ -22,6 +22,27 @@
       "when": 1729068975304,
       "tag": "0002_chunky_lethal_legion",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1729088069030,
+      "tag": "0003_outstanding_lifeguard",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1729088941451,
+      "tag": "0004_lonely_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1729089382176,
+      "tag": "0005_unknown_magneto",
+      "breakpoints": true
     }
   ]
 }
