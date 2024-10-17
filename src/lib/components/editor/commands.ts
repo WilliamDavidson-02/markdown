@@ -1,3 +1,4 @@
+import { completionKeymap } from '@codemirror/autocomplete'
 import { defaultKeymap, insertBlankLine } from '@codemirror/commands'
 import {
 	EditorSelection,

@@ -7,8 +7,7 @@
 		highlightSpecialChars,
 		drawSelection,
 		dropCursor,
-		rectangularSelection,
-		type KeyBinding
+		rectangularSelection
 	} from '@codemirror/view'
 	import { indentWithTab, history, historyKeymap } from '@codemirror/commands'
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
@@ -21,8 +20,9 @@
 	} from '@codemirror/language'
 	import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
 	import { onMount } from 'svelte'
+	import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 
-	import { resizeTable } from '../assistance'
+	import { completions, resizeTable } from '../assistance'
 	import { customKeymaps, reMappedKeymap } from '../commands'
 
 	let parent: HTMLDivElement
@@ -58,11 +58,13 @@ this is a test for the bold and the italic assistances.
 				...closeBracketsKeymap,
 				...reMappedKeymap,
 				...historyKeymap,
+				...completionKeymap,
 				indentWithTab,
 				...customKeymaps
 			]),
 			theme,
 			resizeTable,
+			autocompletion(),
 			history(),
 			bracketMatching(),
 			closeBrackets(),
@@ -76,6 +78,9 @@ this is a test for the bold and the italic assistances.
 				base: markdownLanguage,
 				codeLanguages: languages,
 				addKeymap: true
+			}),
+			markdownLanguage.data.of({
+				autocomplete: completions
 			}),
 			syntaxHighlighting(defaultHighlightStyle, { fallback: true })
 		]
