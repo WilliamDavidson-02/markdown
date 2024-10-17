@@ -10,7 +10,7 @@
 		rectangularSelection,
 		type KeyBinding
 	} from '@codemirror/view'
-	import { defaultKeymap, indentWithTab, history, historyKeymap } from '@codemirror/commands'
+	import { indentWithTab, history, historyKeymap } from '@codemirror/commands'
 	import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
 	import { languages } from '@codemirror/language-data'
 	import {
@@ -23,7 +23,7 @@
 	import { onMount } from 'svelte'
 
 	import { resizeTable } from '../assistance'
-	import { customKeymaps } from '../commands'
+	import { customKeymaps, reMappedKeymap } from '../commands'
 
 	let parent: HTMLDivElement
 	const initDoc = `
@@ -35,20 +35,18 @@
 |1 col 2 row |2 col 2 row  |
 
 this is a test for the bold and the italic assistances.
+
+- [ ] a task list item
+- [ ] list syntax required
+- [ ] normal **formatting**, @mentions, #1234 refs
+- [ ] incomplete
+- [x] completed
 `
 
 	const theme = EditorView.theme({
 		'&': {
 			height: '100vh'
 		}
-	})
-
-	// Replace default keymap Mod-i, so custom Mod-i can be used
-	const reMappedKeymap = defaultKeymap.map((keymap: KeyBinding) => {
-		if (keymap.key === 'Mod-i') {
-			keymap.key = 'Shift-Mod-i'
-		}
-		return keymap
 	})
 
 	let state = EditorState.create({

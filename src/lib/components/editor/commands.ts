@@ -1,6 +1,8 @@
+import { defaultKeymap, insertBlankLine } from '@codemirror/commands'
 import {
 	EditorSelection,
 	EditorState,
+	Line,
 	SelectionRange,
 	Transaction,
 	type ChangeSpec
@@ -126,6 +128,57 @@ const toggleItalic = (editor: EditorView) => {
 	return true
 }
 
+const isCheckBox = (value: string) => {
+	const checkBoxPattern = /^- \[(x| )\] /i
+	return checkBoxPattern.test(value)
+}
+
+const toggleCheckbox = (line: Line, range: SelectionRange) => {
+	const startIndex = line.text.indexOf('- [')
+	const isChecked = line.text.toLowerCase().includes('- [x]')
+
+	const checkbox = isChecked ? '- [ ]' : '- [x]'
+
+	return {
+		from: line.from + startIndex,
+		to: line.from + startIndex + checkbox.length,
+		insert: checkbox
+	}
+}
+
+const handleInsertBlankLine = (editor: EditorView) => {
+	const changes = editor.state.changeByRange((range) => {
+		let changes: ChangeSpec[] = []
+		let from = range.from
+
+		while (from <= range.to) {
+			const line = editor.state.doc.lineAt(from)
+			if (isCheckBox(line.text)) {
+				changes.push(toggleCheckbox(line, range))
+				from = line.to + 1
+				continue
+			}
+
+			break
+		}
+
+		return { range, changes }
+	})
+
+	if (changes.changes.empty) {
+		return insertBlankLine(editor)
+	}
+
+	editor.dispatch(changes, {
+		scrollIntoView: true,
+		annotations: Transaction.userEvent.of('input')
+	})
+
+	return true
+}
+/**
+ * Custom keymaps
+ */
 export const customKeymaps: KeyBinding[] = [
 	{
 		key: 'Mod-b',
@@ -138,3 +191,20 @@ export const customKeymaps: KeyBinding[] = [
 		preventDefault: true
 	}
 ]
+
+/**
+ * Default codemirror keymaps, remapped with custom function and new keys
+ */
+export const reMappedKeymap = defaultKeymap.map((keymap: KeyBinding) => {
+	// Replace default keymap Mod-i, so custom Mod-i can be used
+	if (keymap.run?.name === 'selectParentSyntax') {
+		keymap.key = 'Shift-Mod-i'
+	}
+
+	// Default Mod-Enter keymap.run.name is empty, to find it we compare the function.
+	if (keymap.run === insertBlankLine) {
+		keymap.run = handleInsertBlankLine
+	}
+
+	return keymap
+})
