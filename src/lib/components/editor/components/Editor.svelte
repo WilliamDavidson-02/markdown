@@ -22,7 +22,7 @@
 	import { onMount } from 'svelte'
 	import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
 
-	import { completions, resizeTable } from '../assistance'
+	import { completions, resizeTable, handleLinks } from '../assistance'
 	import { customKeymaps, reMappedKeymap } from '../commands'
 
 	let parent: HTMLDivElement
@@ -41,6 +41,12 @@ this is a test for the bold and the italic assistances.
 - [ ] normal **formatting**, @mentions, #1234 refs
 - [ ] incomplete
 - [x] completed
+
+https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.pixelstalk.net%2Fwp-content%2Fuploads%2F2016%2F04%2FDesktop-landscape-wallpaper-HD-1.jpg&f=1&nofb=1&ipt=23e913794b994d1ffd5f1c198007921deb0772625b0390c8b1b7361970036afd&ipo=images
+
+this is not a match but this is a link http://localhost:5173/
+
+http://localhost:5173/
 `
 
 	const theme = EditorView.theme({
@@ -64,6 +70,7 @@ this is a test for the bold and the italic assistances.
 			]),
 			theme,
 			resizeTable,
+			handleLinks,
 			autocompletion(),
 			history(),
 			bracketMatching(),
