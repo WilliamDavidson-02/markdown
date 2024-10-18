@@ -684,6 +684,8 @@ const gt = (rangeA: SelectionRange, rangeB: SelectionRange) => {
 	)
 }
 
+let rangeHistory: EditorSelection[] = []
+
 /**
  * Extend selection range to the next parent
  */
@@ -692,6 +694,7 @@ export const extendSelectionToParent = ({ state, dispatch }: EditorView) => {
 		let newRange = range
 
 		if (range.from === range.to) {
+			rangeHistory = [state.selection]
 			newRange = selectWordBoundary(range, state)
 			if (gt(newRange, range)) return newRange
 		}
@@ -722,15 +725,26 @@ export const extendSelectionToParent = ({ state, dispatch }: EditorView) => {
 
 		return range
 	})
-
 	if (selection.eq(state.selection)) return false
-	dispatch(setSel(state, selection), { userEvent: 'select' })
+	rangeHistory.push(selection)
+	dispatch(setSel(state, selection))
 	return true
 }
 
 /**
  * Contract selection range to the extended elements child
  */
-export const contractSelectionToChild = (editor: EditorView) => {
+export const contractSelectionToChild = ({ state, dispatch }: EditorView) => {
+	if (rangeHistory.length === 0) return false
+
+	// Check if the last range does not match the current selection, meaning the cursor has moved.
+	if (!rangeHistory[rangeHistory.length - 1].eq(state.selection)) {
+		rangeHistory = []
+		return false
+	}
+
+	rangeHistory = rangeHistory.slice(0, rangeHistory.length - 1)
+	const selection = rangeHistory[rangeHistory.length - 1]
+	dispatch(setSel(state, selection))
 	return true
 }
