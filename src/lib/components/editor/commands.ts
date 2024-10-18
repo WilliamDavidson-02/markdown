@@ -1,5 +1,11 @@
 import { defaultKeymap, insertBlankLine } from '@codemirror/commands'
-import { handleInsertBlankLine, toggleBold, toggleItalic } from './assistance'
+import {
+	contractSelectionToChild,
+	extendSelectionToParent,
+	handleInsertBlankLine,
+	toggleBold,
+	toggleItalic
+} from './assistance'
 import type { KeyBinding } from '@codemirror/view'
 
 /**
@@ -14,6 +20,16 @@ export const customKeymaps: KeyBinding[] = [
 	{
 		key: 'Mod-i',
 		run: toggleItalic,
+		preventDefault: true
+	},
+	{
+		key: 'Ctrl-Alt-ArrowUp',
+		run: extendSelectionToParent,
+		preventDefault: true
+	},
+	{
+		key: 'Ctrl-Alt-ArrowDown',
+		run: contractSelectionToChild,
 		preventDefault: true
 	}
 ]
