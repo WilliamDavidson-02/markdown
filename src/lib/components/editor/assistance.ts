@@ -98,7 +98,7 @@ const formatTableLines = (lines: Line[]): LineChange[] => {
 					separator.splice(firstIndex, Math.abs(padding))
 					cell = separator.join('')
 				}
-				cells[i] = cell
+				cells[i] = ` ${cell} `
 				const newLine = `|${cells.join('|')}|`
 				return {
 					...line,
@@ -113,7 +113,7 @@ const formatTableLines = (lines: Line[]): LineChange[] => {
 				cell = cell + ' '.repeat(padding)
 			}
 
-			cells[i] = cell
+			cells[i] = ` ${cell} `
 			const newLine = `|${cells.join('|')}|`
 
 			return {
