@@ -3,6 +3,7 @@ import {
 	contractSelectionToChild,
 	extendSelectionToParent,
 	handleInsertBlankLine,
+	insertBlankLineAbove,
 	toggleBold,
 	toggleItalic
 } from './assistance'
@@ -30,6 +31,11 @@ export const customKeymaps: KeyBinding[] = [
 	{
 		key: 'Ctrl-Alt-ArrowDown',
 		run: contractSelectionToChild,
+		preventDefault: true
+	},
+	{
+		key: 'Mod-Shift-Enter',
+		run: insertBlankLineAbove,
 		preventDefault: true
 	}
 ]

@@ -1,6 +1,8 @@
 import {
+	countColumn,
 	EditorSelection,
 	EditorState,
+	Text,
 	Transaction,
 	type ChangeSpec,
 	type Line,
@@ -11,7 +13,7 @@ import { CompletionContext, type Completion } from '@codemirror/autocomplete'
 import { languages } from '@codemirror/language-data'
 import type { LineChange } from './types'
 import { insertBlankLine } from '@codemirror/commands'
-import { syntaxTree } from '@codemirror/language'
+import { indentString, syntaxTree } from '@codemirror/language'
 
 const tableRegex = {
 	header: /^\|(.+\|)+/,
@@ -746,5 +748,25 @@ export const contractSelectionToChild = ({ state, dispatch }: EditorView) => {
 	rangeHistory = rangeHistory.slice(0, rangeHistory.length - 1)
 	const selection = rangeHistory[rangeHistory.length - 1]
 	dispatch(setSel(state, selection))
+	return true
+}
+
+/**
+ * Insert new blank line above cursor position
+ */
+export const insertBlankLineAbove = ({ state, dispatch }: EditorView) => {
+	const changes = state.changeByRange((range) => {
+		const line = state.doc.lineAt(range.from)
+		const from = line.from
+		const to = line.from
+		const indent = countColumn(/^\s*/.exec(state.doc.lineAt(from).text)![0], state.tabSize)
+
+		return {
+			changes: { from, to, insert: `${indentString(state, indent)}\n` },
+			range: EditorSelection.cursor(from + indent)
+		}
+	})
+
+	dispatch(state.update(changes, { scrollIntoView: true, userEvent: 'input' }))
 	return true
 }
