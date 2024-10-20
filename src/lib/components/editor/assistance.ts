@@ -2,7 +2,6 @@ import {
 	countColumn,
 	EditorSelection,
 	EditorState,
-	Text,
 	Transaction,
 	type ChangeSpec,
 	type Line,
@@ -16,138 +15,237 @@ import { insertBlankLine } from '@codemirror/commands'
 import { indentString, syntaxTree } from '@codemirror/language'
 
 const tableRegex = {
-	header: /^\|(.+\|)+/,
-	separator: /^\|(\s*:?-+:?\s*\|)+/,
-	row: /^\|(.+\|)+/,
-	cell: /(?<=\|)([^|]+)(?=\|)/g
+	delimiter: /^\|\s*(?:(:?-+:?)\s*\|)+/,
+	row: /^\|(.*?)\|/
 }
 
-const isTableLine = (text: string) => {
-	if (tableRegex.header.test(text.trim())) return true
-	if (tableRegex.separator.test(text.trim())) return true
-	if (tableRegex.row.test(text.trim())) return true
+const getTableLines = (state: EditorState, range: SelectionRange): LineChange[] => {
+	let lines: LineChange[] = []
+	let { number } = state.doc.lineAt(range.from)
 
-	return false
-}
+	for (let i = number; i >= 0; i--) {
+		const { from, to, text } = state.doc.line(i)
+		if (!tableRegex.row.test(text)) break
+		lines.unshift({ from, to, insert: text })
+	}
 
-const getTableLines = (state: EditorState, range: SelectionRange) => {
-	let { number, text } = state.doc.lineAt(range.from)
-	let lines: Line[] = []
+	for (let i = number + 1; i <= state.doc.lines; i++) {
+		const { from, to, text } = state.doc.line(i)
+		if (!tableRegex.row.test(text)) break
+		lines.push({ from, to, insert: text })
+	}
 
-	if (number < 1 || !isTableLine(text)) {
+	// Delimiter must be present on the second line
+	if (lines.length > 1 && !tableRegex.delimiter.test(lines[1].insert)) {
 		return []
-	}
-
-	let prevLine = number
-	while (prevLine > 0) {
-		const line = state.doc.line(prevLine)
-		if (!isTableLine(line.text)) {
-			break
-		}
-		lines.unshift(line)
-		prevLine--
-	}
-
-	let nextLine = number + 1
-	while (nextLine <= state.doc.lines) {
-		const line = state.doc.line(nextLine)
-		if (!isTableLine(line.text)) {
-			break
-		}
-		lines.push(line)
-		nextLine++
 	}
 
 	return lines
 }
 
-const formatTableLines = (lines: Line[]): LineChange[] => {
-	const pipeCount = lines[0].text.match(/\|/g)?.length ?? 0
-	const columns = Math.ceil(pipeCount / 2)
-	let formattedLines: LineChange[] = [...lines].map((line) => ({
-		from: line.from,
-		to: line.to,
-		insert: line.text
-	}))
+const getCurrentLine = (
+	lines: LineChange[],
+	main: EditorSelection['main']
+): LineChange | undefined => {
+	const lineIndex = lines.findIndex((line) => main.from >= line.from && main.to <= line.to)
+	if (lineIndex < 0) return undefined
+	return lines[lineIndex]
+}
 
-	for (let i = 0; i < columns; i++) {
-		let maxWidth = 0
+/**
+ * Formats the current table cell to replace white spaces with the inserted characters
+ */
+const formatTableCell = (lines: LineChange[], update: ViewUpdate): LineChange[] => {
+	const { main } = update.state.selection
+	let line = getCurrentLine(lines, main)
+	if (!line) return lines
 
-		// Find the max width of the column
-		for (const line of lines) {
-			if (tableRegex.separator.test(line.text)) continue
-			const cells = line.text.match(tableRegex.cell)
-			if (!cells) continue
+	const basedCursorPos = main.from - line.from
+	const closingPipeIndex = line.insert.indexOf('|', basedCursorPos)
+	const charBetweenCursorAndPipe = line.insert.slice(basedCursorPos, closingPipeIndex)
 
-			const width = cells[i].trim().length
-			if (width > maxWidth) maxWidth = width
+	// If there is a character between the cursor and the pipe, we should not replace a white space with the inserted characters
+	if (charBetweenCursorAndPipe.trim().length > 0) return lines
+
+	const insertedLength = update.changes.newLength - update.changes.length
+
+	if (insertedLength > 0) {
+		const lineChars = line.insert.split('')
+		lineChars.splice(
+			basedCursorPos,
+			charBetweenCursorAndPipe.length >= insertedLength
+				? insertedLength
+				: charBetweenCursorAndPipe.length
+		)
+		line.insert = lineChars.join('')
+	}
+
+	return lines
+}
+
+const getSpacesBeforeFirstChar = (line: LineChange, startIndex: number, endIndex: number) => {
+	let firstCharIndex = line.insert.slice(startIndex, endIndex).search(/[^|\s]/)
+	return firstCharIndex > -1 ? line.insert.slice(startIndex + 1, startIndex + firstCharIndex) : ''
+}
+
+const getSpacesAfterLastChar = (line: LineChange, startIndex: number, endIndex: number) => {
+	let lastCharIndex = -1
+	const lineChars = line.insert.slice(startIndex, endIndex)
+	const lastPipeIndex = lineChars.lastIndexOf('|')
+	for (let i = lastPipeIndex; i >= 0; i--) {
+		if (!/[|\s]/.test(lineChars[i])) {
+			lastCharIndex = i
+			break
+		}
+	}
+	return lastCharIndex > -1 ? lineChars.slice(lastCharIndex + 1, endIndex - startIndex - 1) : ''
+}
+
+const getColumnBoundaries = (line: LineChange) => {
+	return line.insert.split('').reduce((boundaries, char, index) => {
+		if (char === '|') boundaries.push(index)
+		return boundaries
+	}, [] as number[])
+}
+
+const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[] => {
+	const { main } = update.state.selection
+	const line = getCurrentLine(lines, main)
+	if (!line) return lines
+
+	const columnCount = line.insert.split('').reduce((count, char) => {
+		if (char === '|') count++
+		return count
+	}, -1)
+
+	const basedCursorPos = main.from - line.from
+
+	for (let i = 0; i < columnCount; i++) {
+		const columnBoundaries = getColumnBoundaries(line)
+		const currentCellStartIndex = columnBoundaries[i]
+		const currentCellEndIndex = columnBoundaries[i + 1] + 1
+		const spacesBeforeFirstChar = getSpacesBeforeFirstChar(
+			line,
+			currentCellStartIndex,
+			currentCellEndIndex
+		)
+
+		// add spaces before the first character of the cell
+		lines = lines.map((row): LineChange => {
+			const columnBoundaries = getColumnBoundaries(row)
+			const startIndex = columnBoundaries[i]
+			const endIndex = columnBoundaries[i + 1]
+			const rowChars = row.insert.split('')
+			if (startIndex < basedCursorPos && row.from !== line.from) {
+				const currentSpaces = getSpacesBeforeFirstChar(row, startIndex, endIndex)
+				const spacesToAdd = spacesBeforeFirstChar.length - currentSpaces.length
+				if (spacesToAdd > 0) {
+					rowChars.splice(
+						startIndex + 1,
+						currentSpaces.length,
+						currentSpaces + ' '.repeat(spacesToAdd)
+					)
+				} else if (spacesToAdd < 0) {
+					rowChars.splice(startIndex + 1, currentSpaces.length, currentSpaces.slice(0, spacesToAdd))
+				}
+			}
+
+			return { ...row, insert: rowChars.join('') }
+		})
+
+		const currentCell = line.insert.slice(currentCellStartIndex, currentCellEndIndex)
+		const spacesAfterLastChar = getSpacesAfterLastChar(
+			line,
+			currentCellStartIndex,
+			currentCellEndIndex
+		)
+		let widestCell = lines.reduce(
+			(widest, row) => {
+				const columnBoundaries = getColumnBoundaries(row)
+				const startIndex = columnBoundaries[i]
+				const endIndex = columnBoundaries[i + 1] + 1
+				const cell = row.insert.slice(startIndex, endIndex)
+				const spaces = getSpacesAfterLastChar(row, startIndex, endIndex)
+				const isDelimiter = tableRegex.delimiter.test(cell)
+
+				if (row.from !== line.from && !isDelimiter) {
+					const currentCellContent = cell.length - spaces.length
+					const widestCellContent = widest.insert.length - widest.spaces.length
+
+					if (currentCellContent > widestCellContent) {
+						return { insert: cell, from: row.from, spaces }
+					}
+				}
+
+				if (cell.length > widest.insert.length && !isDelimiter) {
+					return { insert: cell, from: row.from, spaces }
+				}
+
+				return widest
+			},
+			{ insert: currentCell, from: line.from, spaces: spacesAfterLastChar }
+		)
+
+		/**
+		 * Current cell is less then widest cell
+		 * as long as the current cell is not shorter then the widest cell minus the spaces after the widest last char
+		 */
+		if (
+			currentCell.length <= widestCell.insert.length &&
+			currentCell.length >= widestCell.insert.length - widestCell.spaces.length
+		) {
+			widestCell = {
+				insert: currentCell,
+				from: line.from,
+				spaces: widestCell.spaces
+			}
 		}
 
-		formattedLines = formattedLines.map((line) => {
-			let cells = line.insert.match(tableRegex.cell)
-			if (!cells) return line
-
-			const isSeparator = tableRegex.separator.test(line.insert)
-
-			let cell = cells[i].trim()
-			let padding = maxWidth - cell.length
-			if (padding <= 0) {
-				if (isSeparator) {
-					const firstIndex = cell.indexOf('-')
-					let separator = cell.split('')
-					separator.splice(firstIndex, Math.abs(padding))
-					cell = separator.join('')
+		// add spaces after the last character of the cell
+		lines = lines.map((row): LineChange => {
+			const columnBoundaries = getColumnBoundaries(row)
+			const startIndex = columnBoundaries[i]
+			const endIndex = columnBoundaries[i + 1] + 1
+			const rowChars = row.insert.split('')
+			if (startIndex < basedCursorPos) {
+				const currentSpaces = getSpacesAfterLastChar(row, startIndex, endIndex)
+				const spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
+				if (spacesToAdd > 0) {
+					rowChars.splice(
+						endIndex - 1 - currentSpaces.length,
+						currentSpaces.length,
+						currentSpaces + ' '.repeat(spacesToAdd)
+					)
+				} else if (spacesToAdd < 0) {
+					rowChars.splice(
+						endIndex - 1 - currentSpaces.length,
+						currentSpaces.length,
+						currentSpaces.slice(0, spacesToAdd)
+					)
 				}
-				cells[i] = ` ${cell} `
-				const newLine = `|${cells.join('|')}|`
-				return {
-					...line,
-					insert: newLine
-				}
 			}
 
-			if (isSeparator) {
-				const lastIndex = cell.lastIndexOf('-') + 1
-				cell = cell.slice(0, lastIndex) + '-'.repeat(padding) + cell.slice(lastIndex)
-			} else {
-				cell = cell + ' '.repeat(padding)
-			}
-
-			cells[i] = ` ${cell} `
-			const newLine = `|${cells.join('|')}|`
-
-			return {
-				...line,
-				insert: newLine
-			}
+			return { ...row, insert: rowChars.join('') }
 		})
 	}
 
-	return formattedLines
+	return lines
 }
 
-const getNewCursorPosition = (
-	formated: LineChange[],
-	range: SelectionRange,
-	state: EditorState
-) => {
-	let lengthChangeBefore = formated[0].from - 1
+const getNewCursorPosition = (lines: LineChange[], range: SelectionRange, state: EditorState) => {
+	let lengthChangeBefore = lines[0].from
 
-	formated.forEach((change) => {
-		const isAllBefore = change.to <= range.from
-		const isPartiallyBefore = change.from <= range.from && change.to >= range.from
+	for (const line of lines) {
+		const isAllBefore = line.to <= range.from
+		const isPartiallyBefore = line.from <= range.from && line.to >= range.from
 		if (isAllBefore) {
-			lengthChangeBefore += change.insert.length + 1
+			lengthChangeBefore += line.insert.length + 1
 		} else if (isPartiallyBefore) {
-			const originalLine = state.doc.lineAt(change.from)
-			// if there is spacing after the type character in a cell that is still left in the original text
-			// but removed in the formated text
-			const hasSpacing = originalLine.text.length !== change.insert.length
-			const diff = hasSpacing ? 0 : 1
-			const diffWithCursor = diff + (range.from - change.from) + (hasSpacing ? 1 : 0)
-			lengthChangeBefore += diffWithCursor
+			const originalLine = state.doc.lineAt(line.from)
+			const beforeCursor = originalLine.text.slice(0, range.from - originalLine.from)
+			lengthChangeBefore += beforeCursor.length
 		}
-	})
+	}
 
 	return lengthChangeBefore
 }
@@ -165,22 +263,22 @@ export const resizeTable = EditorView.updateListener.of((update: ViewUpdate) => 
 	}
 
 	const changes = update.state.changeByRange((range) => {
-		const lines = getTableLines(update.state, range)
+		let lines = getTableLines(update.state, range)
 
 		if (lines.length < 1) return { range }
-		const formated = formatTableLines(lines)
+		lines = formatTableCell(lines, update)
 
-		resized = true // prevent infinite loop
+		lines = formatColumnWidth(lines, update)
 
-		const cursor = getNewCursorPosition(formated, range, update.state)
+		const newCursorPos = getNewCursorPosition(lines, range, update.state)
 
-		return {
-			changes: formated,
-			range: EditorSelection.cursor(cursor)
-		}
+		resized = true
+		return { range: EditorSelection.cursor(newCursorPos), changes: lines }
 	})
 
-	update.view.dispatch(changes)
+	if (!changes.changes.empty) {
+		update.view.dispatch(changes)
+	}
 })
 
 const applyCodeBlock = (view: EditorView, completion: Completion) => {
