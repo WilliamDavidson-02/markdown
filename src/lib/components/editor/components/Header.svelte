@@ -5,7 +5,7 @@
 </script>
 
 <header>
-	<Button on:click={() => navStore.update((state) => !state)}>
+	<Button icon size="sm" variant="ghost" on:click={() => navStore.update((state) => !state)}>
 		{#if $navStore}
 			<ChevronsLeft size={20} stroke-width={1.5} />
 		{:else}

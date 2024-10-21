@@ -43,28 +43,28 @@
 	<aside>
 		<div class="between">
 			<div class="btn-icons">
-				<Button>
+				<Button size="sm" variant="ghost" icon>
 					<Search size={20} stroke-width={1.5} />
 				</Button>
-				<Button>
+				<Button size="sm" variant="ghost" icon>
 					<TableOfContents size={20} stroke-width={1.5} />
 				</Button>
 			</div>
 			<div class="btn-icons">
-				<Button>
+				<Button size="sm" variant="ghost" icon>
 					<Folder size={20} stroke-width={1.5} />
 				</Button>
-				<Button>
+				<Button size="sm" variant="ghost" icon>
 					<SquarePen size={20} stroke-width={1.5} />
 				</Button>
 			</div>
 		</div>
 		<div class="file-tree"></div>
 		<div class="between">
-			<Button>
+			<Button size="sm" variant="ghost" icon>
 				<Trash2 size={20} stroke-width={1.5} />
 			</Button>
-			<Button>
+			<Button size="sm" variant="ghost" icon>
 				<Settings size={20} stroke-width={1.5} />
 			</Button>
 		</div>

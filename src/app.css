@@ -10,6 +10,8 @@
 	--danger: #cb4646;
 	--danger-active: #f14e4e;
 
+	--interactive-text: #ffffff;
+
 	/* Spacing */
 	--space-xs: 0.25rem;
 	--space-sm: 0.5rem;
@@ -25,9 +27,15 @@
 	--space-7xl: 4.5rem;
 	--space-8xl: 5rem;
 	--space-9xl: 6rem;
+
+	/* Border radius */
+	--border-radius-sm: 0.25rem;
+	--border-radius-md: 0.5rem;
+	--border-radius-lg: 0.75rem;
+	--border-radius-xl: 1rem;
 }
 
-/* @media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: dark) {
 	:root {
 		--base: #1d1d1d;
 		--secondary: #242424;
@@ -36,15 +44,11 @@
 		--foreground-md: #787878;
 		--foreground-dk: #ffffff;
 	}
-} */
+}
 
 *:not(.cm-editor, .cm-editor *) {
 	box-sizing: border-box;
 	margin: 0;
 	padding: 0;
 	font-family: 'Poppins', sans-serif;
-}
-
-button {
-	cursor: pointer;
 }
