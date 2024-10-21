@@ -3,10 +3,12 @@
 	import { Search, TableOfContents, Folder, SquarePen, Trash2, Settings } from 'lucide-svelte'
 	import { navStore } from '../store'
 	import { onMount } from 'svelte'
-	import { TreeFile, FileTree, TreeFolder, TreeLabel } from '$lib/components/file-tree'
+	import { FileTree } from '$lib/components/file-tree'
+	import { OutlinePanel } from '$lib/components/outline-panel'
 
 	let isResizing = false
 	let navWidth = 400
+	let showOutlinePanel = true
 
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
@@ -47,7 +49,13 @@
 				<Button size="sm" variant="ghost" icon>
 					<Search size={20} stroke-width={1.5} />
 				</Button>
-				<Button size="sm" variant="ghost" icon>
+				<Button
+					on:click={() => (showOutlinePanel = !showOutlinePanel)}
+					size="sm"
+					variant="ghost"
+					icon
+					data-button-toggled={showOutlinePanel}
+				>
 					<TableOfContents size={20} stroke-width={1.5} />
 				</Button>
 			</div>
@@ -60,99 +68,11 @@
 				</Button>
 			</div>
 		</div>
-		<FileTree>
-			<div>
-				<TreeLabel date="2024-10-21" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-10-18" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-09-30" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-08-30" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-07-30" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-06-30" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-			<div>
-				<TreeLabel date="2024-05-30" />
-				<TreeFile name="Markdown docs 1" />
-				<TreeFolder name="Mode markdown">
-					<TreeFile name="Markdown docs 2" />
-					<TreeFile name="Markdown docs 3" />
-					<TreeFolder name="Nested folder">
-						<TreeFile name="Markdown docs 4" />
-						<TreeFile name="Markdown docs 5" />
-					</TreeFolder>
-				</TreeFolder>
-				<TreeFile name="Markdown docs 6" />
-			</div>
-		</FileTree>
+		{#if showOutlinePanel}
+			<OutlinePanel />
+		{:else}
+			<FileTree />
+		{/if}
 		<div class="between">
 			<Button size="sm" variant="ghost" icon>
 				<Trash2 size={20} stroke-width={1.5} />
@@ -173,12 +93,10 @@
 		color: var(--foreground-dk);
 		border-right: 1px solid var(--secondary-dk);
 		overflow: hidden;
-		flex-grow: 1;
 		flex-shrink: 0;
 	}
 
 	aside {
-		width: 100%;
 		height: 100vh;
 		padding: var(--space-base);
 		display: grid;
@@ -204,9 +122,5 @@
 	.btn-icons {
 		display: flex;
 		gap: var(--space-sm);
-	}
-
-	.file-tree {
-		flex-grow: 1;
 	}
 </style>

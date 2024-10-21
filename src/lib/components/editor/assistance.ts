@@ -23,7 +23,7 @@ const getTableLines = (state: EditorState, range: SelectionRange): LineChange[] 
 	let lines: LineChange[] = []
 	let { number } = state.doc.lineAt(range.from)
 
-	for (let i = number; i >= 0; i--) {
+	for (let i = number; i > 0; i--) {
 		const { from, to, text } = state.doc.line(i)
 		if (!tableRegex.row.test(text)) break
 		lines.unshift({ from, to, insert: text })

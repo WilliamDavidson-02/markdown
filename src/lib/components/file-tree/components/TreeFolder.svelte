@@ -12,28 +12,25 @@
 	}
 </script>
 
-<div class="folder">
-	<button class="folder-header" on:click={toggleFolder}>
-		<span class="icon">
-			{#if isOpen}
-				<FolderOpen color={iconColor} size={20} />
-			{:else}
-				<Folder color={iconColor} size={20} />
-			{/if}
-		</span>
-		<p>{name}</p>
-	</button>
-	{#if isOpen}
-		<div transition:slide={{ duration: 200 }} class="folder-content">
-			<slot />
-		</div>
-	{/if}
-</div>
+<button class="folder-header" on:click={toggleFolder}>
+	<span class="icon">
+		{#if isOpen}
+			<FolderOpen color={iconColor} size={20} />
+		{:else}
+			<Folder color={iconColor} size={20} />
+		{/if}
+	</span>
+	<p>{name}</p>
+</button>
+{#if isOpen}
+	<div transition:slide={{ duration: 200 }} class="folder-content">
+		<slot />
+	</div>
+{/if}
 
 <style>
 	.folder-header {
 		all: unset;
-		width: 100%;
 		display: flex;
 		align-items: center;
 		background-color: var(--base);

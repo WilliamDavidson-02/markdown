@@ -84,6 +84,10 @@
 		border: none;
 	}
 
+	.button--ghost[data-button-toggled='true'] {
+		background-color: var(--secondary);
+	}
+
 	.button--destructive {
 		background-color: var(--danger);
 		border-color: var(--danger-active);
