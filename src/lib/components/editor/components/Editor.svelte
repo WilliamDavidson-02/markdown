@@ -2,6 +2,7 @@
 	import { EditorView } from '@codemirror/view'
 	import { onMount } from 'svelte'
 	import { state } from '../state'
+	import Header from './Header.svelte'
 
 	let parent: HTMLDivElement
 
@@ -15,4 +16,13 @@
 	})
 </script>
 
-<div bind:this={parent} />
+<section>
+	<Header />
+	<div bind:this={parent} />
+</section>
+
+<style>
+	div {
+		height: calc(100vh - var(--header-height, 40px));
+	}
+</style>

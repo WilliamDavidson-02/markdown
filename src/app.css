@@ -1,3 +1,43 @@
+:root {
+	--base: #ffffff;
+	--secondary: #fafaf9;
+	--secondary-dk: #eeeeec;
+	--foreground-li: #a5a3a0;
+	--foreground-md: #4e4d49;
+	--foreground-dk: #34322e;
+	--interactive: #007ad9;
+	--interactive-active: #008fff;
+	--danger: #cb4646;
+	--danger-active: #f14e4e;
+
+	/* Spacing */
+	--space-xs: 0.25rem;
+	--space-sm: 0.5rem;
+	--space-md: 0.75rem;
+	--space-base: 1rem;
+	--space-lg: 1.25rem;
+	--space-xl: 1.5rem;
+	--space-2xl: 1.75rem;
+	--space-3xl: 2rem;
+	--space-4xl: 2.5rem;
+	--space-5xl: 3rem;
+	--space-6xl: 4rem;
+	--space-7xl: 4.5rem;
+	--space-8xl: 5rem;
+	--space-9xl: 6rem;
+}
+
+/* @media (prefers-color-scheme: dark) {
+	:root {
+		--base: #1d1d1d;
+		--secondary: #242424;
+		--secondary-dk: #303030;
+		--foreground-li: #474747;
+		--foreground-md: #787878;
+		--foreground-dk: #ffffff;
+	}
+} */
+
 *:not(.cm-editor, .cm-editor *) {
 	box-sizing: border-box;
 	margin: 0;
