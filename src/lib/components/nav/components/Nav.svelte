@@ -8,7 +8,7 @@
 
 	let isResizing = false
 	let navWidth = 400
-	let showOutlinePanel = true
+	let showOutlinePanel = false
 
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
