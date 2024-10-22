@@ -2,7 +2,7 @@ import type { Actions } from './$types'
 import { superValidate } from 'sveltekit-superforms'
 import { zod } from 'sveltekit-superforms/adapters'
 import { z } from 'zod'
-import { hash, verify } from '@node-rs/argon2'
+import { verify } from '@node-rs/argon2'
 import { fail, redirect } from '@sveltejs/kit'
 import { lucia } from '$lib/server/auth'
 import { userTable } from '$lib/db/schema'
@@ -17,7 +17,11 @@ const emailAndPasswordSchema = z.object({
 		.max(256, { message: 'Password must be at most 256 characters' })
 })
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	if (locals.user) {
+		throw redirect(302, '/')
+	}
+
 	const form = await superValidate(zod(emailAndPasswordSchema))
 	return { form }
 }
@@ -43,7 +47,7 @@ export const actions: Actions = {
 
 		const user = existingUser[0]
 
-		const validPassword = await verify(user.passwordHash, form.data.password, {
+		const validPassword = await verify(user.passwordHash ?? '', form.data.password, {
 			memoryCost: 19456,
 			timeCost: 2,
 			outputLen: 32,

@@ -18,7 +18,10 @@ const emailAndPasswordSchema = z.object({
 		.max(256, { message: 'Password must be at most 256 characters' })
 })
 
-export const load = async () => {
+export const load = async ({ locals }) => {
+	if (locals.user) {
+		throw redirect(302, '/')
+	}
 	const form = await superValidate(zod(emailAndPasswordSchema))
 	return { form }
 }

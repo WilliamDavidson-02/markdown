@@ -27,13 +27,9 @@
 {/if}
 
 <style>
-	:global(body) {
-		background-color: var(--base);
-	}
-
 	main {
 		display: flex;
-		min-height: 100vh;
+		min-height: 100svh;
 	}
 
 	.guest {
