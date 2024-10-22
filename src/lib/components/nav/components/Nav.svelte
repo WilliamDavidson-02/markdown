@@ -5,20 +5,17 @@
 	import { onMount } from 'svelte'
 	import { FileTree } from '$lib/components/file-tree'
 	import { OutlinePanel } from '$lib/components/outline-panel'
+	import { Dialog, DialogFooter, DialogHeader } from '$lib/components/dialog'
 
 	let isResizing = false
 	let navWidth = 400
 	let showOutlinePanel = false
 
+	let fileDialog: HTMLDialogElement
+	let folderDialog: HTMLDialogElement
+
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
-
-		const closeNav = (ev: KeyboardEvent) => {
-			if (ev.key === 'Escape') {
-				ev.preventDefault()
-				navStore.set(false)
-			}
-		}
 
 		const handleMove = (ev: PointerEvent) => {
 			if (!isResizing) return
@@ -31,16 +28,34 @@
 			window.localStorage.setItem('navWidth', navWidth.toString())
 		}
 
-		window.addEventListener('keydown', closeNav)
 		window.addEventListener('pointermove', handleMove)
 		window.addEventListener('pointerup', handleUp)
 		return () => {
-			window.removeEventListener('keydown', closeNav)
 			window.removeEventListener('pointermove', handleMove)
 			window.removeEventListener('pointerup', handleUp)
 		}
 	})
 </script>
+
+<Dialog bind:dialog={fileDialog}>
+	<form>
+		<DialogHeader>Create new file</DialogHeader>
+		<div>Fields</div>
+		<DialogFooter>
+			<Button variant="outline" on:click={() => fileDialog.close()}>Cancel</Button>
+			<Button type="submit">Create</Button>
+		</DialogFooter>
+	</form>
+</Dialog>
+
+<Dialog bind:dialog={folderDialog}>
+	<DialogHeader>Create new folder</DialogHeader>
+	<div>Fields</div>
+	<DialogFooter>
+		<Button variant="outline" on:click={() => folderDialog.close()}>Cancel</Button>
+		<Button type="submit">Create</Button>
+	</DialogFooter>
+</Dialog>
 
 <nav style:width={`${!$navStore ? 0 : navWidth}px`}>
 	<aside>
@@ -60,10 +75,10 @@
 				</Button>
 			</div>
 			<div class="btn-icons">
-				<Button size="sm" variant="ghost" icon>
+				<Button on:click={() => folderDialog.showModal()} size="sm" variant="ghost" icon>
 					<Folder size={20} stroke-width={1.5} />
 				</Button>
-				<Button size="sm" variant="ghost" icon>
+				<Button on:click={() => fileDialog.showModal()} size="sm" variant="ghost" icon>
 					<SquarePen size={20} stroke-width={1.5} />
 				</Button>
 			</div>
