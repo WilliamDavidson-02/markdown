@@ -1,0 +1,5 @@
+export { default as Command } from './components/Command.svelte'
+export { default as CommandInput } from './components/CommandInput.svelte'
+export { default as CommandList } from './components/CommandList.svelte'
+export { default as CommandItem } from './components/CommandItem.svelte'
+export type { CommandProps, CommandGroupProps, CommandItemProps } from './types'

@@ -51,6 +51,7 @@
 		"dotenv": "^16.4.5",
 		"drizzle-orm": "^0.34.1",
 		"lucide-svelte": "^0.453.0",
+		"nanoid": "^5.0.7",
 		"oslo": "^1.2.1",
 		"rehype-stringify": "^10.0.1",
 		"remark-frontmatter": "^5.0.0",
