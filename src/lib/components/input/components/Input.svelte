@@ -4,11 +4,22 @@
 	type $$Props = Props
 	type $$Events = Events
 
-	export let type: $$Props['type'] = undefined
+	export let type: $$Props['type'] = 'text'
 	export let el: $$Props['el'] = undefined
+	export let value: string = ''
 </script>
 
-<input bind:this={el} {type} {...$$restProps} />
+<input
+	bind:this={el}
+	{type}
+	{value}
+	on:input={(e) => (value = e.currentTarget.value)}
+	{...$$restProps}
+	on:keydown
+	on:focus
+	on:blur
+	on:change
+/>
 
 <style>
 	input {

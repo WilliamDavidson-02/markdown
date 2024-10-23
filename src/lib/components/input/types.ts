@@ -13,4 +13,6 @@ export type InputEvents = {
 	change: InputEventHandler<Event>
 	focus: InputEventHandler<FocusEvent>
 	blur: InputEventHandler<FocusEvent>
+	input: InputEventHandler<InputEvent>
+	keydown: InputEventHandler<KeyboardEvent>
 }
