@@ -43,6 +43,20 @@
       "when": 1729089382176,
       "tag": "0005_unknown_magneto",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1729602567054,
+      "tag": "0006_volatile_crystal",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1729603593517,
+      "tag": "0007_legal_gamma_corps",
+      "breakpoints": true
     }
   ]
 }

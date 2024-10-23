@@ -1,8 +1,13 @@
 <script lang="ts">
-	export let direction: 'horizontal' | 'vertical' = 'horizontal'
+	import type { DividerProps } from '../index'
+
+	type $$Props = DividerProps
+	export let direction: $$Props['direction'] = 'horizontal'
+	let className: $$Props['class'] = ''
+	export { className as class }
 </script>
 
-<div class={direction} />
+<div class={`${direction} ${className}`} {...$$restProps} />
 
 <style>
 	div {

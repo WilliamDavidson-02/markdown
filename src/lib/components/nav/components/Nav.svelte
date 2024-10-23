@@ -5,14 +5,13 @@
 	import { onMount } from 'svelte'
 	import { FileTree } from '$lib/components/file-tree'
 	import { OutlinePanel } from '$lib/components/outline-panel'
-	import { Dialog, DialogFooter, DialogHeader } from '$lib/components/dialog'
+
+	export let fileDialog: HTMLDialogElement
+	export let folderDialog: HTMLDialogElement
 
 	let isResizing = false
 	let navWidth = 400
 	let showOutlinePanel = false
-
-	let fileDialog: HTMLDialogElement
-	let folderDialog: HTMLDialogElement
 
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
@@ -36,26 +35,6 @@
 		}
 	})
 </script>
-
-<Dialog bind:dialog={fileDialog}>
-	<form>
-		<DialogHeader>Create new file</DialogHeader>
-		<div>Fields</div>
-		<DialogFooter>
-			<Button variant="outline" on:click={() => fileDialog.close()}>Cancel</Button>
-			<Button type="submit">Create</Button>
-		</DialogFooter>
-	</form>
-</Dialog>
-
-<Dialog bind:dialog={folderDialog}>
-	<DialogHeader>Create new folder</DialogHeader>
-	<div>Fields</div>
-	<DialogFooter>
-		<Button variant="outline" on:click={() => folderDialog.close()}>Cancel</Button>
-		<Button type="submit">Create</Button>
-	</DialogFooter>
-</Dialog>
 
 <nav style:width={`${!$navStore ? 0 : navWidth}px`}>
 	<aside>
