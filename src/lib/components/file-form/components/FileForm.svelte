@@ -83,6 +83,7 @@
 					class="file-icon-input"
 					bind:value={$fileForm.name}
 					placeholder="Enter a file name"
+					autofocus={fileDialog?.open}
 				/>
 				<ErrorMessage class="file-icon-error" error={$errors.name} />
 			</div>

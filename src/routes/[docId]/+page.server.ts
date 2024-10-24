@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileIcons } from '$lib/fileIcons'
 import { db } from '$lib/db'
-import { fileTable } from '$lib/db/schema.js'
+import { fileTable, folderTable } from '$lib/db/schema.js'
 
 const fileSchema = z.object({
 	name: z.string().min(1, { message: 'File name is required' }).max(256, {
@@ -42,9 +42,7 @@ export const actions: Actions = {
 		const form = await superValidate(request, zod(fileSchema))
 
 		// The page is protected, so there should always be a user but just in case there isn't
-		if (!locals.user) return { form }
-
-		if (!form.valid) return fail(400, { form })
+		if (!locals.user || !form.valid) return fail(400, { form })
 
 		const { icon, name, folderId } = form.data
 
@@ -60,9 +58,23 @@ export const actions: Actions = {
 
 		return { form, id: file[0].id }
 	},
-	folder: async ({ request }) => {
+	folder: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(folderSchema))
-		console.log('folder', form)
-		return { form }
+
+		// The page is protected, so there should always be a user but just in case there isn't
+		if (!locals.user || !form.valid) return fail(400, { form })
+
+		const { name, parentId } = form.data
+
+		const folder = await db
+			.insert(folderTable)
+			.values({
+				userId: locals.user.id,
+				name: name.trim(),
+				parentId
+			})
+			.returning({ id: folderTable.id })
+
+		return { form, id: folder[0].id }
 	}
 }
