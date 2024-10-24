@@ -1,8 +1,11 @@
 <script lang="ts">
 	import { getCtx, getState } from '../command'
-	import type { CommandProps } from '../index'
+	import type { CommandListProps } from '../index'
 
-	type $$Props = CommandProps
+	type $$Props = CommandListProps
+
+	let className: $$Props['class'] = ''
+	export { className as class }
 
 	const { ids } = getCtx()
 	const state = getState()
@@ -43,7 +46,7 @@
 	}
 </script>
 
-<div {...listAttrs} {...$$restProps}>
+<div {...listAttrs} class={className} {...$$restProps}>
 	<div {...sizerAttrs} use:sizerAction>
 		{#key $state.search === ''}
 			<slot />

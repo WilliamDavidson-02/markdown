@@ -7,10 +7,13 @@
 	export let type: $$Props['type'] = 'text'
 	export let el: $$Props['el'] = undefined
 	export let value: string = ''
+	let className: $$Props['class'] = undefined
+	export { className as class }
 </script>
 
 <input
 	bind:this={el}
+	class={className}
 	{type}
 	{value}
 	on:input={(e) => (value = e.currentTarget.value)}

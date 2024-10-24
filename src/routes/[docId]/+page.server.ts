@@ -1,12 +1,19 @@
 import { superValidate } from 'sveltekit-superforms'
 import { zod } from 'sveltekit-superforms/adapters'
 import { z } from 'zod'
-import { redirect, type Actions } from '@sveltejs/kit'
+import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileIcons } from '$lib/fileIcons'
+import { db } from '$lib/db'
+import { fileTable } from '$lib/db/schema.js'
 
 const fileSchema = z.object({
-	name: z.string().max(256, { message: 'Name must be at most 256 characters' }),
-	icon: z.enum(fileIcons.map((icon) => icon.name) as [string, ...string[]]).default('File'),
+	name: z.string().min(1, { message: 'File name is required' }).max(256, {
+		message: 'Name must be at most 256 characters'
+	}),
+	icon: z
+		.string()
+		.refine((value) => fileIcons.map((icon) => icon.name).includes(value))
+		.default(fileIcons[0].name),
 	folderId: z.string().uuid().optional()
 })
 
@@ -31,14 +38,31 @@ export const load = async ({ locals }) => {
 }
 
 export const actions: Actions = {
-	file: async ({ request }) => {
+	file: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(fileSchema))
-		console.log(form)
-		return { form }
+
+		// The page is protected, so there should always be a user but just in case there isn't
+		if (!locals.user) return { form }
+
+		if (!form.valid) return fail(400, { form })
+
+		const { icon, name, folderId } = form.data
+
+		const file = await db
+			.insert(fileTable)
+			.values({
+				userId: locals.user.id,
+				icon,
+				name: name.trim(),
+				folderId
+			})
+			.returning({ id: fileTable.id })
+
+		return { form, id: file[0].id }
 	},
 	folder: async ({ request }) => {
 		const form = await superValidate(request, zod(folderSchema))
-		console.log(form)
+		console.log('folder', form)
 		return { form }
 	}
 }

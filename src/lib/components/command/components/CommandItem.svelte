@@ -13,6 +13,9 @@
 	export let onSelect: $$Props['onSelect'] = undefined
 	export let id: string = nanoid()
 
+	let className: $$Props['class'] = ''
+	export { className as class }
+
 	const context = getCtx()
 	const state = getState()
 
@@ -83,13 +86,7 @@
 </script>
 
 {#if $render || isFirstRender}
-	<div {...attrs} use:action {...$$restProps}>
+	<div {...attrs} use:action class={className} {...$$restProps}>
 		<slot {action} {attrs} />
 	</div>
 {/if}
-
-<style>
-	div[aria-selected] {
-		background-color: var(--secondary-dk);
-	}
-</style>

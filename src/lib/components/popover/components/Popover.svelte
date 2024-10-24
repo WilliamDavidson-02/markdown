@@ -1,7 +1,18 @@
 <script lang="ts">
 	import { onMount } from 'svelte'
 	import { createPopover } from '../popover'
-	const popover = createPopover()
+	import type { PopoverProps } from '../types'
+
+	type $$Props = PopoverProps
+	export let isOpen: $$Props['isOpen'] = undefined
+	let className: $$Props['class'] = undefined
+	export { className as class }
+
+	const popover = createPopover({ isOpen })
+
+	$: popover.set({ isOpen: isOpen ?? false })
+
+	$: isOpen = $popover.isOpen
 
 	onMount(() => {
 		const closePopover = (ev: KeyboardEvent) => {
@@ -17,7 +28,7 @@
 	})
 </script>
 
-<div>
+<div class={className}>
 	<slot />
 </div>
 

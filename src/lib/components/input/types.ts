@@ -3,6 +3,7 @@ import type { DOMEl } from '$lib/types'
 
 export type InputProps = HTMLInputAttributes & {
 	type?: HTMLInputTypeAttribute
+	class?: string
 } & DOMEl<HTMLInputElement>
 
 export type InputEventHandler<T extends Event = Event> = T & {

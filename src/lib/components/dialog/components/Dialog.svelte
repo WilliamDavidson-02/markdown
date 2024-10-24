@@ -7,22 +7,23 @@
 	export let dialog: HTMLDialogElement
 
 	onMount(() => {
-		const closeDialog = (ev: KeyboardEvent | MouseEvent) => {
-			if (ev instanceof KeyboardEvent && ev.key === 'Escape') {
+		const closeDialog = (ev: KeyboardEvent) => {
+			if (ev.key === 'Escape') {
 				ev.preventDefault()
 				dialog.close()
 			}
 		}
-		dialog.addEventListener('click', closeDialog)
+
+		window.addEventListener('keydown', closeDialog)
 		return () => {
-			dialog.removeEventListener('click', closeDialog)
+			window.removeEventListener('keydown', closeDialog)
 		}
 	})
 </script>
 
 <dialog bind:this={dialog} on:close transition:fade={{ duration: 200 }}>
 	<div class="close-header">
-		<Button variant="ghost" icon size="sm" on:click={() => dialog.close()}>
+		<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
 			<X size={16} />
 		</Button>
 	</div>
@@ -38,12 +39,13 @@
 		border: 1px solid var(--secondary-dk);
 		max-width: 500px;
 		width: 100%;
-
+		overflow: visible;
 		position: fixed;
 		top: 50%;
 		left: 50%;
 		transform: translate(-50%, -50%);
 		margin: 0;
+		outline: none;
 	}
 
 	dialog::backdrop {

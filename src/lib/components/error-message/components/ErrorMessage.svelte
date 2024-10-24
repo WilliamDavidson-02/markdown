@@ -1,9 +1,15 @@
 <script lang="ts">
-	export let error: string[] | undefined
+	import type { ErrorMessageProps } from '../types.js'
+
+	type $$Props = ErrorMessageProps
+
+	export let error: $$Props['error'] = undefined
+	let className: $$Props['class'] = undefined
+	export { className as class }
 </script>
 
 {#if error}
-	<p>{error}</p>
+	<p class={className}>{error}</p>
 {/if}
 
 <style>

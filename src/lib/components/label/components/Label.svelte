@@ -4,9 +4,11 @@
 	type $$Props = Props
 	export let htmlFor: $$Props['for'] = ''
 	export let el: $$Props['el'] = undefined
+	let className: $$Props['class'] = undefined
+	export { className as class }
 </script>
 
-<label bind:this={el} for={htmlFor} {...$$restProps}>
+<label bind:this={el} for={htmlFor} class={className} {...$$restProps}>
 	<slot />
 </label>
 

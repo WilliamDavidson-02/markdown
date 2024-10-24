@@ -1,4 +1,4 @@
-import type { HTMLAttributes } from 'svelte/elements'
+import type { HTMLDivAttributes } from '$lib/types'
 import type { Writable } from 'svelte/store'
 
 export type State = {
@@ -10,20 +10,26 @@ export type State = {
 	}
 }
 
-export type CommandProps = HTMLAttributes<HTMLDivElement> & {
+export type CommandProps = HTMLDivAttributes & {
 	label?: string
 	value?: string
 	onKeydown?: (e: KeyboardEvent) => void
+	class?: string
 }
 
-export type CommandItemProps = HTMLAttributes<HTMLDivElement> & {
+export type CommandListProps = HTMLDivAttributes & {
+	class?: string
+}
+
+export type CommandItemProps = HTMLDivAttributes & {
 	id?: string
 	value?: string
 	disabled?: boolean
 	onSelect?: (value: string) => void
+	class?: string
 }
 
-export type CommandGroupProps = HTMLAttributes<HTMLDivElement> & {
+export type CommandGroupProps = HTMLDivAttributes & {
 	heading?: string
 }
 
