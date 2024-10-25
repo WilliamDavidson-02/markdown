@@ -15,12 +15,13 @@
 	}
 </script>
 
-<div
-	role="button"
-	on:click={togglePopover}
-	tabindex={-1}
-	on:keydown={handleKeyDown}
-	{...$$restProps}
->
+<!-- svelte-ignore a11y-interactive-supports-focus -->
+<div role="button" on:click={togglePopover} on:keydown={handleKeyDown} {...$$restProps}>
 	<slot />
 </div>
+
+<style>
+	div:not(:disabled) {
+		cursor: pointer;
+	}
+</style>

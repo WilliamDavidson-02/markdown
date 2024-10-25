@@ -53,6 +53,12 @@
 	font-family: 'Poppins', sans-serif;
 }
 
+* {
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	text-rendering: optimizeLegibility;
+}
+
 body {
 	background-color: var(--base);
 }
