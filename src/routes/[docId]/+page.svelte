@@ -7,7 +7,7 @@
 	import { page } from '$app/stores'
 	import { goto } from '$app/navigation'
 	import { editorStore } from '$lib/components/editor/editorStore'
-	import { treeStore } from '$lib/components/file-tree/treeStore.js'
+	import { selectedFile, treeStore } from '$lib/components/file-tree/treeStore.js'
 	import type { fileTable } from '$lib/db/schema.js'
 
 	export let data
@@ -19,6 +19,7 @@
 		$editorStore?.dispatch({
 			changes: { from: 0, to: $editorStore?.state.doc?.length ?? 0, insert: currentDoc?.doc ?? '' }
 		})
+		selectedFile.set(currentDoc)
 	}
 
 	$: if (data.currentDoc) setDoc(data.currentDoc)

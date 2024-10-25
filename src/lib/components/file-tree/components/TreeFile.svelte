@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { ComponentType } from 'svelte'
 	import { fileIcons, type FileIcon } from '$lib/fileIcons'
+	import { selectedFile } from '../treeStore'
 
 	export let name: string
 	export let id: string
@@ -11,7 +12,7 @@
 </script>
 
 <li>
-	<a class="file" href={`/${id}`}>
+	<a class="file" href={`/${id}`} data-selected={$selectedFile?.id === id}>
 		<span class="icon">
 			<svelte:component this={iconName} color={iconColor} size={20} />
 		</span>
@@ -30,6 +31,11 @@
 		cursor: pointer;
 		height: 36px;
 		padding-right: var(--space-sm);
+	}
+
+	.file[data-selected='true'],
+	.file[data-selected='true']:hover {
+		background-color: var(--secondary-dk);
 	}
 
 	p {

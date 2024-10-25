@@ -10,3 +10,4 @@ export type Folder = typeof folderTable.$inferSelect & {
 export type Tree = (File | Folder)[][]
 
 export const treeStore = writable<Tree>([])
+export const selectedFile = writable<File | null>(null)

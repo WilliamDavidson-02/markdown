@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Folder as ClosedFolder, FolderOpen } from 'lucide-svelte'
 	import { slide } from 'svelte/transition'
-	import type { Folder } from '../treeStore'
+	import { type Folder } from '../treeStore'
 	import TreeFile from './TreeFile.svelte'
 
 	export let folder: Folder
@@ -32,6 +32,11 @@
 </li>
 
 <style>
+	li {
+		display: flex;
+		flex-direction: column;
+	}
+
 	.folder-header {
 		all: unset;
 		display: flex;
