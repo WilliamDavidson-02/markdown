@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { getDaysDifference } from '$lib/utilts/date'
+
 	export let date: string
 
 	import { onMount } from 'svelte'
@@ -6,10 +8,8 @@
 	let label = ''
 
 	onMount(() => {
-		const now = new Date()
-		const inputDate = new Date(date)
-		const diffTime = Math.abs(now.getTime() - inputDate.getTime())
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+		const diffDays = getDaysDifference(new Date(date))
+		const daysSinceNewYear = getDaysDifference(new Date(`${new Date().getFullYear()}-01-01`))
 
 		if (diffDays === 0) {
 			label = 'Today'
@@ -17,10 +17,12 @@
 			label = 'Previous 7 days'
 		} else if (diffDays <= 30) {
 			label = 'Previous 30 days'
-		} else {
+		} else if (diffDays <= daysSinceNewYear) {
 			// prettier-ignore
 			const months = [ 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December' ]
-			label = months[inputDate.getMonth()]
+			label = months[new Date(date).getMonth()]
+		} else {
+			label = new Date(date).toLocaleDateString('en-US', { year: 'numeric' })
 		}
 	})
 </script>

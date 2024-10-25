@@ -1,32 +1,35 @@
 <script lang="ts">
-	import { Folder, FolderOpen } from 'lucide-svelte'
+	import { Folder as ClosedFolder, FolderOpen } from 'lucide-svelte'
 	import { slide } from 'svelte/transition'
+	import type { Folder } from '../treeStore'
+	import TreeFile from './TreeFile.svelte'
 
-	export let name: string
-	export let iconColor: string = 'var(--foreground-md)'
-
+	export let folder: Folder
 	let isOpen = false
-
-	const toggleFolder = () => {
-		isOpen = !isOpen
-	}
 </script>
 
-<button class="folder-header" on:click={toggleFolder}>
-	<span class="icon">
-		{#if isOpen}
-			<FolderOpen color={iconColor} size={20} />
-		{:else}
-			<Folder color={iconColor} size={20} />
-		{/if}
-	</span>
-	<p>{name}</p>
-</button>
-{#if isOpen}
-	<div transition:slide={{ duration: 200 }} class="folder-content">
-		<slot />
-	</div>
-{/if}
+<li>
+	<button class="folder-header" on:click={() => (isOpen = !isOpen)}>
+		<span class="icon">
+			{#if isOpen}
+				<FolderOpen size={20} />
+			{:else}
+				<ClosedFolder size={20} />
+			{/if}
+		</span>
+		<p>{folder.name ?? 'Untitled'}</p>
+	</button>
+	{#if isOpen}
+		<ul transition:slide={{ duration: 200 }} class="folder-content">
+			{#each folder.children as child}
+				<svelte:self folder={child} />
+			{/each}
+			{#each folder.files as file}
+				<TreeFile name={file.name ?? 'Untitled'} icon={file.icon} id={file.id} />
+			{/each}
+		</ul>
+	{/if}
+</li>
 
 <style>
 	.folder-header {
@@ -59,6 +62,7 @@
 		height: 36px;
 		width: 36px;
 		flex-shrink: 0;
+		color: var(--foreground-md);
 	}
 
 	.folder-header:active {
@@ -67,6 +71,8 @@
 
 	.folder-content {
 		padding-left: var(--space-sm);
+		display: flex;
+		flex-direction: column;
 	}
 
 	@media (pointer: fine) {

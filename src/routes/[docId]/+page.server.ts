@@ -5,6 +5,8 @@ import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileIcons } from '$lib/fileIcons'
 import { db } from '$lib/db'
 import { fileTable, folderTable } from '$lib/db/schema.js'
+import { and, desc, eq } from 'drizzle-orm'
+import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 
 const fileSchema = z.object({
 	name: z.string().min(1, { message: 'File name is required' }).max(256, {
@@ -22,15 +24,57 @@ const folderSchema = z.object({
 	parentId: z.string().uuid().optional()
 })
 
-export const load = async ({ locals }) => {
+const getCurrentDocById = async (userId: string, docId: string) => {
+	return await db
+		.select()
+		.from(fileTable)
+		.where(and(eq(fileTable.id, docId), eq(fileTable.userId, userId)))
+		.limit(1)
+}
+
+const getupdatedAtDoc = async (userId: string) => {
+	return await db
+		.select()
+		.from(fileTable)
+		.where(eq(fileTable.userId, userId))
+		.orderBy(desc(fileTable.updatedAt))
+		.limit(1)
+}
+
+export const load = async ({ locals, params }) => {
 	if (!locals.user) {
 		return redirect(302, `/`)
 	}
+
+	let currentDoc: (typeof fileTable.$inferSelect)[] | null = null
+	const { docId } = params
+	const userId = locals.user.id
+
+	// Get the current doc
+	if (docId && z.string().uuid().safeParse(docId).success) {
+		currentDoc = await getCurrentDocById(userId, docId)
+	} else {
+		currentDoc = await getupdatedAtDoc(userId)
+	}
+
+	const folders = await db.select().from(folderTable).where(eq(folderTable.userId, userId))
+	const files = await db
+		.select()
+		.from(fileTable)
+		.where(eq(fileTable.userId, userId))
+		.orderBy(desc(fileTable.updatedAt))
+
+	const folderTree = buildTree(folders, files)
+
+	const rootFiles = files.filter((file) => !file.folderId)
+	const tree = sortTreeByDate([...folderTree, ...rootFiles])
 
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
 
 	return {
+		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
+		tree,
 		fileForm,
 		folderForm,
 		user: locals.user

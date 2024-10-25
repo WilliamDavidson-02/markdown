@@ -1,20 +1,23 @@
 <script lang="ts">
-	import * as icons from 'lucide-svelte'
 	import type { ComponentType } from 'svelte'
+	import { fileIcons, type FileIcon } from '$lib/fileIcons'
 
 	export let name: string
-	export let icon: keyof typeof icons = 'File'
+	export let id: string
+	export let icon: FileIcon['name'] | null = 'File'
 	export let iconColor: string = 'var(--interactive-active)'
 
-	$: iconName = icons[icon] as ComponentType
+	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 </script>
 
-<div class="file">
-	<span class="icon">
-		<svelte:component this={iconName} color={iconColor} size={20} />
-	</span>
-	<p>{name}</p>
-</div>
+<li>
+	<a class="file" href={`/${id}`}>
+		<span class="icon">
+			<svelte:component this={iconName} color={iconColor} size={20} />
+		</span>
+		<p>{name}</p>
+	</a>
+</li>
 
 <style>
 	.file {

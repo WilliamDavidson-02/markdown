@@ -74,3 +74,8 @@ a {
 		transform: rotate(360deg);
 	}
 }
+
+li,
+ul {
+	all: unset;
+}

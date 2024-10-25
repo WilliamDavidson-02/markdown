@@ -1,100 +1,25 @@
 <script lang="ts">
 	import { TreeFile, TreeFolder, TreeLabel } from '$lib/components/file-tree'
+	import { isFolder } from '$lib/utilts/tree'
+	import { treeStore } from '../treeStore'
 </script>
 
-<div class="file-tree">
-	<div>
-		<TreeLabel date="2024-10-21" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-10-18" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-09-30" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-08-30" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-07-30" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-06-30" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-	<div>
-		<TreeLabel date="2024-05-30" />
-		<TreeFile name="Markdown docs 1" />
-		<TreeFolder name="Mode markdown">
-			<TreeFile name="Markdown docs 2" />
-			<TreeFile name="Markdown docs 3" />
-			<TreeFolder name="Nested folder">
-				<TreeFile name="Markdown docs 4" />
-				<TreeFile name="Markdown docs 5" />
-			</TreeFolder>
-		</TreeFolder>
-		<TreeFile name="Markdown docs 6" />
-	</div>
-</div>
+<ul class="file-tree">
+	{#each $treeStore as group}
+		<li class="group">
+			<TreeLabel date={group[0].updatedAt.toString()} />
+			<ul>
+				{#each group as item}
+					{#if isFolder(item)}
+						<TreeFolder folder={item} />
+					{:else}
+						<TreeFile name={item.name ?? 'Untitled'} icon={item.icon} id={item.id} />
+					{/if}
+				{/each}
+			</ul>
+		</li>
+	{/each}
+</ul>
 
 <style>
 	.file-tree {
@@ -106,5 +31,10 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		user-select: none;
+	}
+
+	.group {
+		display: flex;
+		flex-direction: column;
 	}
 </style>

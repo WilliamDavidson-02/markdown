@@ -93,8 +93,14 @@ import {
 	Scissors,
 	Lock
 } from 'lucide-svelte'
+import type { ComponentType } from 'svelte'
 
-export const fileIcons = [
+export type FileIcon = {
+	name: string
+	icon: ComponentType
+}
+
+export const fileIcons: FileIcon[] = [
 	// General file and document icons
 	{ name: 'File', icon: File },
 	{ name: 'FileCode', icon: FileCode },

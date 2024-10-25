@@ -25,47 +25,8 @@ import { customKeymaps, reMappedKeymap } from './commands'
 import { theme } from './theme'
 import { editorStore } from './editorStore'
 
-const initDoc = `## Table section
-|First Header|Second Header|
-|-----------:|:-----------:|
-|1 col 1 row |2 col 1 row  |
-|1 col 2 row |2 col 2 row  |
-|1 col 3 row |2 col 3 row  |
-|1 col 4 row |2 col 4 row  |
-
-this is a test _for the bold and the *italic assistances*.
-
-1. First item
-2. Second item
-3. Third item
-    1. Indented item
-    2. Indented item
-4. Fourth item
-
-- First item
-- Second item
-- Third item
-    - Indented item
-    - Indented item
-- Fourth item
-
-## Task section
-- [ ] a task list item
-- [ ] list "syntax required"
-- [ ] normal **formatting kaopw kdpoak wdopkawd**, @mentions, #1234 refs
-    - [ ] incomplete
-- [x] completed
-
-# Link section
-https://external-content.duckduckgo.com/iu/?u=http%3A%2F%2Fwww.pixelstalk.net%2Fwp-content%2Fuploads%2F2016%2F04%2FDesktop-landscape-wallpaper-HD-1.jpg&f=1&nofb=1&ipt=23e913794b994d1ffd5f1c198007921deb0772625b0390c8b1b7361970036afd&ipo=images
-
-this is not a match but this is a link http://localhost:5173/
-
-http://localhost:5173/
-`
-
 export const state = EditorState.create({
-	doc: initDoc,
+	doc: '',
 	extensions: [
 		EditorView.lineWrapping,
 		EditorState.allowMultipleSelections.of(true),
