@@ -27,6 +27,8 @@ import { editorAutoSave, editorStore } from './editorStore'
 import { selectedFile } from '$lib/components/file-tree/treeStore'
 
 const autoSave = async (view: EditorView) => {
+	let status: 'saved' | 'error' = 'saved'
+
 	selectedFile.subscribe(async (file) => {
 		if (!file || file.doc === view.state.doc.toString()) return
 
@@ -35,10 +37,13 @@ const autoSave = async (view: EditorView) => {
 				method: 'PUT',
 				body: JSON.stringify({ file: { ...file, doc: view.state.doc.toString() } })
 			})
-		} catch (error) {
-			console.error(error)
+			status = 'saved'
+		} catch {
+			status = 'error'
 		}
 	})
+
+	return status
 }
 
 export const state = EditorState.create({
@@ -49,15 +54,22 @@ export const state = EditorState.create({
 		EditorView.updateListener.of((update) => {
 			if (update.docChanged || update.selectionSet) editorStore.set(update.view)
 			if (update.docChanged) {
-				editorAutoSave.update((timer) => {
-					if (timer) clearTimeout(timer)
+				editorAutoSave.update((state) => {
+					if (state.timer) clearTimeout(state.timer)
 					let id: string | undefined = undefined
-					selectedFile.subscribe((file) => (id = file?.id))
-					if (!id) return null
+					selectedFile.subscribe((file) => {
+						id = file?.id
+					})
+					if (!id) return { timer: null, status: 'saved' }
 
-					return setTimeout(() => {
-						autoSave(update.view)
-					}, 3000)
+					return {
+						timer: setTimeout(async () => {
+							editorAutoSave.update((s) => ({ ...s, status: 'saving' }))
+							const status = await autoSave(update.view)
+							editorAutoSave.set({ timer: null, status })
+						}, 3000),
+						status: state.timer ? 'unsaved' : 'saved'
+					}
 				})
 			}
 		}),
