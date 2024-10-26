@@ -72,3 +72,22 @@ export const fileTable = pgTable('file', {
 		.notNull()
 		.defaultNow()
 })
+
+export const trashTable = pgTable('trash', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => userTable.id),
+	folderId: uuid('folder_id')
+		.references(() => folderTable.id)
+		.unique(),
+	fileId: uuid('file_id')
+		.references(() => fileTable.id)
+		.unique(),
+	createdAt: timestamp('created_at', {
+		withTimezone: true,
+		mode: 'date'
+	})
+		.notNull()
+		.defaultNow()
+})
