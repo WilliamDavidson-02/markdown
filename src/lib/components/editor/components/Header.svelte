@@ -74,7 +74,7 @@
 
 	:global(.dropdown) {
 		right: 0;
-		transform: translateX(0) translateY(var(--space-sm)) !important;
+		transform: translateX(0) translateY(var(--space-sm));
 	}
 
 	.dropdown-item {

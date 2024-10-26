@@ -5,7 +5,7 @@
 	import { onMount } from 'svelte'
 
 	type $$Props = PopoverContent
-	let className: $$Props['class'] = ''
+	let className: $$Props['class'] = undefined
 	export { className as class }
 
 	let el: HTMLDivElement
@@ -32,7 +32,7 @@
 	<div
 		bind:this={el}
 		transition:scale={{ start: 0.98, duration: 250 }}
-		class={className}
+		class={className ?? 'default'}
 		{...$$restProps}
 	>
 		<slot />
@@ -42,9 +42,13 @@
 <style>
 	div {
 		position: absolute;
-		top: 100%;
 		z-index: 100;
-		transform: translateX(-25%) translateY(var(--space-sm));
+	}
+
+	.default {
+		top: 100%;
+		left: 50%;
+		transform: translateX(-50%) translateY(var(--space-sm));
 		min-width: 200px;
 	}
 </style>
