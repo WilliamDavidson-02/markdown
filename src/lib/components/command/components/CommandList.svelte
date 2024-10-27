@@ -4,9 +4,6 @@
 
 	type $$Props = CommandListProps
 
-	let className: $$Props['class'] = ''
-	export { className as class }
-
 	const { ids } = getCtx()
 	const state = getState()
 
@@ -46,7 +43,7 @@
 	}
 </script>
 
-<div {...listAttrs} class={className} {...$$restProps}>
+<div {...listAttrs} class={$$restProps.class} {...$$restProps}>
 	<div {...sizerAttrs} use:sizerAction>
 		{#key $state.search === ''}
 			<slot />

@@ -7,6 +7,7 @@
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
+	import { invalidateAll } from '$app/navigation'
 
 	$: doc = $editorStore?.state.doc.toString()
 	$: lastEdited = $selectedFile?.updatedAt
@@ -26,6 +27,10 @@
 				method: 'POST',
 				body: JSON.stringify({ fileId: $selectedFile?.id })
 			})
+
+			if (res.ok) {
+				await invalidateAll()
+			}
 		} catch (error) {
 			console.log(error)
 		} finally {

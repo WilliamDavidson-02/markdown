@@ -14,19 +14,16 @@ export type CommandProps = HTMLDivAttributes & {
 	label?: string
 	value?: string
 	onKeydown?: (e: KeyboardEvent) => void
-	class?: string
 }
 
-export type CommandListProps = HTMLDivAttributes & {
-	class?: string
-}
+export type CommandListProps = HTMLDivAttributes
 
 export type CommandItemProps = HTMLDivAttributes & {
 	id?: string
 	value?: string
 	disabled?: boolean
 	onSelect?: (value: string) => void
-	class?: string
+	alwaysRender?: boolean
 }
 
 export type CommandGroupProps = HTMLDivAttributes & {

@@ -12,15 +12,13 @@
 	export let value: string = ''
 	export let onSelect: $$Props['onSelect'] = undefined
 	export let id: string = nanoid()
-
-	let className: $$Props['class'] = ''
-	export { className as class }
+	export let alwaysRender: $$Props['alwaysRender'] = false
 
 	const context = getCtx()
 	const state = getState()
 
 	const render = derived(state, ($state) => {
-		if (!$state.search) return true
+		if (!$state.search || alwaysRender) return true
 		const currentScore = $state.filtered.items.get(id)
 		if (currentScore === undefined) return false
 		return currentScore > 0
@@ -86,7 +84,7 @@
 </script>
 
 {#if $render || isFirstRender}
-	<div {...attrs} use:action class={className} {...$$restProps}>
+	<div {...attrs} use:action class={$$restProps.class} {...$$restProps}>
 		<slot {action} {attrs} />
 	</div>
 {/if}

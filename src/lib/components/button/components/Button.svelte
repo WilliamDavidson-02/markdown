@@ -16,7 +16,7 @@
 		'data-button-icon': icon
 	}
 
-	$: classes = `button button--${variant} button--${size}`
+	$: classes = `button button-${variant} button-${size} ${$$restProps.class ?? ''}`
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions a11y_no_static_element_interactions -->
@@ -25,6 +25,8 @@
 	bind:this={el}
 	type={href ? undefined : type}
 	{href}
+	{...attrs}
+	{...$$restProps}
 	class={classes}
 	on:click
 	on:change
@@ -36,8 +38,6 @@
 	on:pointerdown
 	on:mouseup
 	on:pointerup
-	{...$$restProps}
-	{...attrs}
 >
 	<slot />
 </svelte:element>
@@ -63,44 +63,44 @@
 		filter: brightness(0.8);
 	}
 
-	.button--primary {
+	.button-primary {
 		background-color: var(--interactive);
 		border-color: var(--interactive-active);
 		color: var(--interactive-text);
 	}
 
-	.button--secondary {
+	.button-secondary {
 		background-color: var(--secondary);
 		border-color: var(--secondary-dk);
 	}
 
-	.button--outline {
+	.button-outline {
 		background-color: transparent;
 		border: 1px solid var(--secondary-dk);
 	}
 
-	.button--ghost {
+	.button-ghost {
 		background-color: transparent;
 		border: none;
 	}
 
-	.button--ghost[data-button-toggled='true'] {
+	.button-ghost[data-button-toggled='true'] {
 		background-color: var(--secondary);
 	}
 
-	.button--destructive {
+	.button-destructive {
 		background-color: var(--danger);
 		border-color: var(--danger-active);
 		color: var(--interactive-text);
 	}
 
-	.button--sm {
+	.button-sm {
 		padding: var(--space-xs) var(--space-sm);
 		font-size: 0.75rem;
 		font-weight: 400;
 	}
 
-	.button--md {
+	.button-md {
 		padding: var(--space-sm) var(--space-base);
 		font-size: 0.875rem;
 		font-weight: 400;

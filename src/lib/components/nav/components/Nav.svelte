@@ -8,6 +8,7 @@
 
 	export let fileDialog: HTMLDialogElement
 	export let folderDialog: HTMLDialogElement
+	export let trashDialog: HTMLDialogElement
 
 	let isResizing = false
 	let navWidth = 400
@@ -68,7 +69,7 @@
 			<FileTree />
 		{/if}
 		<div class="between">
-			<Button size="sm" variant="ghost" icon>
+			<Button on:click={() => trashDialog.showModal()} size="sm" variant="ghost" icon>
 				<Trash2 size={20} stroke-width={1.5} />
 			</Button>
 			<Button size="sm" variant="ghost" icon>

@@ -4,8 +4,8 @@ import { z } from 'zod'
 import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileIcons } from '$lib/fileIcons'
 import { db } from '$lib/db'
-import { fileTable, folderTable } from '$lib/db/schema.js'
-import { and, desc, eq } from 'drizzle-orm'
+import { fileTable, folderTable, trashTable } from '$lib/db/schema.js'
+import { and, desc, eq, notInArray } from 'drizzle-orm'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 
 const fileSchema = z.object({
@@ -24,19 +24,21 @@ const folderSchema = z.object({
 	parentId: z.string().uuid().optional()
 })
 
-const getCurrentDocById = async (userId: string, docId: string) => {
+const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
 	return await db
 		.select()
 		.from(fileTable)
-		.where(and(eq(fileTable.id, docId), eq(fileTable.userId, userId)))
+		.where(
+			and(eq(fileTable.id, docId), eq(fileTable.userId, userId), notInArray(fileTable.id, trashIds))
+		)
 		.limit(1)
 }
 
-const getupdatedAtDoc = async (userId: string) => {
+const getupdatedAtDoc = async (userId: string, trashIds: string[]) => {
 	return await db
 		.select()
 		.from(fileTable)
-		.where(eq(fileTable.userId, userId))
+		.where(and(eq(fileTable.userId, userId), notInArray(fileTable.id, trashIds)))
 		.orderBy(desc(fileTable.updatedAt))
 		.limit(1)
 }
@@ -50,24 +52,61 @@ export const load = async ({ locals, params }) => {
 	const { docId } = params
 	const userId = locals.user.id
 
+	const trash = await db.select().from(trashTable).where(eq(trashTable.userId, userId))
+	const trashIds = trash.map((t) => t.fileId).filter((id) => id !== null)
+
 	// Get the current doc
 	if (docId && z.string().uuid().safeParse(docId).success) {
-		currentDoc = await getCurrentDocById(userId, docId)
+		currentDoc = await getCurrentDocById(userId, docId, trashIds)
+		if (!currentDoc || currentDoc.length === 0) {
+			currentDoc = await getupdatedAtDoc(userId, trashIds)
+		}
 	} else {
-		currentDoc = await getupdatedAtDoc(userId)
+		currentDoc = await getupdatedAtDoc(userId, trashIds)
 	}
 
-	const folders = await db.select().from(folderTable).where(eq(folderTable.userId, userId))
-	const files = await db
+	let files = await db
 		.select()
 		.from(fileTable)
 		.where(eq(fileTable.userId, userId))
 		.orderBy(desc(fileTable.updatedAt))
+	let folders = await db.select().from(folderTable).where(eq(folderTable.userId, userId))
 
-	const folderTree = buildTree(folders, files)
+	let trashedFiles: (typeof fileTable.$inferSelect)[] = []
+	let trashedFolders: (typeof folderTable.$inferSelect)[] = []
+
+	files = files.filter((file) => {
+		if (trash.some((t) => t.fileId === file.id)) {
+			console.log({ id: file.id, name: file.name })
+			trashedFiles.push(file)
+			return false
+		}
+		return true
+	})
+	folders = folders.filter((folder) => {
+		const folderInTrash = trash.some((t) => t.folderId === folder.id)
+		const folderHasNonTrashedFiles = files.some((f) => f.folderId === folder.id)
+
+		if (folderInTrash && folderHasNonTrashedFiles) {
+			trashedFolders.push(folder)
+			return true
+		} else if (folderInTrash) {
+			trashedFolders.push(folder)
+			return false
+		}
+		return true
+	})
+
+	const builtTree = buildTree(folders, files)
+	const builtTrashedTree = buildTree(trashedFolders, trashedFiles)
 
 	const rootFiles = files.filter((file) => !file.folderId)
-	const tree = sortTreeByDate([...folderTree, ...rootFiles])
+	const tree = sortTreeByDate([...builtTree, ...rootFiles])
+
+	const rootTrashedFiles = trashedFiles.filter(
+		(file) => !file.folderId || trashedFolders.some((f) => f.id !== file.folderId)
+	)
+	const trashedTree = [...builtTrashedTree, ...rootTrashedFiles]
 
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
@@ -77,7 +116,8 @@ export const load = async ({ locals, params }) => {
 		tree,
 		fileForm,
 		folderForm,
-		user: locals.user
+		user: locals.user,
+		trashedTree
 	}
 }
 

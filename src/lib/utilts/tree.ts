@@ -25,15 +25,13 @@ export const buildTree = (
 
 	for (const folder of folders) {
 		const folderWithChildren = folderMap.get(folder.id)!
-		if (folder.parentId) {
-			const parent = folderMap.get(folder.parentId)
-			if (parent) {
-				parent.updatedAt =
-					folderWithChildren.updatedAt > parent.updatedAt
-						? folderWithChildren.updatedAt
-						: parent.updatedAt
-				parent.children.push(folderWithChildren)
-			}
+		const parent = folder.parentId ? folderMap.get(folder.parentId) : null
+		if (parent) {
+			parent.updatedAt =
+				folderWithChildren.updatedAt > parent.updatedAt
+					? folderWithChildren.updatedAt
+					: parent.updatedAt
+			parent.children.push(folderWithChildren)
 		} else {
 			folderTree.push(folderWithChildren)
 		}

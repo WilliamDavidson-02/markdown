@@ -8,9 +8,6 @@
 	export let label: $$Props['label'] = undefined
 	export let onKeydown: $$Props['onKeydown'] = undefined
 
-	let className: $$Props['class'] = ''
-	export { className as class }
-
 	const { ids: commandIds, commandEl, handleRootKeydown } = commandContext()
 
 	const rootAction: Action = (node) => {
@@ -43,7 +40,7 @@
 	}
 </script>
 
-<div use:rootAction {...rootAttrs} class={className} {...$$restProps}>
+<div use:rootAction {...rootAttrs} class={$$restProps.class} {...$$restProps}>
 	<!-- svelte-ignore a11y-label-has-associated-control applied in attrs -->
 	<label {...labelAttrs}>{label ?? ''}</label>
 	<slot />

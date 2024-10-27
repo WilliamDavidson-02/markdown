@@ -9,11 +9,14 @@
 	import { editorStore } from '$lib/components/editor/editorStore'
 	import { selectedFile, treeStore } from '$lib/components/file-tree/treeStore.js'
 	import type { fileTable } from '$lib/db/schema.js'
+	import { Trash } from '$lib/components/trash'
+	import { trashStore } from '$lib/components/trash/trashStore.js'
 
 	export let data
 
 	let fileDialog: HTMLDialogElement
 	let folderDialog: HTMLDialogElement
+	let trashDialog: HTMLDialogElement
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		$editorStore?.dispatch({
@@ -22,23 +25,23 @@
 		selectedFile.set(currentDoc)
 	}
 
-	$: if (data.currentDoc) setDoc(data.currentDoc)
-
 	onMount(async () => {
 		if (data.currentDoc?.id !== $page.url.pathname.split('/').pop()) {
 			await goto(`/${data.currentDoc?.id}`)
 		}
-
-		treeStore.set(data.tree)
-		if (data.currentDoc) setDoc(data.currentDoc)
 	})
+
+	$: if (data.currentDoc) setDoc(data.currentDoc)
+	$: treeStore.set(data.tree)
+	$: trashStore.set(data.trashedTree)
 </script>
 
 <main>
 	<FileForm bind:fileDialog form={data.fileForm} />
 	<FolderForm bind:folderDialog form={data.folderForm} />
+	<Trash bind:trashDialog />
 
-	<Nav {fileDialog} {folderDialog} />
+	<Nav {trashDialog} {fileDialog} {folderDialog} />
 	<Editor />
 </main>
 

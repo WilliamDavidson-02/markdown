@@ -5,6 +5,9 @@
 	import { fade } from 'svelte/transition'
 
 	export let dialog: HTMLDialogElement
+	export let withClose: boolean = true
+	let className: string = ''
+	export { className as class }
 
 	onMount(() => {
 		const closeDialog = (ev: KeyboardEvent) => {
@@ -21,12 +24,14 @@
 	})
 </script>
 
-<dialog bind:this={dialog} on:close transition:fade={{ duration: 200 }}>
-	<div class="close-header">
-		<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
-			<X size={16} />
-		</Button>
-	</div>
+<dialog bind:this={dialog} on:close transition:fade={{ duration: 200 }} class={className}>
+	{#if withClose}
+		<div class="close-header">
+			<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
+				<X size={16} />
+			</Button>
+		</div>
+	{/if}
 	<slot />
 </dialog>
 
