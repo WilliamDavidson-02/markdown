@@ -23,7 +23,7 @@
 								<TrashItem item={{ id: item.id, icon: item.icon ?? 'File' }}>
 									{item.name}
 								</TrashItem>
-								<TrashActions />
+								<TrashActions {item} />
 							</TrashContent>
 						</CommandItem>
 					{/if}

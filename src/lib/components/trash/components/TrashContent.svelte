@@ -7,7 +7,7 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: var(--space-sm);
+		padding: var(--space-sm) 0;
 		border-radius: var(--border-radius-sm);
 		cursor: pointer;
 		user-select: none;

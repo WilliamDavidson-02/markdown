@@ -4,16 +4,16 @@
 	import { TrashActions, TrashItem, TrashContent } from '..'
 	import { CommandItem } from '$lib/components/command'
 	import { getState } from '$lib/components/command/command'
-	import { getChildIds } from '$lib/utilts/helpers'
+	import { getNestedIds } from '$lib/utilts/helpers'
+	import { slide } from 'svelte/transition'
 
 	export let folder: Folder
-	let element: HTMLElement
 	let isOpen = false
 
 	const state = getState()
 
 	const isChildSearchValid = (items: Map<string, number>) => {
-		const ids = getChildIds(folder)
+		const ids = getNestedIds([folder])
 		for (const id of ids) {
 			if (items.has(id) && items.get(id) !== 0) return true
 		}
@@ -41,25 +41,23 @@
 					</span>
 					<p>{folder.name ?? 'Untitled'}</p>
 				</div>
-				<TrashActions />
+				<TrashActions item={folder} />
 			</button>
-			<ul
-				class="folder-content"
-				bind:this={element}
-				style:height={isOpen ? `${element.scrollHeight}px` : 0}
-			>
-				{#each folder.children as child}
-					<svelte:self folder={child} />
-				{/each}
-				{#each folder.files as file}
-					<CommandItem value={file.name ?? 'Untitled'} id={file.id} class="trash-item">
-						<TrashItem item={{ id: file.id, icon: file.icon ?? 'File' }}>
-							{file.name}
-						</TrashItem>
-						<TrashActions />
-					</CommandItem>
-				{/each}
-			</ul>
+			{#key isOpen}
+				<ul class="folder-content" transition:slide={{ duration: 200 }} class:open={isOpen}>
+					{#each folder.children as child}
+						<svelte:self folder={child} />
+					{/each}
+					{#each folder.files as file}
+						<CommandItem value={file.name ?? 'Untitled'} id={file.id} class="trash-item">
+							<TrashItem item={{ id: file.id, icon: file.icon ?? 'File' }}>
+								{file.name}
+							</TrashItem>
+							<TrashActions item={file} />
+						</CommandItem>
+					{/each}
+				</ul>
+			{/key}
 		</TrashContent>
 	</li>
 </CommandItem>
@@ -92,6 +90,7 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
+		padding-left: var(--space-sm);
 	}
 
 	p {
@@ -119,6 +118,10 @@
 		height: 0;
 		overflow: hidden;
 		transition: height 0.2s;
+	}
+
+	.folder-content.open {
+		height: auto;
 	}
 
 	:global(.trash-item) {

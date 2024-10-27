@@ -26,5 +26,6 @@
 		font-size: 1rem;
 		line-height: 20px;
 		color: var(--foreground-dk);
+		padding-left: var(--space-sm);
 	}
 </style>

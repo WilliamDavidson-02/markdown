@@ -77,7 +77,6 @@ export const load = async ({ locals, params }) => {
 
 	files = files.filter((file) => {
 		if (trash.some((t) => t.fileId === file.id)) {
-			console.log({ id: file.id, name: file.name })
 			trashedFiles.push(file)
 			return false
 		}
@@ -104,7 +103,7 @@ export const load = async ({ locals, params }) => {
 	const tree = sortTreeByDate([...builtTree, ...rootFiles])
 
 	const rootTrashedFiles = trashedFiles.filter(
-		(file) => !file.folderId || trashedFolders.some((f) => f.id !== file.folderId)
+		(file) => !file.folderId || !trashedFolders.some((f) => f.id === file.folderId)
 	)
 	const trashedTree = [...builtTrashedTree, ...rootTrashedFiles]
 
