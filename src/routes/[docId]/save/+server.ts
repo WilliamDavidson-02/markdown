@@ -10,7 +10,7 @@ const fileSchema = z.object({
 	name: z.string().min(1).max(256),
 	icon: z.string().refine((value) => fileIcons.map((icon) => icon.name).includes(value)),
 	doc: z.string().optional(),
-	folderId: z.string().uuid().optional(),
+	folderId: z.string().uuid().nullable(),
 	createdAt: z.date(),
 	updatedAt: z.date()
 })

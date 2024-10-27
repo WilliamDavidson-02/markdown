@@ -31,3 +31,21 @@ export const getNestedIds = (folders: Folder[]): string[] => {
 	const ids: string[] = traverse(folders)
 	return ids
 }
+
+export const findFolderById = (folders: Folder[], id: string): Folder | null => {
+	const traverse = (folders: Folder[]): Folder | null => {
+		let found: Folder | null = null
+		for (const folder of folders) {
+			if (folder.id === id) return folder
+
+			if (folder.children.length > 0) {
+				found = traverse(folder.children)
+				if (found) return found
+			}
+		}
+
+		return found
+	}
+
+	return traverse(folders)
+}

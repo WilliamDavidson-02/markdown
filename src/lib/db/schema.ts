@@ -29,7 +29,7 @@ export const folderTable = pgTable(
 		parentId: uuid('parent_id'),
 		userId: text('user_id')
 			.notNull()
-			.references(() => userTable.id),
+			.references(() => userTable.id, { onDelete: 'cascade' }),
 		createdAt: timestamp('created_at', {
 			withTimezone: true,
 			mode: 'date'
@@ -43,7 +43,7 @@ export const folderTable = pgTable(
 				columns: [table.parentId],
 				foreignColumns: [table.id],
 				name: 'parent_reference'
-			})
+			}).onDelete('set null')
 		}
 	}
 )
@@ -57,8 +57,8 @@ export const fileTable = pgTable('file', {
 	doc: text('doc'),
 	userId: text('user_id')
 		.notNull()
-		.references(() => userTable.id),
-	folderId: uuid('folder_id').references(() => folderTable.id),
+		.references(() => userTable.id, { onDelete: 'cascade' }),
+	folderId: uuid('folder_id').references(() => folderTable.id, { onDelete: 'set null' }),
 	createdAt: timestamp('created_at', {
 		withTimezone: true,
 		mode: 'date'
@@ -77,12 +77,12 @@ export const trashTable = pgTable('trash', {
 	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
 	userId: text('user_id')
 		.notNull()
-		.references(() => userTable.id),
+		.references(() => userTable.id, { onDelete: 'cascade' }),
 	folderId: uuid('folder_id')
-		.references(() => folderTable.id)
+		.references(() => folderTable.id, { onDelete: 'set null' })
 		.unique(),
 	fileId: uuid('file_id')
-		.references(() => fileTable.id)
+		.references(() => fileTable.id, { onDelete: 'set null' })
 		.unique(),
 	createdAt: timestamp('created_at', {
 		withTimezone: true,
