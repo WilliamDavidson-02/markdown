@@ -82,11 +82,22 @@ export const load = async ({ locals, params }) => {
 		}
 		return true
 	})
+
+	const hasFolderWithNonTrashedContent = (folderId: string): boolean => {
+		return (
+			folders.some(
+				(f) =>
+					f.parentId === folderId &&
+					(!trash.some((t) => t.folderId === f.id) || hasFolderWithNonTrashedContent(f.id))
+			) || files.some((f) => f.folderId === folderId)
+		)
+	}
+
 	folders = folders.filter((folder) => {
 		const folderInTrash = trash.some((t) => t.folderId === folder.id)
-		const folderHasNonTrashedFiles = files.some((f) => f.folderId === folder.id)
+		const folderHasNonTrashedContent = hasFolderWithNonTrashedContent(folder.id)
 
-		if (folderInTrash && folderHasNonTrashedFiles) {
+		if (folderInTrash && folderHasNonTrashedContent) {
 			trashedFolders.push(folder)
 			return true
 		} else if (folderInTrash) {
