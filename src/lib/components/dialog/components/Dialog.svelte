@@ -24,22 +24,36 @@
 	})
 </script>
 
-<dialog bind:this={dialog} on:close transition:fade={{ duration: 200 }} class={className}>
-	{#if withClose}
-		<div class="close-header">
-			<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
-				<X size={16} />
-			</Button>
-		</div>
-	{/if}
-	<slot />
+<!-- svelte-ignore a11y-no-noninteractive-element-interactions svelte-ignore a11y-click-events-have-key-events -->
+<dialog
+	bind:this={dialog}
+	on:close
+	transition:fade={{ duration: 200 }}
+	class={className}
+	on:click={() => dialog.close()}
+>
+	<!-- svelte-ignore a11y-no-noninteractive-element-interactions svelte-ignore a11y-click-events-have-key-events -->
+	<div
+		on:click={(ev) => {
+			ev.stopPropagation()
+		}}
+		role="dialog"
+	>
+		{#if withClose}
+			<div class="close-header">
+				<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
+					<X size={16} />
+				</Button>
+			</div>
+		{/if}
+		<slot />
+	</div>
 </dialog>
 
 <style>
 	dialog {
 		background-color: var(--base);
 		color: var(--foreground-dk);
-		padding: var(--space-xl);
 		border-radius: var(--border-radius-sm);
 		border: 1px solid var(--secondary-dk);
 		max-width: 500px;
@@ -51,6 +65,10 @@
 		transform: translate(-50%, -50%);
 		margin: 0;
 		outline: none;
+	}
+
+	dialog > div {
+		padding: var(--space-xl);
 	}
 
 	dialog::backdrop {
