@@ -1,12 +1,11 @@
 <script lang="ts">
 	import { scale } from 'svelte/transition'
 	import { getPopover } from '../popover'
-	import type { PopoverContent } from '../types'
 	import { onMount } from 'svelte'
+	import type { PopoverContentProps } from '../types'
 
-	type $$Props = PopoverContent
-	let className: $$Props['class'] = undefined
-	export { className as class }
+	type $$Props = PopoverContentProps
+	export let closeOnScroll = true
 
 	let el: HTMLDivElement
 	let position = { top: 0, left: 0 }
@@ -19,10 +18,10 @@
 		const targetRect = $popover.target.getBoundingClientRect()
 		const contentRect = el.getBoundingClientRect()
 		const { innerWidth, innerHeight } = window
-		const padding = 8
+		const padding = 16
 
 		let top = targetRect.bottom + padding
-		let left = targetRect.right - contentRect.width / 2
+		let left = targetRect.left + (targetRect.width - contentRect.width) / 2
 
 		// Place above if content will go off bottom of the screen
 		if (top + contentRect.height > innerHeight) {
@@ -54,12 +53,12 @@
 
 		window.addEventListener('click', handleClickOutside)
 		window.addEventListener('resize', calculatePosition)
-		document.addEventListener('scroll', closePopover, true)
+		if (closeOnScroll) document.addEventListener('scroll', closePopover, true)
 
 		return () => {
 			window.removeEventListener('click', handleClickOutside)
 			window.removeEventListener('resize', calculatePosition)
-			document.removeEventListener('scroll', closePopover, true)
+			if (closeOnScroll) document.removeEventListener('scroll', closePopover, true)
 		}
 	})
 
@@ -72,7 +71,7 @@
 	<div
 		bind:this={el}
 		transition:scale={{ start: 0.98, duration: 250 }}
-		class={className}
+		class={$$restProps.class}
 		style="top: {position.top}px; left: {position.left}px;"
 		{...$$restProps}
 	>

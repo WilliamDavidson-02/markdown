@@ -57,6 +57,21 @@ export const getNestedFolderIds = (folders: Folder[]): string[] => {
 	return traverse(folders)
 }
 
+export const getAllFolders = (folders: Folder[]): Folder[] => {
+	const traverse = (folders: Folder[]): Folder[] => {
+		const newFolders: Folder[] = []
+		for (const folder of folders) {
+			newFolders.push(folder)
+
+			if (folder.children.length > 0) {
+				newFolders.push(...traverse(folder.children))
+			}
+		}
+		return newFolders
+	}
+	return traverse(folders)
+}
+
 export const findFolderById = (folders: Folder[], id: string): Folder | null => {
 	const traverse = (folders: Folder[]): Folder | null => {
 		let found: Folder | null = null

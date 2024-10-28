@@ -16,7 +16,7 @@
 		'data-button-icon': icon
 	}
 
-	$: classes = `button button-${variant} button-${size} ${$$restProps.class ?? ''}`
+	$: classes = `button-${variant} button-${size} ${$$restProps.class ?? ''}`
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions a11y_no_static_element_interactions -->
@@ -43,7 +43,7 @@
 </svelte:element>
 
 <style>
-	.button {
+	button {
 		outline: none;
 		cursor: pointer;
 		display: flex;
@@ -106,25 +106,25 @@
 		font-weight: 400;
 	}
 
-	.button--lg {
+	.button-lg {
 		padding: var(--space-base) var(--space-lg);
 		font-size: 1rem;
 		font-weight: 500;
 	}
 
-	.button--sm[data-button-icon='true'] {
+	.button-sm[data-button-icon='true'] {
 		padding: var(--space-xs);
 		min-width: 32px;
 		min-height: 32px;
 	}
 
-	.button--md[data-button-icon='true'] {
+	.button-md[data-button-icon='true'] {
 		padding: var(--space-sm);
 		min-width: 36px;
 		min-height: 36px;
 	}
 
-	.button--lg[data-button-icon='true'] {
+	.button-lg[data-button-icon='true'] {
 		padding: var(--space-base);
 		min-width: 40px;
 		min-height: 40px;
@@ -135,21 +135,21 @@
 	}
 
 	@media (pointer: fine) {
-		.button--destructive:hover:not(:disabled) {
+		.button-destructive:hover:not(:disabled) {
 			background-color: var(--danger-active);
 		}
-		.button--ghost:hover:not(:disabled) {
+		.button-ghost:hover:not(:disabled) {
 			background-color: var(--secondary);
 		}
 
-		.button--outline:hover:not(:disabled) {
+		.button-outline:hover:not(:disabled) {
 			background-color: var(--secondary);
 		}
 
-		.button--primary:hover:not(:disabled) {
+		.button-primary:hover:not(:disabled) {
 			background-color: var(--interactive-active);
 		}
-		.button--secondary:hover:not(:disabled) {
+		.button-secondary:hover:not(:disabled) {
 			background-color: var(--secondary-dk);
 		}
 	}

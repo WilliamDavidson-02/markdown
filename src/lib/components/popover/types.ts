@@ -11,6 +11,6 @@ export type PopoverProps = HTMLDivAttributes & {
 	target?: HTMLElement
 }
 
-export type PopoverContent = HTMLDivAttributes & {
-	class?: string
+export type PopoverContentProps = HTMLDivAttributes & {
+	closeOnScroll?: boolean
 }

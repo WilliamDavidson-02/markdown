@@ -3,14 +3,12 @@
 
 	type $$Props = Props
 	export let htmlFor: $$Props['for'] = ''
-	export let el: $$Props['el'] = undefined
-	let className: $$Props['class'] = undefined
-	export { className as class }
+	export let as: $$Props['as'] = 'label'
 </script>
 
-<label bind:this={el} for={htmlFor} class={className} {...$$restProps}>
+<svelte:element this={as} for={htmlFor} class={$$restProps.class} {...$$restProps}>
 	<slot />
-</label>
+</svelte:element>
 
 <style>
 	label {
