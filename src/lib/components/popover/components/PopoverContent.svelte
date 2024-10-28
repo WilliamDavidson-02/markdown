@@ -9,30 +9,72 @@
 	export { className as class }
 
 	let el: HTMLDivElement
+	let position = { top: 0, left: 0 }
 
 	const popover = getPopover()
 
+	const calculatePosition = () => {
+		if (!el || !$popover?.target) return
+
+		const targetRect = $popover.target.getBoundingClientRect()
+		const contentRect = el.getBoundingClientRect()
+		const { innerWidth, innerHeight } = window
+		const padding = 8
+
+		let top = targetRect.bottom + padding
+		let left = targetRect.right - contentRect.width / 2
+
+		// Place above if content will go off bottom of the screen
+		if (top + contentRect.height > innerHeight) {
+			top = targetRect.top - contentRect.height - padding
+		}
+
+		// Check horizontal bounds
+		if (left < padding) {
+			left = padding // Keep 8px from left edge
+		} else if (left + contentRect.width > innerWidth - padding) {
+			left = targetRect.right - contentRect.width
+		}
+
+		position = { top, left }
+	}
+
 	onMount(() => {
+		const closePopover = () => {
+			popover?.update(($state) => ({ ...$state, isOpen: false }))
+		}
+
 		const handleClickOutside = (ev: MouseEvent) => {
 			if (
 				!el?.contains(ev.target as Node) &&
 				!(ev.target as HTMLElement).closest('[role="button"]')
 			) {
-				popover?.update(() => ({ isOpen: false }))
+				closePopover()
 			}
 		}
 
 		window.addEventListener('click', handleClickOutside)
+		window.addEventListener('resize', calculatePosition)
+		document.addEventListener('scroll', closePopover, true)
 
-		return () => window.removeEventListener('click', handleClickOutside)
+		return () => {
+			window.removeEventListener('click', handleClickOutside)
+			window.removeEventListener('resize', calculatePosition)
+			document.removeEventListener('scroll', closePopover, true)
+		}
 	})
+
+	$: if ($popover?.isOpen && el) {
+		calculatePosition()
+	}
 </script>
 
 {#if $popover?.isOpen}
 	<div
 		bind:this={el}
 		transition:scale={{ start: 0.98, duration: 250 }}
-		class={className ?? 'default'}
+		class={className}
+		style="top: {position.top}px; left: {position.left}px;"
 		{...$$restProps}
 	>
 		<slot />
@@ -41,14 +83,9 @@
 
 <style>
 	div {
-		position: absolute;
-		z-index: 100;
-	}
-
-	.default {
-		top: 100%;
-		left: 50%;
-		transform: translateX(-50%) translateY(var(--space-sm));
+		position: fixed;
+		z-index: 9999;
 		min-width: 200px;
+		width: max-content;
 	}
 </style>

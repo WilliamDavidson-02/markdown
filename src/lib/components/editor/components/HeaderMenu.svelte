@@ -46,7 +46,7 @@
 	<PopoverTrigger>
 		<Ellipsis size={20} stroke-width={1.5} />
 	</PopoverTrigger>
-	<PopoverContent class="dropdown">
+	<PopoverContent>
 		<Dropdown>
 			<DropdownGroup>
 				<DropdownItem>
@@ -82,11 +82,6 @@
 </Popover>
 
 <style>
-	:global(.dropdown) {
-		right: 0;
-		transform: translateX(0) translateY(var(--space-sm));
-	}
-
 	.dropdown-item {
 		display: flex;
 		align-items: center;

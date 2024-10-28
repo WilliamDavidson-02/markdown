@@ -10,7 +10,7 @@
 
 	const popover = createPopover({ isOpen })
 
-	$: popover.set({ isOpen: isOpen ?? false })
+	$: popover.update(($state) => ({ ...$state, isOpen: isOpen ?? false }))
 
 	$: isOpen = $popover.isOpen
 
@@ -18,7 +18,7 @@
 		const closePopover = (ev: KeyboardEvent) => {
 			if (ev.key === 'Escape') {
 				ev.preventDefault()
-				popover?.update(() => ({ isOpen: false }))
+				popover?.update(($state) => ({ ...$state, isOpen: false }))
 			}
 		}
 

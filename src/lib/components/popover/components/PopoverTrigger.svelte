@@ -5,18 +5,27 @@
 	type $$Props = HTMLDivAttributes
 
 	const popover = getPopover()
+	let target: HTMLElement | undefined
 
 	const togglePopover = () => {
-		popover?.update(($state) => ({ isOpen: !$state.isOpen }))
+		popover?.update(($state) => ({ ...$state, isOpen: !$state.isOpen }))
 	}
 
 	const handleKeyDown = (ev: KeyboardEvent) => {
 		if (ev.key === 'Enter') togglePopover()
 	}
+
+	$: if (target) popover?.update(($state) => ({ ...$state, target }))
 </script>
 
 <!-- svelte-ignore a11y-interactive-supports-focus -->
-<div role="button" on:click={togglePopover} on:keydown={handleKeyDown} {...$$restProps}>
+<div
+	{...$$restProps}
+	role="button"
+	on:click={togglePopover}
+	on:keydown={handleKeyDown}
+	bind:this={target}
+>
 	<slot />
 </div>
 

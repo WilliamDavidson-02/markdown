@@ -9,7 +9,10 @@ export const getPopover = () => {
 }
 
 export const createPopover = (props: PopoverProps) => {
-	const store = writable<Popover>({ isOpen: props.isOpen ?? false })
+	const store = writable<Popover>({
+		isOpen: props.isOpen ?? false,
+		target: props.target
+	})
 	setContext('popover', store)
 	return store
 }
