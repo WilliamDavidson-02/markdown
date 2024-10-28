@@ -13,7 +13,6 @@
 	import { goto, invalidateAll } from '$app/navigation'
 	import { treeStore, type Tree } from '$lib/components/file-tree/treeStore'
 	import { isFolder } from '$lib/utilts/tree'
-	import { onMount } from 'svelte'
 	import { getAllFolders } from '$lib/utilts/helpers'
 
 	export let fileDialog: HTMLDialogElement
