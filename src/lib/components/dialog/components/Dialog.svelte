@@ -6,8 +6,6 @@
 
 	export let dialog: HTMLDialogElement
 	export let withClose: boolean = true
-	let className: string = ''
-	export { className as class }
 
 	onMount(() => {
 		const closeDialog = (ev: KeyboardEvent) => {
@@ -29,16 +27,11 @@
 	bind:this={dialog}
 	on:close
 	transition:fade={{ duration: 200 }}
-	class={className}
+	class={$$restProps.class}
 	on:click={() => dialog.close()}
 >
 	<!-- svelte-ignore a11y-no-noninteractive-element-interactions svelte-ignore a11y-click-events-have-key-events -->
-	<div
-		on:click={(ev) => {
-			ev.stopPropagation()
-		}}
-		role="dialog"
-	>
+	<div on:click={(ev) => ev.stopPropagation()} role="dialog">
 		{#if withClose}
 			<div class="close-header">
 				<Button variant="ghost" type="button" icon size="sm" on:click={() => dialog.close()}>
@@ -56,8 +49,6 @@
 		color: var(--foreground-dk);
 		border-radius: var(--border-radius-sm);
 		border: 1px solid var(--secondary-dk);
-		max-width: 500px;
-		width: 100%;
 		overflow: visible;
 		position: fixed;
 		top: 0;
@@ -70,7 +61,7 @@
 	}
 
 	dialog > div {
-		padding: var(--space-xl);
+		height: 100%;
 	}
 
 	dialog::backdrop {

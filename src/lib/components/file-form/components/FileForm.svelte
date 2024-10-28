@@ -64,7 +64,7 @@
 	$: folders = getFolders($treeStore)
 </script>
 
-<Dialog bind:dialog={fileDialog} on:close={resetForm}>
+<Dialog bind:dialog={fileDialog} on:close={resetForm} class="file-form-dialog">
 	<form method="POST" action="?/file" use:enhance>
 		<input type="hidden" name="icon" bind:value={$fileForm.icon} />
 		<input type="hidden" id="folderId" name="folderId" bind:value={$fileForm.folderId} />
@@ -182,6 +182,12 @@
 		grid-template-columns: auto 1fr;
 		grid-template-rows: repeat(3, auto);
 		gap: var(--space-sm);
+	}
+
+	:global(.file-form-dialog) {
+		max-width: 500px;
+		width: 100%;
+		padding: var(--space-xl);
 	}
 
 	:global(.file-icon-popover) {

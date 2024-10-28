@@ -54,7 +54,7 @@
 	$: folders = getFolders($treeStore)
 </script>
 
-<Dialog bind:dialog={folderDialog} on:close={resetForm}>
+<Dialog bind:dialog={folderDialog} on:close={resetForm} class="folder-form-dialog">
 	<form method="POST" action="?/folder" use:enhance>
 		<input type="hidden" name="parentId" bind:value={$folderForm.parentId} />
 		<DialogHeader>Create new folder</DialogHeader>
@@ -132,5 +132,11 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-xs);
+	}
+
+	:global(.folder-form-dialog) {
+		max-width: 500px;
+		width: 100%;
+		padding: var(--space-xl);
 	}
 </style>

@@ -9,6 +9,7 @@
 	export let fileDialog: HTMLDialogElement
 	export let folderDialog: HTMLDialogElement
 	export let trashDialog: HTMLDialogElement
+	export let settingsDialog: HTMLDialogElement
 
 	let isResizing = false
 	let navWidth = 400
@@ -72,7 +73,7 @@
 			<Button on:click={() => trashDialog.showModal()} size="sm" variant="ghost" icon>
 				<Trash2 size={20} stroke-width={1.5} />
 			</Button>
-			<Button size="sm" variant="ghost" icon>
+			<Button on:click={() => settingsDialog.showModal()} size="sm" variant="ghost" icon>
 				<Settings size={20} stroke-width={1.5} />
 			</Button>
 		</div>

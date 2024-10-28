@@ -11,12 +11,14 @@
 	import type { fileTable } from '$lib/db/schema.js'
 	import { Trash } from '$lib/components/trash'
 	import { trashStore } from '$lib/components/trash/trashStore.js'
+	import { Settings } from '$lib/components/settings'
 
 	export let data
 
 	let fileDialog: HTMLDialogElement
 	let folderDialog: HTMLDialogElement
 	let trashDialog: HTMLDialogElement
+	let settingsDialog: HTMLDialogElement
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		$editorStore?.dispatch({
@@ -41,8 +43,8 @@
 	<FileForm bind:fileDialog form={data.fileForm} />
 	<FolderForm bind:folderDialog form={data.folderForm} />
 	<Trash bind:trashDialog />
-
-	<Nav {trashDialog} {fileDialog} {folderDialog} />
+	<Settings bind:settingsDialog />
+	<Nav {trashDialog} {fileDialog} {folderDialog} {settingsDialog} />
 	<Editor />
 </main>
 

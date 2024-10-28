@@ -37,6 +37,9 @@
 	:global(.trash-dialog) {
 		max-height: 500px;
 		height: 100%;
+		max-width: 500px;
+		width: 100%;
+		padding: var(--space-xl);
 	}
 
 	:global(.trash-command) {

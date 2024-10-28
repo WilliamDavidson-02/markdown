@@ -54,7 +54,7 @@
 		border-radius: var(--border-radius-sm);
 		border-width: 1px;
 		border-style: solid;
-
+		user-select: none;
 		transition: background-color 0.25s;
 	}
 
