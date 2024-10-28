@@ -29,9 +29,8 @@
 			top = targetRect.top - contentRect.height - padding
 		}
 
-		// Check horizontal bounds
 		if (left < padding) {
-			left = padding // Keep 8px from left edge
+			left = padding
 		} else if (left + contentRect.width > innerWidth - padding) {
 			left = targetRect.right - contentRect.width
 		}
@@ -87,5 +86,6 @@
 		z-index: 9999;
 		min-width: 200px;
 		width: max-content;
+		box-shadow: var(--shadow-overlay);
 	}
 </style>

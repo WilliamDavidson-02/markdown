@@ -22,8 +22,8 @@
 <div
 	{...$$restProps}
 	role="button"
-	on:click={togglePopover}
-	on:keydown={handleKeyDown}
+	on:click|stopPropagation={togglePopover}
+	on:keydown|stopPropagation={handleKeyDown}
 	bind:this={target}
 >
 	<slot />

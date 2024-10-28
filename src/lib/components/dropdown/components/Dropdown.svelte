@@ -11,6 +11,7 @@
 		color: var(--foreground-dk);
 		padding: var(--space-base) 0;
 		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--secondary-dk);
 		user-select: none;
 	}
 

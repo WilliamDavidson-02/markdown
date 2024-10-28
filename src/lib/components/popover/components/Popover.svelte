@@ -5,8 +5,6 @@
 
 	type $$Props = PopoverProps
 	export let isOpen: $$Props['isOpen'] = undefined
-	let className: $$Props['class'] = undefined
-	export { className as class }
 
 	const popover = createPopover({ isOpen })
 
@@ -28,7 +26,7 @@
 	})
 </script>
 
-<div class={className}>
+<div class={$$restProps.class}>
 	<slot />
 </div>
 

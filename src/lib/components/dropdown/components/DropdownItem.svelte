@@ -1,5 +1,5 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div on:click on:keydown>
+<div on:click|stopPropagation on:keydown|stopPropagation>
 	<slot />
 </div>
 

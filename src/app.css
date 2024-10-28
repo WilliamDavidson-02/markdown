@@ -33,6 +33,9 @@
 	--border-radius-md: 0.5rem;
 	--border-radius-lg: 0.75rem;
 	--border-radius-xl: 1rem;
+
+	/* Shadows */
+	--shadow-overlay: rgba(0, 0, 0, 0.1) 0px 2px 8px 0px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -43,6 +46,9 @@
 		--foreground-li: #474747;
 		--foreground-md: #787878;
 		--foreground-dk: #ffffff;
+
+		/* Shadows */
+		--shadow-overlay: rgba(0, 0, 0, 0.2) 0px 2px 8px 0px;
 	}
 }
 

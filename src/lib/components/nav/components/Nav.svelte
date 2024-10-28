@@ -87,7 +87,6 @@
 		background: var(--base);
 		color: var(--foreground-dk);
 		border-right: 1px solid var(--secondary-dk);
-		overflow: hidden;
 		flex-shrink: 0;
 	}
 

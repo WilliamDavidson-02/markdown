@@ -65,6 +65,7 @@
 		transform: translate(-50%, -50%);
 		margin: 0;
 		outline: none;
+		box-shadow: var(--shadow-overlay);
 	}
 
 	dialog > div {
