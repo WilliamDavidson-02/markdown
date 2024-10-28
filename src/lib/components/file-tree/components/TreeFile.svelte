@@ -1,10 +1,11 @@
 <script lang="ts">
-	import type { ComponentType } from 'svelte'
+	import { type ComponentType } from 'svelte'
 	import { fileIcons, type FileIcon } from '$lib/fileIcons'
 	import { selectedFile } from '../treeStore'
 	import { Ellipsis, Loader2, Trash2, CornerUpRight } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
+	import { invalidateAll } from '$app/navigation'
 
 	export let name: string
 	export let id: string
@@ -13,6 +14,26 @@
 
 	let showEllipsis = false
 	let isMovingToTrash = false
+	let isOpen = false
+
+	const moveToTrash = async () => {
+		try {
+			isMovingToTrash = true
+			const res = await fetch(`/${id}/move-to-trash`, {
+				method: 'POST',
+				body: JSON.stringify({ fileIds: [id] })
+			})
+
+			if (res.ok) {
+				isOpen = false
+				await invalidateAll()
+			}
+		} catch (error) {
+			console.log(error)
+		} finally {
+			isMovingToTrash = false
+		}
+	}
 
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 </script>
@@ -31,7 +52,7 @@
 		</span>
 		<p>{name}</p>
 	</a>
-	<Popover>
+	<Popover bind:isOpen>
 		<PopoverTrigger>
 			<div class="ellipsis" data-show={showEllipsis}>
 				<Ellipsis size={18} />
@@ -46,7 +67,7 @@
 							<span>Move to</span>
 						</div>
 					</DropdownItem>
-					<DropdownItem>
+					<DropdownItem on:click={moveToTrash} on:keydown={moveToTrash}>
 						<div class="dropdown-item">
 							<Trash2 size={16} stroke-width={1.5} />
 							<span>Move to Trash</span>

@@ -12,11 +12,37 @@
 	import TreeFile from './TreeFile.svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
+	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
+	import { invalidateAll } from '$app/navigation'
+	import { selectedFile } from '../treeStore'
 
 	export let folder: Folder
 	let isOpen = false
 	let showEllipsis = false
 	let isMovingToTrash = false
+	let isMenuOpen = false
+
+	const moveToTrash = async () => {
+		try {
+			const folderIds = getNestedFolderIds([folder])
+			const fileIds = getNestedFileIds([folder])
+
+			isMovingToTrash = true
+			const res = await fetch(`/${$selectedFile?.id}/move-to-trash`, {
+				method: 'POST',
+				body: JSON.stringify({ folderIds, fileIds })
+			})
+
+			if (res.ok) {
+				isMenuOpen = false
+				await invalidateAll()
+			}
+		} catch (error) {
+			console.log(error)
+		} finally {
+			isMovingToTrash = false
+		}
+	}
 </script>
 
 <li>
@@ -36,7 +62,7 @@
 			{/if}
 		</span>
 		<p>{folder.name ?? 'Untitled'}</p>
-		<Popover>
+		<Popover bind:isOpen={isMenuOpen}>
 			<PopoverTrigger>
 				<div class="ellipsis" data-show={showEllipsis}>
 					<Ellipsis size={18} />
@@ -51,7 +77,7 @@
 								<span>Move to</span>
 							</div>
 						</DropdownItem>
-						<DropdownItem>
+						<DropdownItem on:click={moveToTrash} on:keydown={moveToTrash}>
 							<div class="dropdown-item">
 								<Trash2 size={16} stroke-width={1.5} />
 								<span>Move to Trash</span>

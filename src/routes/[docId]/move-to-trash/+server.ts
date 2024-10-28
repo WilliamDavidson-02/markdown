@@ -1,42 +1,43 @@
 import { db } from '$lib/db'
 import { fileTable, folderTable, trashTable } from '$lib/db/schema.js'
 import { json } from '@sveltejs/kit'
-import { eq } from 'drizzle-orm'
+import { inArray } from 'drizzle-orm'
 
 type MoveToDeleteBody = {
-	folderId?: string
-	fileId?: string
+	folderIds?: string[]
+	fileIds?: string[]
 }
 
 export const POST = async ({ request, locals }) => {
-	if (!locals.user) {
+	const userId = locals.user?.id
+
+	if (!userId) {
 		return json({ success: false, message: 'Unauthorized' }, { status: 401 })
 	}
 
 	try {
-		const { folderId, fileId }: MoveToDeleteBody = await request.json()
+		const { folderIds, fileIds }: MoveToDeleteBody = await request.json()
 
-		if (!folderId && !fileId) {
+		if (!folderIds && !fileIds) {
 			return json({ success: false, message: 'No folder or file id provided' }, { status: 400 })
 		}
 
-		if (folderId) {
-			const folder = await db.$count(folderTable, eq(folderTable.id, folderId))
+		if (folderIds) {
+			const folder = await db.$count(folderTable, inArray(folderTable.id, folderIds))
 			if (!folder) {
 				return json({ success: false, message: 'Folder not found' }, { status: 404 })
 			}
-		} else if (fileId) {
-			const file = await db.$count(fileTable, eq(fileTable.id, fileId))
+		} else if (fileIds) {
+			const file = await db.$count(fileTable, inArray(fileTable.id, fileIds))
 			if (!file) {
 				return json({ success: false, message: 'File not found' }, { status: 404 })
 			}
 		}
 
-		await db.insert(trashTable).values({
-			userId: locals.user.id,
-			folderId,
-			fileId
-		})
+		const trashedFiles = fileIds?.map((id) => ({ userId, fileId: id })) ?? []
+		const trashedFolders = folderIds?.map((id) => ({ userId, folderId: id })) ?? []
+
+		await db.insert(trashTable).values([...trashedFiles, ...trashedFolders])
 
 		return json({ success: true })
 	} catch (error) {

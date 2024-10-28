@@ -12,20 +12,14 @@
 	$: doc = $editorStore?.state.doc.toString()
 	$: lastEdited = $selectedFile?.updatedAt
 
-	let isLoading = {
-		item: '',
-		loading: false
-	}
+	let isMovingToTrash = false
 
 	const moveToTrash = async () => {
 		try {
-			isLoading = {
-				item: 'move-to-trash',
-				loading: true
-			}
+			isMovingToTrash = true
 			const res = await fetch(`/${$selectedFile?.id}/move-to-trash`, {
 				method: 'POST',
-				body: JSON.stringify({ fileId: $selectedFile?.id })
+				body: JSON.stringify({ fileIds: [$selectedFile?.id] })
 			})
 
 			if (res.ok) {
@@ -34,10 +28,7 @@
 		} catch (error) {
 			console.log(error)
 		} finally {
-			isLoading = {
-				item: '',
-				loading: false
-			}
+			isMovingToTrash = false
 		}
 	}
 </script>
@@ -60,7 +51,7 @@
 						<Trash2 size={16} stroke-width={1.5} />
 						<span>Move to Trash</span>
 					</div>
-					{#if isLoading.loading && isLoading.item === 'move-to-trash'}
+					{#if isMovingToTrash}
 						<Loader2 class="animate-spin" size={14} />
 					{/if}
 				</DropdownItem>
