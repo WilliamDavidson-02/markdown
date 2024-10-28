@@ -31,7 +31,8 @@
 		}
 	})
 
-	$: if (data.currentDoc && $editorStore) setDoc(data.currentDoc)
+	$: if (data.currentDoc && $editorStore && $selectedFile?.id !== data.currentDoc.id)
+		setDoc(data.currentDoc)
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
 </script>
