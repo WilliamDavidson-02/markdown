@@ -16,7 +16,7 @@
 		'data-button-icon': icon
 	}
 
-	$: classes = `button-${variant} button-${size} ${$$restProps.class ?? ''}`
+	$: classes = `button button-${variant} button-${size} ${$$restProps.class ?? ''}`
 </script>
 
 <!-- svelte-ignore a11y-no-static-element-interactions a11y_no_static_element_interactions -->
@@ -43,7 +43,7 @@
 </svelte:element>
 
 <style>
-	button {
+	.button {
 		outline: none;
 		cursor: pointer;
 		display: flex;

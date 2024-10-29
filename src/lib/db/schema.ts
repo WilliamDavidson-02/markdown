@@ -91,3 +91,12 @@ export const trashTable = pgTable('trash', {
 		.notNull()
 		.defaultNow()
 })
+
+export const githubInstallationTable = pgTable('github_installation', {
+	id: integer('id').primaryKey(),
+	username: text('username').notNull(),
+	avatarUrl: text('avatar_url').notNull(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => userTable.id, { onDelete: 'cascade' })
+})

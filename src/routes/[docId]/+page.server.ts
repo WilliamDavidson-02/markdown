@@ -4,7 +4,7 @@ import { z } from 'zod'
 import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileIcons } from '$lib/fileIcons'
 import { db } from '$lib/db'
-import { fileTable, folderTable, trashTable } from '$lib/db/schema.js'
+import { fileTable, folderTable, githubInstallationTable, trashTable } from '$lib/db/schema.js'
 import { and, desc, eq, notInArray } from 'drizzle-orm'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 
@@ -115,6 +115,12 @@ export const load = async ({ locals, params }) => {
 	)
 	const trashedTree = [...builtTrashedTree, ...rootTrashedFiles]
 
+	// Get users github installations
+	const installations = await db
+		.select()
+		.from(githubInstallationTable)
+		.where(eq(githubInstallationTable.userId, userId))
+
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
 
@@ -124,7 +130,8 @@ export const load = async ({ locals, params }) => {
 		fileForm,
 		folderForm,
 		user: locals.user,
-		trashedTree
+		trashedTree,
+		installations
 	}
 }
 

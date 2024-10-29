@@ -12,6 +12,7 @@
 	import { Trash } from '$lib/components/trash'
 	import { trashStore } from '$lib/components/trash/trashStore.js'
 	import { Settings } from '$lib/components/settings'
+	import { settingsContext } from '$lib/components/settings/settingsContext'
 
 	export let data
 
@@ -19,6 +20,10 @@
 	let folderDialog: HTMLDialogElement
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
+
+	settingsContext({
+		installations: data.installations
+	})
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		$editorStore?.dispatch({

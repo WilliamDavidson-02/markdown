@@ -78,6 +78,13 @@
       "when": 1730031872275,
       "tag": "0010_lush_monster_badoon",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1730210186267,
+      "tag": "0011_outstanding_maddog",
+      "breakpoints": true
     }
   ]
 }
