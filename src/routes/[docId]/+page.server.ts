@@ -85,11 +85,8 @@ export const load = async ({ locals, params }) => {
 
 	const hasFolderWithNonTrashedContent = (folderId: string): boolean => {
 		return (
-			folders.some(
-				(f) =>
-					f.parentId === folderId &&
-					(!trash.some((t) => t.folderId === f.id) || hasFolderWithNonTrashedContent(f.id))
-			) || files.some((f) => f.folderId === folderId)
+			folders.some((f) => f.parentId === folderId && !trash.some((t) => t.folderId === f.id)) ||
+			files.some((f) => f.folderId === folderId)
 		)
 	}
 
