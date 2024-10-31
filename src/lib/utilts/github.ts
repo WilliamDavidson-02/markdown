@@ -197,7 +197,7 @@ export const formatGithubFolders = (
 		})
 
 		formatedGithubFoldersData.push({
-			id: folder.sha,
+			sha: folder.sha,
 			repositoryId: repoId,
 			folderId
 		})
@@ -238,7 +238,7 @@ export const formatGithubFiles = (
 		})
 
 		formatedGithubFilesData.push({
-			id: file.sha,
+			sha: file.sha,
 			repositoryId: repoId,
 			fileId
 		})

@@ -220,7 +220,7 @@ export const actions: Actions = {
 					]
 
 					formatedGithubFoldersData = [
-						{ id: rootSha, repositoryId: repository.id, folderId: repoFolder.id },
+						{ sha: rootSha, repositoryId: repository.id, folderId: repoFolder.id },
 						...formatedGithubFoldersData
 					]
 
