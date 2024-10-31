@@ -1,9 +1,9 @@
 <script lang="ts">
-	import '../styles/file.css'
+	import '../../file-tree/styles/file.css'
 
 	import { type ComponentType } from 'svelte'
 	import { fileIcons, type FileIcon } from '$lib/fileIcons'
-	import { selectedFile } from '../treeStore'
+	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { Ellipsis, Loader2, Trash2, CornerUpRight } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'

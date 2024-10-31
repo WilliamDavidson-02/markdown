@@ -1,0 +1,81 @@
+.tree-folder-item {
+	display: flex;
+	flex-direction: column;
+}
+
+.tree-folder-item .folder-header {
+	all: unset;
+	display: flex;
+	align-items: center;
+	background-color: var(--base);
+	border-radius: var(--border-radius-sm);
+	transition: background-color 0.2s;
+	user-select: none;
+	cursor: pointer;
+	height: 36px;
+	padding-right: var(--space-sm);
+}
+
+.tree-folder-item .folder-name {
+	color: var(--foreground-dk);
+	font-size: 1rem;
+	font-weight: 400;
+	line-height: 20px;
+	width: 100%;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.tree-folder-item .icon {
+	display: grid;
+	place-content: center;
+	height: 36px;
+	width: 36px;
+	flex-shrink: 0;
+	color: var(--foreground-md);
+}
+
+.tree-folder-item .folder-header:active {
+	background-color: var(--secondary);
+}
+
+.tree-folder-item .folder-content {
+	padding-left: var(--space-sm);
+	display: flex;
+	flex-direction: column;
+}
+
+.tree-folder-item .ellipsis {
+	all: unset;
+	cursor: pointer;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	color: var(--foreground-md);
+	padding-left: var(--space-sm);
+	opacity: 0;
+	transition: opacity 0.2s;
+}
+
+.tree-folder-item .ellipsis[data-show='true'] {
+	opacity: 1;
+}
+
+.tree-folder-item :global(.ellipsis-menu) {
+	background-color: var(--secondary);
+	border-radius: var(--border-radius-sm);
+	border: 1px solid var(--secondary-dk);
+}
+
+.tree-folder-item .dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: var(--space-sm);
+}
+
+@media (pointer: fine) {
+	.tree-folder-item .folder-header:hover {
+		background-color: var(--secondary);
+	}
+}

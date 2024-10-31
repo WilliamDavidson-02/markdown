@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '../styles/folder.css'
+	import '../../file-tree/styles/folder.css'
 
 	import {
 		Folder as ClosedFolder,
@@ -10,13 +10,12 @@
 		CornerUpRight
 	} from 'lucide-svelte'
 	import { slide } from 'svelte/transition'
-	import { type Folder } from '../treeStore'
-	import TreeFile from './TreeFile.svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
 	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { invalidateAll } from '$app/navigation'
-	import { selectedFile } from '../treeStore'
+	import { type Folder, selectedFile } from '$lib/components/file-tree/treeStore'
+	import GithubTreeFile from './GithubTreeFile.svelte'
 
 	export let folder: Folder
 	let isOpen = false
@@ -99,7 +98,7 @@
 				<svelte:self folder={child} />
 			{/each}
 			{#each folder.files as file}
-				<TreeFile name={file.name ?? 'Untitled'} icon={file.icon} id={file.id} />
+				<GithubTreeFile name={file.name ?? 'Untitled'} icon={file.icon} id={file.id} />
 			{/each}
 		</ul>
 	{/if}

@@ -13,6 +13,7 @@
 	import { trashStore } from '$lib/components/trash/trashStore.js'
 	import { Settings } from '$lib/components/settings'
 	import { settingsContext } from '$lib/components/settings/settingsContext'
+	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
 
 	export let data
 
@@ -44,6 +45,7 @@
 		setDoc(data.currentDoc)
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
+	$: githubTree.set(data.githubTree)
 </script>
 
 <main>
@@ -51,7 +53,13 @@
 	<FolderForm bind:folderDialog form={data.folderForm} />
 	<Trash bind:trashDialog />
 	<Settings bind:settingsDialog />
-	<Nav {trashDialog} {fileDialog} {folderDialog} {settingsDialog} />
+	<Nav
+		{trashDialog}
+		{fileDialog}
+		{folderDialog}
+		{settingsDialog}
+		isCurrentDocGithub={data.isCurrentDocGithub}
+	/>
 	<Editor />
 </main>
 

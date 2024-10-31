@@ -19,6 +19,7 @@ import {
 	getAllFiles,
 	getAllFolders,
 	getCurrentDocById,
+	getGithubFilesAndFoldersIds,
 	getGithubInstallations,
 	getSelectedRepositories,
 	getTrash,
@@ -28,6 +29,7 @@ import {
 	insertNewRepository,
 	removeRepository
 } from './queries'
+import type { File } from '$lib/components/file-tree/treeStore'
 
 export const load = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -54,12 +56,20 @@ export const load = async ({ locals, params }) => {
 	let files = await getAllFiles(userId)
 	let folders = await getAllFolders(userId)
 
-	let trashedFiles: (typeof fileTable.$inferSelect)[] = []
+	const githubIds = await getGithubFilesAndFoldersIds(userId)
+
+	let trashedFiles: File[] = []
 	let trashedFolders: (typeof folderTable.$inferSelect)[] = []
+
+	let githubFiles: File[] = []
+	let githubFolders: (typeof folderTable.$inferSelect)[] = []
 
 	files = files.filter((file) => {
 		if (trash.some((t) => t.fileId === file.id)) {
 			trashedFiles.push(file)
+			return false
+		} else if (githubIds.fileIds.includes(file.id)) {
+			githubFiles.push(file)
 			return false
 		}
 		return true
@@ -79,6 +89,9 @@ export const load = async ({ locals, params }) => {
 		if (folderInTrash && folderHasNonTrashedContent) {
 			trashedFolders.push(folder)
 			return true
+		} else if (githubIds.folderIds.includes(folder.id)) {
+			githubFolders.push(folder)
+			return false
 		} else if (folderInTrash) {
 			trashedFolders.push(folder)
 			return false
@@ -88,6 +101,7 @@ export const load = async ({ locals, params }) => {
 
 	const builtTree = buildTree(folders, files)
 	const builtTrashedTree = buildTree(trashedFolders, trashedFiles)
+	const builtGithubTree = buildTree(githubFolders, githubFiles)
 
 	const rootFiles = files.filter((file) => !file.folderId)
 	const tree = sortTreeByDate([...builtTree, ...rootFiles])
@@ -96,6 +110,8 @@ export const load = async ({ locals, params }) => {
 		(file) => !file.folderId || !trashedFolders.some((f) => f.id === file.folderId)
 	)
 	const trashedTree = [...builtTrashedTree, ...rootTrashedFiles]
+
+	const githubTree = sortTreeByDate(builtGithubTree)
 
 	const installations = await getGithubInstallations(userId)
 	const selectedRepositories = await getSelectedRepositories(
@@ -125,6 +141,8 @@ export const load = async ({ locals, params }) => {
 		)
 	)
 
+	const isCurrentDocGithub = currentDoc?.some((doc) => githubIds.fileIds.includes(doc.id))
+
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
 		tree,
@@ -134,7 +152,9 @@ export const load = async ({ locals, params }) => {
 		trashedTree,
 		installations,
 		availableRepositories,
-		repositoriesForm
+		repositoriesForm,
+		githubTree,
+		isCurrentDocGithub
 	}
 }
 

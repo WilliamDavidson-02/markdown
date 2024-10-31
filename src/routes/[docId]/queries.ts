@@ -104,3 +104,26 @@ export const removeRepository = async (
 			.where(and(inArray(repositoryTable.id, repoIds), eq(repositoryTable.userId, userId)))
 	})
 }
+
+export const getGithubFilesAndFoldersIds = async (userId: string) => {
+	let fileIds: string[] = []
+	let folderIds: string[] = []
+
+	const githubFiles = await db
+		.select({ id: fileTable.id })
+		.from(fileTable)
+		.where(eq(fileTable.userId, userId))
+		.innerJoin(githubFileTable, eq(fileTable.id, githubFileTable.fileId))
+
+	fileIds = githubFiles.map((f) => f.id)
+
+	const githubFolders = await db
+		.select({ id: folderTable.id })
+		.from(folderTable)
+		.where(eq(folderTable.userId, userId))
+		.innerJoin(githubFolderTable, eq(folderTable.id, githubFolderTable.folderId))
+
+	folderIds = githubFolders.map((f) => f.id)
+
+	return { fileIds, folderIds }
+}

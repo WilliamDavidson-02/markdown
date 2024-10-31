@@ -7,18 +7,20 @@
 	import { OutlinePanel } from '$lib/components/outline-panel'
 	import GithubIcon from '$lib/components/GithubIcon.svelte'
 	import { getSettings } from '$lib/components/settings/settingsContext'
+	import { GithubTree } from '$lib/components/github-tree'
 
 	export let fileDialog: HTMLDialogElement
 	export let folderDialog: HTMLDialogElement
 	export let trashDialog: HTMLDialogElement
 	export let settingsDialog: HTMLDialogElement
+	export let isCurrentDocGithub: boolean
 
 	const settings = getSettings()
 
 	let isResizing = false
 	let navWidth = 400
 	let showOutlinePanel = false
-	let showGithubPanel = false
+	let showGithubPanel = isCurrentDocGithub ? true : false
 
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
@@ -82,6 +84,8 @@
 		</div>
 		{#if showOutlinePanel}
 			<OutlinePanel />
+		{:else if showGithubPanel}
+			<GithubTree />
 		{:else}
 			<FileTree />
 		{/if}
