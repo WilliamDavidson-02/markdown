@@ -60,22 +60,37 @@ export const getAvailableRepositories = async (
 
 		const tokenData = await tokenResponse.json()
 
-		const response = await fetch(`https://api.github.com/installation/repositories`, {
-			headers: {
-				Authorization: `Bearer ${tokenData.token}`,
-				Accept: 'application/vnd.github+json'
-			}
-		})
+		let page = 1
+		const repositories: GitHubRepository[] = []
 
-		if (!response.ok) return []
+		while (true) {
+			const response = await fetch(
+				`https://api.github.com/installation/repositories?per_page=100&page=${page}`,
+				{
+					headers: {
+						Authorization: `Bearer ${tokenData.token}`,
+						Accept: 'application/vnd.github+json'
+					}
+				}
+			)
 
-		const data = await response.json()
-		return data.repositories.map((repo: GitHubRepository) => ({
-			id: repo.id,
-			name: repo.name,
-			full_name: repo.full_name,
-			html_url: repo.html_url
-		}))
+			if (!response.ok) break
+
+			const data = await response.json()
+			repositories.push(
+				...data.repositories.map((repo: GitHubRepository) => ({
+					id: repo.id,
+					name: repo.name,
+					full_name: repo.full_name,
+					html_url: repo.html_url
+				}))
+			)
+
+			if (data.repositories.length < 100) break
+			page++
+		}
+
+		return repositories
 	} catch {
 		return []
 	}
