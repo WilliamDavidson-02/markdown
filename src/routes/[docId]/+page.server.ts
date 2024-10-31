@@ -2,17 +2,7 @@ import { superValidate } from 'sveltekit-superforms'
 import { zod } from 'sveltekit-superforms/adapters'
 import { z } from 'zod'
 import { fail, redirect, type Actions } from '@sveltejs/kit'
-import { db, dbPool } from '$lib/db'
-import {
-	fileTable,
-	folderTable,
-	githubFileTable,
-	githubFolderTable,
-	githubInstallationTable,
-	repositoryTable,
-	trashTable
-} from '$lib/db/schema.js'
-import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
+import { fileTable, folderTable } from '$lib/db/schema.js'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 import {
 	formatGithubFiles,
@@ -25,25 +15,19 @@ import {
 } from '$lib/utilts/github'
 import { fileSchema, folderSchema, repositoriesSchema } from './schemas'
 import { v4 as uuid } from 'uuid'
-
-const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
-	return await db
-		.select()
-		.from(fileTable)
-		.where(
-			and(eq(fileTable.id, docId), eq(fileTable.userId, userId), notInArray(fileTable.id, trashIds))
-		)
-		.limit(1)
-}
-
-const getupdatedAtDoc = async (userId: string, trashIds: string[]) => {
-	return await db
-		.select()
-		.from(fileTable)
-		.where(and(eq(fileTable.userId, userId), notInArray(fileTable.id, trashIds)))
-		.orderBy(desc(fileTable.updatedAt))
-		.limit(1)
-}
+import {
+	getAllFiles,
+	getAllFolders,
+	getCurrentDocById,
+	getGithubInstallations,
+	getSelectedRepositories,
+	getTrash,
+	getUpdatedAtDoc,
+	insertNewFile,
+	insertNewFolder,
+	insertNewRepository,
+	removeRepository
+} from './queries'
 
 export const load = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -54,25 +38,21 @@ export const load = async ({ locals, params }) => {
 	const { docId } = params
 	const userId = locals.user.id
 
-	const trash = await db.select().from(trashTable).where(eq(trashTable.userId, userId))
+	const trash = await getTrash(userId)
 	const trashIds = trash.map((t) => t.fileId).filter((id) => id !== null)
 
 	// Get the current doc
 	if (docId && z.string().uuid().safeParse(docId).success) {
 		currentDoc = await getCurrentDocById(userId, docId, trashIds)
 		if (!currentDoc || currentDoc.length === 0) {
-			currentDoc = await getupdatedAtDoc(userId, trashIds)
+			currentDoc = await getUpdatedAtDoc(userId, trashIds)
 		}
 	} else {
-		currentDoc = await getupdatedAtDoc(userId, trashIds)
+		currentDoc = await getUpdatedAtDoc(userId, trashIds)
 	}
 
-	let files = await db
-		.select()
-		.from(fileTable)
-		.where(eq(fileTable.userId, userId))
-		.orderBy(desc(fileTable.updatedAt))
-	let folders = await db.select().from(folderTable).where(eq(folderTable.userId, userId))
+	let files = await getAllFiles(userId)
+	let folders = await getAllFolders(userId)
 
 	let trashedFiles: (typeof fileTable.$inferSelect)[] = []
 	let trashedFolders: (typeof folderTable.$inferSelect)[] = []
@@ -117,24 +97,11 @@ export const load = async ({ locals, params }) => {
 	)
 	const trashedTree = [...builtTrashedTree, ...rootTrashedFiles]
 
-	// Get users github installations
-	const installations = await db
-		.select()
-		.from(githubInstallationTable)
-		.where(eq(githubInstallationTable.userId, userId))
-
-	const selectedRepositories = await db
-		.select()
-		.from(repositoryTable)
-		.where(
-			and(
-				eq(repositoryTable.userId, userId),
-				inArray(
-					repositoryTable.installationId,
-					installations.map((i) => i.id)
-				)
-			)
-		)
+	const installations = await getGithubInstallations(userId)
+	const selectedRepositories = await getSelectedRepositories(
+		userId,
+		installations.map((i) => i.id)
+	)
 
 	// Gets all available repositories for each installation from the github api
 	const availableRepositories = await Promise.all(
@@ -174,40 +141,29 @@ export const load = async ({ locals, params }) => {
 export const actions: Actions = {
 	file: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(fileSchema))
+		const userId = locals.user?.id
 
 		// The page is protected, so there should always be a user but just in case there isn't
-		if (!locals.user || !form.valid) return fail(400, { form })
+		if (!userId || !form.valid) return fail(400, { form })
 
 		const { icon, name, folderId } = form.data
 
-		const file = await db
-			.insert(fileTable)
-			.values({
-				userId: locals.user.id,
-				icon,
-				name: name.trim(),
-				folderId
-			})
-			.returning({ id: fileTable.id })
+		const fileData = { userId, icon, name: name.trim(), folderId }
+		const file = await insertNewFile(userId, fileData)
 
 		return { form, id: file[0].id }
 	},
 	folder: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(folderSchema))
+		const userId = locals.user?.id
 
 		// The page is protected, so there should always be a user but just in case there isn't
-		if (!locals.user || !form.valid) return fail(400, { form })
+		if (!userId || !form.valid) return fail(400, { form })
 
 		const { name, parentId } = form.data
 
-		const folder = await db
-			.insert(folderTable)
-			.values({
-				userId: locals.user.id,
-				name: name.trim(),
-				parentId
-			})
-			.returning({ id: folderTable.id })
+		const folderData = { userId, name: name.trim(), parentId }
+		const folder = await insertNewFolder(userId, folderData)
 
 		return { form, id: folder[0].id }
 	},
@@ -257,26 +213,22 @@ export const actions: Actions = {
 
 					const filesToInsert = formatedFiles.map((f) => ({ ...f, userId }))
 
-					try {
-						await dbPool.transaction(async (tx) => {
-							await tx.insert(repositoryTable).values({
-								id: repository.id,
-								name: repository.full_name,
-								fullName: repository.full_name,
-								htmlUrl: repository.html_url,
-								installationId,
-								userId
-							})
-
-							await tx.insert(folderTable).values(foldersToInsert)
-							await tx.insert(fileTable).values(filesToInsert)
-
-							await tx.insert(githubFolderTable).values(formatedGithubFoldersData)
-							await tx.insert(githubFileTable).values(formatedGithubFilesData)
-						})
-					} catch (error) {
-						throw Error('Failed to add repository')
+					const repositoryData = {
+						id: repository.id,
+						name: repository.full_name,
+						fullName: repository.full_name,
+						htmlUrl: repository.html_url,
+						installationId,
+						userId
 					}
+
+					await insertNewRepository(
+						repositoryData,
+						foldersToInsert,
+						filesToInsert,
+						formatedGithubFoldersData,
+						formatedGithubFilesData
+					)
 				}
 			}
 
@@ -284,27 +236,7 @@ export const actions: Actions = {
 				const folderIds = await getFolderIdsByRepositoryIds(removedRepositories)
 				const fileIds = await getFileIdsByRepositoryIds(removedRepositories)
 
-				try {
-					await dbPool.transaction(async (tx) => {
-						await tx
-							.delete(folderTable)
-							.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
-						await tx
-							.delete(fileTable)
-							.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
-
-						await tx
-							.delete(repositoryTable)
-							.where(
-								and(
-									inArray(repositoryTable.id, removedRepositories),
-									eq(repositoryTable.userId, userId)
-								)
-							)
-					})
-				} catch (error) {
-					throw Error('Failed to remove repository')
-				}
+				await removeRepository(userId, removedRepositories, folderIds, fileIds)
 			}
 		}
 
