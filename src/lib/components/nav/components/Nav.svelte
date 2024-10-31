@@ -5,15 +5,20 @@
 	import { onMount } from 'svelte'
 	import { FileTree } from '$lib/components/file-tree'
 	import { OutlinePanel } from '$lib/components/outline-panel'
+	import GithubIcon from '$lib/components/GithubIcon.svelte'
+	import { getSettings } from '$lib/components/settings/settingsContext'
 
 	export let fileDialog: HTMLDialogElement
 	export let folderDialog: HTMLDialogElement
 	export let trashDialog: HTMLDialogElement
 	export let settingsDialog: HTMLDialogElement
 
+	const settings = getSettings()
+
 	let isResizing = false
 	let navWidth = 400
 	let showOutlinePanel = false
+	let showGithubPanel = false
 
 	onMount(() => {
 		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
@@ -54,6 +59,17 @@
 				>
 					<TableOfContents size={20} stroke-width={1.5} />
 				</Button>
+				{#if $settings && $settings.installations.length > 0}
+					<Button
+						on:click={() => (showGithubPanel = !showGithubPanel)}
+						size="sm"
+						variant="ghost"
+						icon
+						data-button-toggled={showGithubPanel}
+					>
+						<GithubIcon size={20} />
+					</Button>
+				{/if}
 			</div>
 			<div class="btn-icons">
 				<Button on:click={() => folderDialog.showModal()} size="sm" variant="ghost" icon>

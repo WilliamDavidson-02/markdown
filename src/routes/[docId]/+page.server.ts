@@ -2,27 +2,29 @@ import { superValidate } from 'sveltekit-superforms'
 import { zod } from 'sveltekit-superforms/adapters'
 import { z } from 'zod'
 import { fail, redirect, type Actions } from '@sveltejs/kit'
-import { fileIcons } from '$lib/fileIcons'
-import { db } from '$lib/db'
-import { fileTable, folderTable, githubInstallationTable, trashTable } from '$lib/db/schema.js'
-import { and, desc, eq, notInArray } from 'drizzle-orm'
+import { db, dbPool } from '$lib/db'
+import {
+	fileTable,
+	folderTable,
+	githubFileTable,
+	githubFolderTable,
+	githubInstallationTable,
+	repositoryTable,
+	trashTable
+} from '$lib/db/schema.js'
+import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
-
-const fileSchema = z.object({
-	name: z.string().min(1, { message: 'File name is required' }).max(256, {
-		message: 'Name must be at most 256 characters'
-	}),
-	icon: z
-		.string()
-		.refine((value) => fileIcons.map((icon) => icon.name).includes(value))
-		.default(fileIcons[0].name),
-	folderId: z.string().uuid().optional()
-})
-
-const folderSchema = z.object({
-	name: z.string().max(256, { message: 'Name must be at most 256 characters' }),
-	parentId: z.string().uuid().optional()
-})
+import {
+	formatGithubFiles,
+	formatGithubFolders,
+	getAvailableRepositories,
+	getFileIdsByRepositoryIds,
+	getFolderIdsByRepositoryIds,
+	getRepositoryFilesAndFolders,
+	mergeReposWithInstallation
+} from '$lib/utilts/github'
+import { fileSchema, folderSchema, repositoriesSchema } from './schemas'
+import { v4 as uuid } from 'uuid'
 
 const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
 	return await db
@@ -121,8 +123,40 @@ export const load = async ({ locals, params }) => {
 		.from(githubInstallationTable)
 		.where(eq(githubInstallationTable.userId, userId))
 
+	const selectedRepositories = await db
+		.select()
+		.from(repositoryTable)
+		.where(
+			and(
+				eq(repositoryTable.userId, userId),
+				inArray(
+					repositoryTable.installationId,
+					installations.map((i) => i.id)
+				)
+			)
+		)
+
+	// Gets all available repositories for each installation from the github api
+	const availableRepositories = await Promise.all(
+		installations.map(async ({ id }) => {
+			const repositories = await getAvailableRepositories(id)
+			return { id, repositories }
+		})
+	)
+
+	const mergedRepositories = installations.map((installation) =>
+		mergeReposWithInstallation(selectedRepositories, installation.id)
+	)
+
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
+	const repositoriesForm = await superValidate(
+		zod(
+			repositoriesSchema.default({
+				installations: mergedRepositories
+			})
+		)
+	)
 
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
@@ -131,7 +165,9 @@ export const load = async ({ locals, params }) => {
 		folderForm,
 		user: locals.user,
 		trashedTree,
-		installations
+		installations,
+		availableRepositories,
+		repositoriesForm
 	}
 }
 
@@ -174,5 +210,104 @@ export const actions: Actions = {
 			.returning({ id: folderTable.id })
 
 		return { form, id: folder[0].id }
+	},
+	repositories: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(repositoriesSchema))
+		const userId = locals.user?.id
+
+		if (!userId || !form.valid) return fail(400, { form })
+
+		const { installations } = form.data
+
+		for (const installation of installations) {
+			const { repositories, installationId, removedRepositories } = installation
+
+			if (!installationId) continue
+
+			if (repositories.length > 0) {
+				for (const repository of repositories) {
+					const repoFolder = { id: uuid(), name: repository.full_name }
+					const { files, folders, rootSha } = await getRepositoryFilesAndFolders(
+						installationId,
+						repository
+					)
+
+					let { formatedFolders, formatedGithubFoldersData } = formatGithubFolders(
+						folders,
+						repoFolder.id,
+						repository.id
+					)
+
+					const foldersToInsert = [
+						{ ...repoFolder, userId },
+						...formatedFolders.map((f) => ({ ...f, userId }))
+					]
+
+					formatedGithubFoldersData = [
+						{ id: rootSha, repositoryId: repository.id, folderId: repoFolder.id },
+						...formatedGithubFoldersData
+					]
+
+					const { formatedFiles, formatedGithubFilesData } = formatGithubFiles(
+						files,
+						formatedFolders,
+						repoFolder.id,
+						repository.id
+					)
+
+					const filesToInsert = formatedFiles.map((f) => ({ ...f, userId }))
+
+					try {
+						await dbPool.transaction(async (tx) => {
+							await tx.insert(repositoryTable).values({
+								id: repository.id,
+								name: repository.full_name,
+								fullName: repository.full_name,
+								htmlUrl: repository.html_url,
+								installationId,
+								userId
+							})
+
+							await tx.insert(folderTable).values(foldersToInsert)
+							await tx.insert(fileTable).values(filesToInsert)
+
+							await tx.insert(githubFolderTable).values(formatedGithubFoldersData)
+							await tx.insert(githubFileTable).values(formatedGithubFilesData)
+						})
+					} catch (error) {
+						throw Error('Failed to add repository')
+					}
+				}
+			}
+
+			if (removedRepositories.length > 0) {
+				const folderIds = await getFolderIdsByRepositoryIds(removedRepositories)
+				const fileIds = await getFileIdsByRepositoryIds(removedRepositories)
+
+				try {
+					await dbPool.transaction(async (tx) => {
+						await tx
+							.delete(folderTable)
+							.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
+						await tx
+							.delete(fileTable)
+							.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
+
+						await tx
+							.delete(repositoryTable)
+							.where(
+								and(
+									inArray(repositoryTable.id, removedRepositories),
+									eq(repositoryTable.userId, userId)
+								)
+							)
+					})
+				} catch (error) {
+					throw Error('Failed to remove repository')
+				}
+			}
+		}
+
+		return { form }
 	}
 }

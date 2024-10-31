@@ -1,5 +1,9 @@
 import type { githubInstallationTable } from '$lib/db/schema'
+import type { GitHubRepository } from '$lib/utilts/github'
 import type { ComponentType } from 'svelte'
+import type { SuperValidated } from 'sveltekit-superforms'
+import type { z } from 'zod'
+import type { repositoriesSchema } from '../../../routes/[docId]/schemas'
 
 export type SettingsSelected = 'Account' | 'Editor' | 'General' | 'Shortcut keys' | 'Connections'
 export type SettingsItem = {
@@ -7,6 +11,13 @@ export type SettingsItem = {
 	label: SettingsSelected
 }
 
+export type AvailableRepositories = {
+	id: number
+	repositories: GitHubRepository[]
+}
+
 export type SettingsContext = {
 	installations: (typeof githubInstallationTable.$inferSelect)[]
+	availableRepositories: AvailableRepositories[]
+	repositoriesForm: SuperValidated<z.infer<typeof repositoriesSchema>>
 }

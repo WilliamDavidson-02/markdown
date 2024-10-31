@@ -21,8 +21,10 @@
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
 
-	settingsContext({
-		installations: data.installations
+	$: settingsContext({
+		installations: data.installations,
+		availableRepositories: data.availableRepositories,
+		repositoriesForm: data.repositoriesForm
 	})
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {

@@ -100,3 +100,36 @@ export const githubInstallationTable = pgTable('github_installation', {
 		.notNull()
 		.references(() => userTable.id, { onDelete: 'cascade' })
 })
+
+export const repositoryTable = pgTable('repository', {
+	id: integer('id').primaryKey(),
+	name: text('name').notNull(),
+	fullName: text('full_name').notNull(),
+	htmlUrl: text('html_url').notNull(),
+	installationId: integer('installation_id')
+		.notNull()
+		.references(() => githubInstallationTable.id, { onDelete: 'cascade' }),
+	userId: text('user_id')
+		.notNull()
+		.references(() => userTable.id, { onDelete: 'cascade' })
+})
+
+export const githubFileTable = pgTable('github_file', {
+	id: text('id').primaryKey(),
+	repositoryId: integer('repository_id')
+		.notNull()
+		.references(() => repositoryTable.id, { onDelete: 'cascade' }),
+	fileId: uuid('file_id')
+		.references(() => fileTable.id, { onDelete: 'cascade' })
+		.unique()
+})
+
+export const githubFolderTable = pgTable('github_folder', {
+	id: text('id').primaryKey(),
+	repositoryId: integer('repository_id')
+		.notNull()
+		.references(() => repositoryTable.id, { onDelete: 'cascade' }),
+	folderId: uuid('folder_id')
+		.references(() => folderTable.id, { onDelete: 'cascade' })
+		.unique()
+})
