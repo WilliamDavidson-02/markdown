@@ -2,6 +2,7 @@
 	import GithubIcon from '$lib/components/GithubIcon.svelte'
 	import { Repeat, CirclePlus } from 'lucide-svelte'
 	import { Button } from '$lib/components/button'
+	import { PUBLIC_GITHUB_INSTALLATION_URL } from '$env/static/public'
 </script>
 
 <div class="wrapper">
@@ -11,7 +12,7 @@
 		<img src="/logo_icon.svg" alt="Markdown logo" />
 	</div>
 	<p>Connect your Github to create, edit and update your Github-hosted markdown files.</p>
-	<Button href={'https://github.com/apps/markdown-labs/installations/select_target'}>
+	<Button href={PUBLIC_GITHUB_INSTALLATION_URL}>
 		<CirclePlus size={16} stroke-width={1.5} />
 		Connect new Github Org
 	</Button>

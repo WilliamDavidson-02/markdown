@@ -4,6 +4,7 @@
 	import { getSettings } from '../settingsContext'
 	import EmptyConnections from './EmptyConnections.svelte'
 	import ConnectionItem from './ConnectionItem.svelte'
+	import { PUBLIC_GITHUB_INSTALLATION_URL } from '$env/static/public'
 
 	const settings = getSettings()
 
@@ -18,10 +19,7 @@
 		{#each availableRepositories as installation}
 			<ConnectionItem {installation} />
 		{/each}
-		<Button
-			variant="outline"
-			href={'https://github.com/apps/markdown-labs/installations/select_target'}
-		>
+		<Button variant="outline" href={PUBLIC_GITHUB_INSTALLATION_URL}>
 			<CirclePlus size={16} stroke-width={1.5} />
 			Connect new Github Org
 		</Button>
