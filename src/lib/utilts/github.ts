@@ -90,7 +90,7 @@ export const getAvailableRepositories = async (
 			page++
 		}
 
-		return repositories
+		return repositories.reverse()
 	} catch {
 		return []
 	}
