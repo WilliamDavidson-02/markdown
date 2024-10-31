@@ -59,11 +59,11 @@ export const getSelectedRepositories = async (userId: string, ids: number[]) => 
 		.where(and(eq(repositoryTable.userId, userId), inArray(repositoryTable.installationId, ids)))
 }
 
-export const insertNewFile = async (userId: string, file: typeof fileTable.$inferInsert) => {
+export const insertNewFile = async (file: typeof fileTable.$inferInsert) => {
 	return await db.insert(fileTable).values(file).returning({ id: fileTable.id })
 }
 
-export const insertNewFolder = async (userId: string, folder: typeof folderTable.$inferInsert) => {
+export const insertNewFolder = async (folder: typeof folderTable.$inferInsert) => {
 	return await db.insert(folderTable).values(folder).returning({ id: folderTable.id })
 }
 
@@ -77,11 +77,19 @@ export const insertNewRepository = async (
 	await dbPool.transaction(async (tx) => {
 		await tx.insert(repositoryTable).values(repository)
 
-		await tx.insert(folderTable).values(foldersToInsert)
-		await tx.insert(fileTable).values(filesToInsert)
+		if (foldersToInsert.length > 0) {
+			await tx.insert(folderTable).values(foldersToInsert)
+		}
+		if (filesToInsert.length > 0) {
+			await tx.insert(fileTable).values(filesToInsert)
+		}
 
-		await tx.insert(githubFolderTable).values(formatedGithubFoldersData)
-		await tx.insert(githubFileTable).values(formatedGithubFilesData)
+		if (formatedGithubFoldersData.length > 0) {
+			await tx.insert(githubFolderTable).values(formatedGithubFoldersData)
+		}
+		if (formatedGithubFilesData.length > 0) {
+			await tx.insert(githubFileTable).values(formatedGithubFilesData)
+		}
 	})
 }
 

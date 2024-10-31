@@ -169,7 +169,7 @@ export const actions: Actions = {
 		const { icon, name, folderId } = form.data
 
 		const fileData = { userId, icon, name: name.trim(), folderId }
-		const file = await insertNewFile(userId, fileData)
+		const file = await insertNewFile(fileData)
 
 		return { form, id: file[0].id }
 	},
@@ -183,7 +183,7 @@ export const actions: Actions = {
 		const { name, parentId } = form.data
 
 		const folderData = { userId, name: name.trim(), parentId }
-		const folder = await insertNewFolder(userId, folderData)
+		const folder = await insertNewFolder(folderData)
 
 		return { form, id: folder[0].id }
 	},
