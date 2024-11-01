@@ -193,7 +193,8 @@ export const formatGithubFolders = (
 		formatedFolders.push({
 			id: folderId,
 			name: folder.path.split('/').pop() ?? '',
-			parentId
+			parentId,
+			path: folder.path
 		})
 
 		foldersWithPath.push({ path: folder.path, id: folderId })
@@ -218,16 +219,8 @@ export const formatGithubFiles = (
 	const formatedGithubFilesData: (typeof githubFileTable.$inferInsert)[] = []
 
 	for (const file of files) {
-		const folderNames = file.path.split('/').slice(0, -1)
-		// To prevent the wrong directory, we find the first folder and match the rest of the folder names
-		const firstFolderIndex = folders.findIndex((f, i) => {
-			if (f.name !== folderNames[0]) return false
-			const folderSlice = folders.slice(i, i + folderNames.length)
-			return folderSlice.every((f, index) => f.name === folderNames[index])
-		})
-
-		const pathFolders = folders.slice(firstFolderIndex, firstFolderIndex + folderNames.length)
-		const folder = pathFolders.at(-1)
+		const parentPath = file.path.split('/').slice(0, -1).join('/')
+		const parentId = folders.find((f) => f.path === parentPath)?.id ?? rootFolderId
 
 		const fileId = uuid()
 
@@ -236,7 +229,7 @@ export const formatGithubFiles = (
 			name: file.name,
 			icon: 'File',
 			doc: file.content,
-			folderId: folder?.id ?? rootFolderId
+			folderId: parentId
 		})
 
 		formatedGithubFilesData.push({

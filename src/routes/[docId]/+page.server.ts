@@ -216,7 +216,12 @@ export const actions: Actions = {
 
 					const foldersToInsert = [
 						{ ...repoFolder, userId },
-						...formatedFolders.map((f) => ({ ...f, userId }))
+						...formatedFolders.map((f) => ({
+							userId,
+							id: f.id,
+							name: f.name,
+							parentId: f.parentId
+						}))
 					]
 
 					formatedGithubFoldersData = [

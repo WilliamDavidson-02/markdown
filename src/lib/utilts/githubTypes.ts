@@ -20,6 +20,7 @@ export type GithubFolder = {
 	id: string
 	name: string
 	parentId: string
+	path?: string
 }
 
 export type GithubFolderData = {
