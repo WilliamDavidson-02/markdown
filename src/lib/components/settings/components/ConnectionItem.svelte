@@ -9,25 +9,22 @@
 	import { Input } from '$lib/components/input'
 	import type { GitHubRepository } from '$lib/utilts/github'
 	import { fade } from 'svelte/transition'
+	import type { AvailableRepositories } from '../types'
 
-	export let installation: (typeof availableRepositories)[number]
+	export let installation: AvailableRepositories
 
 	const settings = getSettings()
 	let initialRepositories: GitHubRepository[] | undefined
 	let checkList: GitHubRepository[] = []
 	let uninstalling = false
 
-	$: availableRepositories = $settings?.availableRepositories ?? []
-	$: installations = $settings?.installations ?? []
-
-	$: getForm = (id: number) => {
-		return $forms.installations.find((install) => install.installationId === id)
+	$: getForm = () => {
+		return $forms.installations.find((install) => install.installationId === installation.id)
 	}
 
 	const {
 		form: forms,
 		enhance,
-		reset,
 		submitting
 	} = superForm($settings?.repositoriesForm!, {
 		onResult: async ({ result }) => {
@@ -39,11 +36,11 @@
 		onSubmit: () => {
 			const removedRepositories =
 				initialRepositories
-					?.filter((repo) => !getForm(installation.id)?.repositories.some((r) => r.id === repo.id))
+					?.filter((repo) => !getForm()?.repositories.some((r) => r.id === repo.id))
 					.map((repo) => repo.id) ?? []
 
 			const newRepositories =
-				getForm(installation.id)?.repositories.filter(
+				getForm()?.repositories.filter(
 					(repo) => !initialRepositories?.some((r) => r.id === repo.id)
 				) ?? []
 
@@ -60,8 +57,11 @@
 	})
 
 	$: if (!initialRepositories) {
-		initialRepositories = [...(getForm(installation.id)?.repositories ?? [])]
-		checkList = [...initialRepositories]
+		const form = getForm()
+		if (form) {
+			initialRepositories = [...form.repositories]
+			checkList = [...initialRepositories]
+		}
 	}
 
 	$: hasChanged = () => {
@@ -74,18 +74,16 @@
 		return false
 	}
 
-	$: isChecked = (repo: GitHubRepository) => {
-		return checkList.some((r) => r.id === repo.id)
-	}
+	$: isChecked = (repo: GitHubRepository) => checkList.some((r) => r.id === repo.id)
 
-	const getUser = (id: number) => installations.find((install) => install.id === id)
+	const getUser = (id: number) => $settings?.installations.find((install) => install.id === id)
 
 	const handleChange = (repository: GitHubRepository) => {
 		forms.update(
 			(forms) => {
-				const form = getForm(installation.id)
-
+				const form = getForm()
 				if (!form) return forms
+
 				if (!isChecked(repository)) {
 					form.repositories.push(repository)
 				} else {
@@ -103,8 +101,17 @@
 	}
 
 	const handleReset = () => {
-		checkList = [...(initialRepositories ?? [])]
-		reset()
+		forms.update((forms) => {
+			const form = getForm()
+			if (!form || !initialRepositories) return forms
+			form.repositories = [...initialRepositories]
+			forms.installations = forms.installations.map((install) =>
+				install.installationId === installation.id ? form : install
+			)
+			checkList = [...initialRepositories]
+
+			return forms
+		})
 	}
 
 	const handleUninstall = async () => {
