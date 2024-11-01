@@ -15,6 +15,7 @@
 	const settings = getSettings()
 	let initialRepositories: GitHubRepository[] | undefined
 	let checkList: GitHubRepository[] = []
+	let uninstalling = false
 
 	$: availableRepositories = $settings?.availableRepositories ?? []
 	$: installations = $settings?.installations ?? []
@@ -105,6 +106,22 @@
 		checkList = [...(initialRepositories ?? [])]
 		reset()
 	}
+
+	const handleUninstall = async () => {
+		try {
+			uninstalling = true
+			await fetch(`/github/un-install`, {
+				method: 'DELETE',
+				body: JSON.stringify({ installationId: installation.id })
+			})
+
+			await invalidateAll()
+		} catch (error) {
+			console.error(error)
+		} finally {
+			uninstalling = false
+		}
+	}
 </script>
 
 <div class="user">
@@ -115,7 +132,10 @@
 			>{`https://github.com/${getUser(installation.id)?.username}`}</a
 		>
 	</div>
-	<Button variant="outline">
+	<Button variant="outline" on:click={handleUninstall} disabled={uninstalling}>
+		{#if uninstalling}
+			<Loader2 size={16} stroke-width={1.5} class="animate-spin" />
+		{/if}
 		Remove {getUser(installation.id)?.username}
 	</Button>
 </div>

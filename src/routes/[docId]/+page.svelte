@@ -22,7 +22,7 @@
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
 
-	$: settingsContext({
+	const store = settingsContext({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm
@@ -46,6 +46,11 @@
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
 	$: githubTree.set(data.githubTree)
+	$: store.set({
+		installations: data.installations,
+		availableRepositories: data.availableRepositories,
+		repositoriesForm: data.repositoriesForm
+	})
 </script>
 
 <main>

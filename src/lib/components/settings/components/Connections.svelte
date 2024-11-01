@@ -7,16 +7,13 @@
 	import { PUBLIC_GITHUB_INSTALLATION_URL } from '$env/static/public'
 
 	const settings = getSettings()
-
-	$: availableRepositories = $settings?.availableRepositories ?? []
-	$: installations = $settings?.installations ?? []
 </script>
 
 <div>
-	{#if installations.length === 0}
+	{#if $settings?.installations.length === 0}
 		<EmptyConnections />
 	{:else}
-		{#each availableRepositories as installation}
+		{#each $settings?.availableRepositories ?? [] as installation}
 			<ConnectionItem {installation} />
 		{/each}
 		<Button variant="outline" href={PUBLIC_GITHUB_INSTALLATION_URL}>

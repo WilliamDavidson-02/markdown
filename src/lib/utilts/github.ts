@@ -32,6 +32,18 @@ export const generateGitHubJWT = () => {
 	return jwt.sign(payload, privateKey, { algorithm: 'RS256' })
 }
 
+export const getGithubAccessToken = async (installationId: number) => {
+	const jwtToken = generateGitHubJWT()
+
+	return await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${jwtToken}`,
+			Accept: 'application/vnd.github+json'
+		}
+	})
+}
+
 export type GitHubRepository = {
 	id: number
 	name: string
@@ -43,18 +55,7 @@ export const getAvailableRepositories = async (
 	installationId: number
 ): Promise<GitHubRepository[]> => {
 	try {
-		const jwtToken = generateGitHubJWT()
-
-		const tokenResponse = await fetch(
-			`https://api.github.com/app/installations/${installationId}/access_tokens`,
-			{
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${jwtToken}`,
-					Accept: 'application/vnd.github+json'
-				}
-			}
-		)
+		const tokenResponse = await getGithubAccessToken(installationId)
 
 		if (!tokenResponse.ok) return []
 
@@ -102,18 +103,7 @@ export const getRepositoryFilesAndFolders = async (
 ): Promise<{ files: GithubFile[]; folders: GithubFolderData[]; rootSha: string }> => {
 	const returnDefault = { files: [], folders: [], rootSha: '' }
 	try {
-		const jwtToken = generateGitHubJWT()
-
-		const tokenResponse = await fetch(
-			`https://api.github.com/app/installations/${installationId}/access_tokens`,
-			{
-				method: 'POST',
-				headers: {
-					Authorization: `Bearer ${jwtToken}`,
-					Accept: 'application/vnd.github+json'
-				}
-			}
-		)
+		const tokenResponse = await getGithubAccessToken(installationId)
 
 		if (!tokenResponse.ok) return returnDefault
 		const tokenData = await tokenResponse.json()
