@@ -131,6 +131,7 @@
 						id={repository.id.toString()}
 						checked={isChecked(repository)}
 						on:change={() => handleChange(repository)}
+						disabled={$submitting}
 					/>
 					{repository.name}
 				</Label>
@@ -139,7 +140,9 @@
 	</ul>
 	{#if hasChanged()}
 		<div transition:fade={{ duration: 200 }} class="actions-container">
-			<Button type="button" variant="outline" on:click={handleReset}>Cancel</Button>
+			<Button type="button" disabled={$submitting} variant="outline" on:click={handleReset}
+				>Cancel</Button
+			>
 			<Button type="submit" disabled={$submitting}>
 				{#if $submitting}
 					<Loader2 size={16} stroke-width={1.5} class="animate-spin" />

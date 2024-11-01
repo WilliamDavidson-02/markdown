@@ -34,6 +34,10 @@
 		outline: none;
 	}
 
+	input:disabled {
+		cursor: not-allowed;
+	}
+
 	input::placeholder {
 		color: var(--foreground-li);
 	}
