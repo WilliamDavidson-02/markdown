@@ -22,6 +22,8 @@
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
 
+	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
+
 	const store = settingsContext({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
@@ -32,7 +34,8 @@
 		$editorStore?.dispatch({
 			changes: { from: 0, to: $editorStore?.state.doc?.length ?? 0, insert: currentDoc?.doc ?? '' }
 		})
-		selectedFile.set(currentDoc)
+
+		selectedFile.set({ ...currentDoc, isGithub: isCurrentDocGithub })
 	}
 
 	onMount(async () => {
@@ -58,19 +61,13 @@
 	<FolderForm bind:folderDialog form={data.folderForm} />
 	<Trash bind:trashDialog />
 	<Settings bind:settingsDialog />
-	<Nav
-		{trashDialog}
-		{fileDialog}
-		{folderDialog}
-		{settingsDialog}
-		isCurrentDocGithub={data.isCurrentDocGithub}
-	/>
+	<Nav {trashDialog} {fileDialog} {folderDialog} {settingsDialog} {isCurrentDocGithub} />
 	<Editor />
 </main>
 
 <style>
 	main {
 		display: flex;
-		min-height: 100svh;
+		max-height: 100svh;
 	}
 </style>

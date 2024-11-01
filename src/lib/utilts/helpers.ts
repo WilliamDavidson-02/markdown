@@ -86,3 +86,22 @@ export const findFolderById = (folders: Folder[], id: string): Folder | null => 
 	}
 	return traverse(folders)
 }
+
+export const getFoldersToFilePos = (folders: Folder[], id: string): Folder[] => {
+	const traverse = (folders: Folder[]): Folder[] | null => {
+		for (const folder of folders) {
+			if (folder.files.some((file) => file.id === id)) {
+				return [folder]
+			}
+
+			if (folder.children.length > 0) {
+				const childResult = traverse(folder.children)
+				if (childResult) {
+					return [folder, ...childResult]
+				}
+			}
+		}
+		return null
+	}
+	return traverse(folders) || []
+}

@@ -65,7 +65,7 @@
 <style>
 	main {
 		display: flex;
-		min-height: 100svh;
+		max-height: 100svh;
 		max-width: 1440px;
 		margin: 0 auto;
 		color: var(--foreground-dk);

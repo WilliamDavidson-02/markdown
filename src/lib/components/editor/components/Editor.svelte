@@ -27,9 +27,14 @@
 <style>
 	section {
 		flex-grow: 1;
+		display: grid;
+		grid-template-rows: auto 1fr;
+		max-height: 100svh;
 	}
 
 	div {
-		height: calc(100vh - var(--header-height, 40px));
+		max-height: 100%;
+		height: 100%;
+		overflow-y: auto;
 	}
 </style>

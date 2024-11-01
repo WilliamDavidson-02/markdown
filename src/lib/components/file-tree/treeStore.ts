@@ -8,6 +8,11 @@ export type Folder = typeof folderTable.$inferSelect & {
 	files: File[]
 }
 export type Tree = (File | Folder)[][]
+export type SelectedFile =
+	| (File & {
+			isGithub?: boolean
+	  })
+	| null
 
 export const treeStore = writable<Tree>([])
-export const selectedFile = writable<File | null>(null)
+export const selectedFile = writable<SelectedFile | null>(null)

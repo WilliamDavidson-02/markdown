@@ -141,8 +141,6 @@ export const load = async ({ locals, params }) => {
 		)
 	)
 
-	const isCurrentDocGithub = currentDoc?.some((doc) => githubIds.fileIds.includes(doc.id))
-
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
 		tree,
@@ -154,7 +152,7 @@ export const load = async ({ locals, params }) => {
 		availableRepositories,
 		repositoriesForm,
 		githubTree,
-		isCurrentDocGithub
+		githubIds
 	}
 }
 
