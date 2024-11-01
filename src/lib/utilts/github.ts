@@ -182,19 +182,21 @@ export const formatGithubFolders = (
 	const formatedFolders: GithubFolder[] = []
 	const formatedGithubFoldersData: (typeof githubFolderTable.$inferInsert)[] = []
 
+	const foldersWithPath: { path: string; id: string }[] = []
+
 	for (const folder of ghFolderData) {
 		const folderId = uuid()
+
+		const parentPath = folder.path.split('/').slice(0, -1).join('/')
+		const parentId = foldersWithPath.find((f) => f.path === parentPath)?.id ?? rootFolderId
 
 		formatedFolders.push({
 			id: folderId,
 			name: folder.path.split('/').pop() ?? '',
-			// Github folders are returned in order of the path from the api
-			// that is why we can use the last folder as a parent
-			parentId:
-				formatedFolders.length > 0 && folder.path.includes('/')
-					? formatedFolders[formatedFolders.length - 1].id
-					: rootFolderId
+			parentId
 		})
+
+		foldersWithPath.push({ path: folder.path, id: folderId })
 
 		formatedGithubFoldersData.push({
 			sha: folder.sha,
