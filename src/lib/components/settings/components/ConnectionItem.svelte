@@ -132,7 +132,7 @@
 			>{`https://github.com/${getUser(installation.id)?.username}`}</a
 		>
 	</div>
-	<Button variant="outline" on:click={handleUninstall} disabled={uninstalling}>
+	<Button variant="outline" on:click={handleUninstall} disabled={uninstalling || $submitting}>
 		{#if uninstalling}
 			<Loader2 size={16} stroke-width={1.5} class="animate-spin" />
 		{/if}
