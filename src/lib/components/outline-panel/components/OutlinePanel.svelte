@@ -95,7 +95,7 @@
 		gap: var(--space-sm);
 		height: fit-content;
 		max-height: 100%;
-		max-width: 100%;
+		width: 100%;
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		user-select: none;
@@ -119,12 +119,12 @@
 	}
 
 	.headings {
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-rows: repeat(auto-fill, 34px);
 		gap: var(--space-sm);
 		padding: var(--space-sm) 0;
-		flex-grow: 1;
-		max-width: 100%;
+		max-width: calc(100% - 2px - var(--space-sm));
+		width: calc(100% - 2px - var(--space-sm));
 	}
 
 	.heading {
@@ -138,6 +138,8 @@
 		font-weight: 500;
 		line-height: 24px;
 		height: 34px;
+		max-width: calc(100% - 2px - var(--space-sm));
+		width: calc(100% - 2px - var(--space-sm));
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
