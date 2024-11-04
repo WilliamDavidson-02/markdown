@@ -119,6 +119,7 @@ export const githubFileTable = pgTable('github_file', {
 		.primaryKey()
 		.default(sql`gen_random_uuid()`),
 	sha: text('sha').notNull(),
+	path: text('path'),
 	repositoryId: integer('repository_id')
 		.notNull()
 		.references(() => repositoryTable.id, { onDelete: 'cascade' }),
@@ -132,6 +133,7 @@ export const githubFolderTable = pgTable('github_folder', {
 		.primaryKey()
 		.default(sql`gen_random_uuid()`),
 	sha: text('sha').notNull(),
+	path: text('path'),
 	repositoryId: integer('repository_id')
 		.notNull()
 		.references(() => repositoryTable.id, { onDelete: 'cascade' }),

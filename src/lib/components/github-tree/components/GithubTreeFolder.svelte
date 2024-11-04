@@ -7,21 +7,29 @@
 		Ellipsis,
 		Loader2,
 		Trash2,
-		CornerUpRight
+		CornerUpRight,
+		ArrowDownToLine,
+		ArrowUpToLine
 	} from 'lucide-svelte'
 	import { slide } from 'svelte/transition'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
-	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
+	import { getFoldersToFolderPos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { invalidateAll } from '$app/navigation'
 	import { type Folder, selectedFile } from '$lib/components/file-tree/treeStore'
 	import GithubTreeFile from './GithubTreeFile.svelte'
+	import { Divider } from '$lib/components/divider'
+	import { isFolder } from '$lib/utilts/tree'
+	import PullDialog from '$lib/components/editor/components/PullDialog.svelte'
+	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
 
 	export let folder: Folder
+
 	let isOpen = false
 	let showEllipsis = false
 	let isMovingToTrash = false
 	let isMenuOpen = false
+	let pullDialog: HTMLDialogElement
 
 	const moveToTrash = async () => {
 		try {
@@ -44,7 +52,19 @@
 			isMovingToTrash = false
 		}
 	}
+
+	const openPullDialog = () => {
+		pullDialog.showModal()
+		isMenuOpen = false
+	}
+
+	$: folders = $githubTree.flat().filter((f) => isFolder(f))
+	$: rootFolder = getFoldersToFolderPos(folders, folder.id)[0]
+	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
+	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
 </script>
+
+<PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
 
 <li class="tree-folder-item">
 	<button
@@ -86,6 +106,21 @@
 							{#if isMovingToTrash}
 								<Loader2 class="animate-spin" size={14} />
 							{/if}
+						</DropdownItem>
+					</DropdownGroup>
+					<Divider />
+					<DropdownGroup>
+						<DropdownItem on:click={openPullDialog} on:keydown={openPullDialog}>
+							<div class="dropdown-item">
+								<ArrowDownToLine size={16} stroke-width={1.5} />
+								<span>Pull</span>
+							</div>
+						</DropdownItem>
+						<DropdownItem>
+							<div class="dropdown-item">
+								<ArrowUpToLine size={16} stroke-width={1.5} />
+								<span>Push</span>
+							</div>
 						</DropdownItem>
 					</DropdownGroup>
 				</Dropdown>

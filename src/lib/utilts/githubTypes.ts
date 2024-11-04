@@ -7,6 +7,13 @@ export type GithubTreeItem = {
 	url: string
 }
 
+export type GithubTree = {
+	sha: string
+	url: string
+	tree: GithubTreeItem[]
+	truncated: boolean
+}
+
 export type GithubBlob = {
 	sha: string
 	node_id: string
@@ -24,6 +31,7 @@ export type GithubFolder = {
 }
 
 export type GithubFolderData = {
+	id?: string
 	sha: string
 	path: string
 }
@@ -41,4 +49,19 @@ export type GithubFormatedFile = {
 	icon: string
 	doc: string
 	folderId: string | undefined
+}
+
+export type GithubShaItem = {
+	id: string
+	sha: string
+	path: string | null | undefined
+}
+
+export type GithubShaItemUpdate = GithubShaItem & {
+	name: string
+}
+
+export type GithubFileUpdate = GithubFile & {
+	id: string
+	newSha: string
 }

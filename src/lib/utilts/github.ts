@@ -13,6 +13,8 @@ import type {
 	GithubFolder,
 	GithubFolderData,
 	GithubFormatedFile,
+	GithubShaItem,
+	GithubTree,
 	GithubTreeItem
 } from './githubTypes'
 import { v4 as uuid } from 'uuid'
@@ -32,16 +34,21 @@ export const generateGitHubJWT = () => {
 	return jwt.sign(payload, privateKey, { algorithm: 'RS256' })
 }
 
-export const getGithubAccessToken = async (installationId: number) => {
+export const getGithubAccessToken = async (installationId: number): Promise<string | null> => {
 	const jwtToken = generateGitHubJWT()
 
-	return await fetch(`https://api.github.com/app/installations/${installationId}/access_tokens`, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${jwtToken}`,
-			Accept: 'application/vnd.github+json'
+	const response = await fetch(
+		`https://api.github.com/app/installations/${installationId}/access_tokens`,
+		{
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${jwtToken}`,
+				Accept: 'application/vnd.github+json'
+			}
 		}
-	})
+	)
+
+	return response.ok ? (await response.json()).token : null
 }
 
 export type GitHubRepository = {
@@ -55,11 +62,8 @@ export const getAvailableRepositories = async (
 	installationId: number
 ): Promise<GitHubRepository[]> => {
 	try {
-		const tokenResponse = await getGithubAccessToken(installationId)
-
-		if (!tokenResponse.ok) return []
-
-		const tokenData = await tokenResponse.json()
+		const token = await getGithubAccessToken(installationId)
+		if (!token) return []
 
 		let page = 1
 		const repositories: GitHubRepository[] = []
@@ -69,7 +73,7 @@ export const getAvailableRepositories = async (
 				`https://api.github.com/installation/repositories?per_page=100&page=${page}`,
 				{
 					headers: {
-						Authorization: `Bearer ${tokenData.token}`,
+						Authorization: `Bearer ${token}`,
 						Accept: 'application/vnd.github+json'
 					}
 				}
@@ -97,55 +101,82 @@ export const getAvailableRepositories = async (
 	}
 }
 
+export const getFullTree = async (
+	installationId: number,
+	repository: string,
+	token?: string
+): Promise<GithubTree | null> => {
+	let tokenData = token
+
+	if (!tokenData) {
+		const token = await getGithubAccessToken(installationId)
+		if (!token) return null
+		tokenData = token
+	}
+
+	const response = await fetch(
+		`https://api.github.com/repos/${repository}/git/trees/main?recursive=1`,
+		{
+			headers: {
+				Authorization: `Bearer ${tokenData}`,
+				Accept: 'application/vnd.github+json'
+			}
+		}
+	)
+
+	return response.ok ? await response.json() : null
+}
+
+export const getGithubFileContent = async (
+	url: string,
+	token: string
+): Promise<GithubBlob | null> => {
+	try {
+		const res = await fetch(url, {
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/vnd.github+json'
+			}
+		})
+		return res.ok ? await res.json() : null
+	} catch {
+		return null
+	}
+}
+
+export const formatGithubFileBlob = (blob: GithubBlob, treeItem: GithubTreeItem) => {
+	const name = treeItem.path.split('/').pop()?.replace('.md', '') ?? ''
+	return {
+		sha: treeItem.sha,
+		path: treeItem.path,
+		content: atob(blob.content),
+		name
+	}
+}
+
 export const getRepositoryFilesAndFolders = async (
 	installationId: number,
 	repository: GitHubRepository
 ): Promise<{ files: GithubFile[]; folders: GithubFolderData[]; rootSha: string }> => {
 	const returnDefault = { files: [], folders: [], rootSha: '' }
 	try {
-		const tokenResponse = await getGithubAccessToken(installationId)
+		const token = await getGithubAccessToken(installationId)
+		if (!token) return returnDefault
 
-		if (!tokenResponse.ok) return returnDefault
-		const tokenData = await tokenResponse.json()
-
-		const treeResponse = await fetch(
-			`https://api.github.com/repos/${repository.full_name}/git/trees/main?recursive=1`,
-			{
-				headers: {
-					Authorization: `Bearer ${tokenData.token}`,
-					Accept: 'application/vnd.github+json'
-				}
-			}
-		)
-
-		if (!treeResponse.ok) return returnDefault
-		const treeData = await treeResponse.json()
+		const treeData = await getFullTree(installationId, repository.full_name, token)
+		if (!treeData) return returnDefault
 
 		if (treeData.tree.length === 0) return returnDefault
 
 		// Fetch all md files content
-		const mdFiles = treeData.tree.filter((item: GithubTreeItem) => item.path.endsWith('.md'))
-		const blobs = await Promise.all(
-			mdFiles.map((item: GithubTreeItem) =>
-				fetch(item.url, {
-					headers: {
-						Authorization: `Bearer ${tokenData.token}`,
-						Accept: 'application/vnd.github+json'
-					}
-				}).then((res) => res.json())
-			)
-		)
+		const mdFiles = treeData.tree.filter((item) => item.path.endsWith('.md'))
+		const blobs: GithubBlob[] = (
+			await Promise.all(mdFiles.map((item) => getGithubFileContent(item.url, token)))
+		).filter((blob) => blob !== null)
 
-		const formatedFiles = blobs.map((blob: GithubBlob, index) => {
-			const treeItem: GithubTreeItem = mdFiles[index]
-			const name = treeItem.path.split('/').pop()?.replace('.md', '') ?? ''
-			return {
-				sha: treeItem.sha,
-				path: treeItem.path,
-				content: atob(blob.content),
-				name
-			}
-		})
+		const formatedFiles = blobs.map((blob: GithubBlob, index) =>
+			formatGithubFileBlob(blob, mdFiles[index])
+		)
 
 		// Filter all folders that are included in the files paths
 		const treeFolders: GithubFolderData[] = treeData.tree
@@ -175,7 +206,7 @@ export const formatGithubFolders = (
 	const foldersWithPath: { path: string; id: string }[] = []
 
 	for (const folder of ghFolderData) {
-		const folderId = uuid()
+		const folderId = folder.id ?? uuid()
 
 		const parentPath = folder.path.split('/').slice(0, -1).join('/')
 		const parentId = foldersWithPath.find((f) => f.path === parentPath)?.id ?? rootFolderId
@@ -192,7 +223,8 @@ export const formatGithubFolders = (
 		formatedGithubFoldersData.push({
 			sha: folder.sha,
 			repositoryId: repoId,
-			folderId
+			folderId,
+			path: folder.path
 		})
 	}
 
@@ -225,7 +257,8 @@ export const formatGithubFiles = (
 		formatedGithubFilesData.push({
 			sha: file.sha,
 			repositoryId: repoId,
-			fileId
+			fileId,
+			path: file.path
 		})
 	}
 
@@ -270,4 +303,35 @@ export const getFileIdsByRepositoryIds = async (ids: number[]) => {
 		.where(inArray(githubFileTable.repositoryId, ids))
 
 	return files.map((f) => f.id)
+}
+
+export const filterTreeIntoStatus = (
+	tree: GithubTreeItem[],
+	folders: GithubShaItem[],
+	files: GithubShaItem[]
+) => {
+	const mdFiles = tree.filter((item) => item.path.endsWith('.md'))
+	const mdFolders = tree.filter(
+		(item) => item.type === 'tree' && mdFiles.some((f) => f.path.includes(item.path))
+	)
+
+	const validTreeItems = [...mdFolders, ...mdFiles]
+
+	const removedItems = [...folders, ...files].filter(
+		(item) => !validTreeItems.some((t) => t.sha === item.sha || t.path === item.path)
+	)
+
+	const newItems = validTreeItems.filter(
+		(item) =>
+			!folders.some((f) => f.sha === item.sha || f.path === item.path) &&
+			!files.some((f) => f.sha === item.sha || f.path === item.path)
+	)
+
+	const existingItems = validTreeItems.filter(
+		(item) =>
+			folders.some((f) => f.sha === item.sha || f.path === item.path) ||
+			files.some((f) => f.sha === item.sha || f.path === item.path)
+	)
+
+	return { removedItems, newItems, existingItems }
 }

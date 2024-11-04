@@ -96,9 +96,22 @@ export const getFoldersToFilePos = (folders: Folder[], id: string): Folder[] => 
 
 			if (folder.children.length > 0) {
 				const childResult = traverse(folder.children)
-				if (childResult) {
-					return [folder, ...childResult]
-				}
+				if (childResult) return [folder, ...childResult]
+			}
+		}
+		return null
+	}
+	return traverse(folders) || []
+}
+
+export const getFoldersToFolderPos = (folders: Folder[], id: string): Folder[] => {
+	const traverse = (folders: Folder[]): Folder[] | null => {
+		for (const folder of folders) {
+			if (folder.id === id) return [folder]
+
+			if (folder.children.length > 0) {
+				const childResult = traverse(folder.children)
+				if (childResult) return [folder, ...childResult]
 			}
 		}
 		return null

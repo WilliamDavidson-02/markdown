@@ -3,8 +3,7 @@ import { fileTable, folderTable, githubInstallationTable, repositoryTable } from
 import {
 	generateGitHubJWT,
 	getFileIdsByRepositoryIds,
-	getFolderIdsByRepositoryIds,
-	getGithubAccessToken
+	getFolderIdsByRepositoryIds
 } from '$lib/utilts/github'
 import { json } from '@sveltejs/kit'
 import { and, eq, inArray } from 'drizzle-orm'

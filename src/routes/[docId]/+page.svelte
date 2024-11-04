@@ -44,8 +44,14 @@
 		}
 	})
 
-	$: if (data.currentDoc && $editorStore && $selectedFile?.id !== data.currentDoc.id)
+	$: if (
+		data.currentDoc &&
+		$editorStore &&
+		($selectedFile?.id !== data.currentDoc.id ||
+			data.currentDoc?.updatedAt !== $selectedFile?.updatedAt)
+	) {
 		setDoc(data.currentDoc)
+	}
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
 	$: githubTree.set(data.githubTree)
