@@ -5,11 +5,14 @@ import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileTable, folderTable } from '$lib/db/schema.js'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 import {
+	createOrUpdateGithubFile,
 	formatGithubFiles,
 	formatGithubFolders,
 	getAvailableRepositories,
 	getFileIdsByRepositoryIds,
 	getFolderIdsByRepositoryIds,
+	getGithubAccessToken,
+	getGithubRepository,
 	getRepositoryFilesAndFolders,
 	listAllBranches,
 	mergeReposWithInstallation
@@ -20,7 +23,9 @@ import {
 	getAllFiles,
 	getAllFolders,
 	getCurrentDocById,
+	getGithubFileById,
 	getGithubFilesAndFoldersIds,
+	getGithubInstallationIdByFileId,
 	getGithubInstallations,
 	getSelectedRepositories,
 	getTrash,
@@ -33,6 +38,7 @@ import {
 import type { File } from '$lib/components/file-tree/treeStore'
 import type { GithubBranchListItem } from '$lib/utilts/githubTypes'
 import { getFoldersToFilePos } from '$lib/utilts/helpers'
+import { updateGithubFileShaAndPath } from '../github/git-pull/queries'
 
 export const load = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -282,13 +288,48 @@ export const actions: Actions = {
 
 		return { form }
 	},
-	gitPush: async ({ request, locals }) => {
+	gitPush: async ({ request, locals, params }) => {
 		const form = await superValidate(request, zod(repositoryBranchesSchema))
 		const userId = locals.user?.id
+		const docId = params.docId
 
-		if (!userId || !form.valid) return fail(400, { form })
+		if (!userId || !docId || !form.valid) return fail(400, { form })
 
-		console.log(form.data)
+		const { owner, repo, commitMessage, branch } = form.data
+
+		let file = await getGithubFileById(docId, userId)
+		if (!file) return fail(404, { form })
+		if (file.content) file.content = btoa(file.content)
+
+		const installationId = await getGithubInstallationIdByFileId(docId, userId)
+		if (!installationId) return fail(404, { form })
+
+		const token = await getGithubAccessToken(installationId)
+		if (!token) return fail(400, { form })
+
+		const pathParams = { owner, repo, path: file.path ?? '' }
+		const bodyParams = {
+			message: commitMessage,
+			content: file.content ?? '',
+			sha: file.sha,
+			branch
+		}
+		const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
+		if (!updatedFile) return fail(400, { form })
+
+		const repository = await getGithubRepository(owner, repo, token)
+		if (repository?.default_branch === branch) {
+			await updateGithubFileShaAndPath([
+				{
+					sha: file.sha,
+					path: file.path ?? '',
+					newSha: updatedFile.content.sha,
+					content: file.content ?? '',
+					name: updatedFile.content.name,
+					id: file.id
+				}
+			])
+		}
 
 		return { form }
 	}

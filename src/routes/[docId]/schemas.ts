@@ -41,5 +41,7 @@ export const repositoryBranchesSchema = z.object({
 	branch: z.string().min(1, { message: 'Branch is required' }),
 	createPullRequest: z.boolean().default(false),
 	prTitle: z.string(),
-	prDescription: z.string()
+	prDescription: z.string(),
+	owner: z.string(),
+	repo: z.string()
 })

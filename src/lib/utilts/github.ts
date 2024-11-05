@@ -8,12 +8,14 @@ import {
 } from '$lib/db/schema'
 import jwt from 'jsonwebtoken'
 import type {
+	CreateOrUpdateGithubFile,
 	GithubBlob,
 	GithubBranchListItem,
 	GithubFile,
 	GithubFolder,
 	GithubFolderData,
 	GithubFormatedFile,
+	GithubRepository,
 	GithubShaItem,
 	GithubTree,
 	GithubTreeItem
@@ -352,4 +354,52 @@ export const listAllBranches = async (
 	})
 
 	return res.ok ? await res.json() : []
+}
+
+type PathParams = {
+	owner: string
+	repo: string
+	path: string
+}
+type BodyParams = {
+	message: string
+	content: string
+	sha?: string
+	branch?: string
+}
+export const createOrUpdateGithubFile = async (
+	pathParams: PathParams,
+	bodyParams: BodyParams,
+	token: string | null
+): Promise<CreateOrUpdateGithubFile | null> => {
+	if (!token) return null
+
+	const { owner, repo, path } = pathParams
+	const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+		method: 'PUT',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		},
+		body: JSON.stringify(bodyParams)
+	})
+
+	return res.ok ? await res.json() : null
+}
+
+export const getGithubRepository = async (
+	owner: string,
+	repo: string,
+	token: string
+): Promise<GithubRepository | null> => {
+	if (!token) return null
+
+	const res = await fetch(`https://api.github.com/repos/${owner}/${repo}`, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		}
+	})
+
+	return res.ok ? await res.json() : null
 }

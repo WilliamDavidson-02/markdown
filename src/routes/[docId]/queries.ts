@@ -135,3 +135,37 @@ export const getGithubFilesAndFoldersIds = async (userId: string) => {
 
 	return { fileIds, folderIds }
 }
+
+export const getGithubFileById = async (id: string, userId: string) => {
+	const files = await db
+		.select({
+			id: fileTable.id,
+			content: fileTable.doc,
+			sha: githubFileTable.sha,
+			path: githubFileTable.path
+		})
+		.from(fileTable)
+		.where(and(eq(fileTable.id, id), eq(fileTable.userId, userId)))
+		.innerJoin(githubFileTable, eq(fileTable.id, githubFileTable.fileId))
+		.limit(1)
+
+	return files.length > 0 ? files[0] : null
+}
+
+export const getGithubInstallationIdByFileId = async (fileId: string, userId: string) => {
+	const installations = await db
+		.select({
+			id: githubInstallationTable.id
+		})
+		.from(fileTable)
+		.where(and(eq(fileTable.id, fileId), eq(fileTable.userId, userId)))
+		.innerJoin(githubFileTable, eq(fileTable.id, githubFileTable.fileId))
+		.innerJoin(repositoryTable, eq(githubFileTable.repositoryId, repositoryTable.id))
+		.innerJoin(
+			githubInstallationTable,
+			eq(repositoryTable.installationId, githubInstallationTable.id)
+		)
+		.limit(1)
+
+	return installations.length > 0 ? installations[0].id : null
+}

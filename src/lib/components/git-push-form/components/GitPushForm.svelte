@@ -11,11 +11,24 @@
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Command, CommandInput, CommandItem, CommandList } from '$lib/components/command'
 	import { Textarea } from '$lib/components/textarea'
+	import type { Folder } from '$lib/components/file-tree/treeStore'
+	import { invalidateAll } from '$app/navigation'
 
 	export let showGitPushForm = false
+	export let rootFolder: Folder
 
 	const repositoryBranches = getRepositoryBranches()
 	const { form, submitting, enhance, errors, reset } = superForm($repositoryBranchesFormStore!, {
+		onSubmit: () => {
+			const [owner, repo] = rootFolder.name?.split('/') ?? []
+			form.update((f) => ({ ...f, owner, repo }), { taint: 'untaint-all' })
+		},
+		onResult: async ({ result }) => {
+			if (result.type === 'success') {
+				showGitPushForm = false
+				await invalidateAll()
+			}
+		},
 		dataType: 'json'
 	})
 
