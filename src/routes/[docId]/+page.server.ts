@@ -5,6 +5,7 @@ import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileTable, folderTable } from '$lib/db/schema.js'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 import {
+	createGithubPullRequest,
 	createOrUpdateGithubFile,
 	formatGithubFiles,
 	formatGithubFolders,
@@ -13,9 +14,11 @@ import {
 	getFolderIdsByRepositoryIds,
 	getGithubAccessToken,
 	getGithubRepository,
+	getGithubRepositoryContent,
 	getRepositoryFilesAndFolders,
 	listAllBranches,
-	mergeReposWithInstallation
+	mergeReposWithInstallation,
+	type CreatePullRequestBodyParams
 } from '$lib/utilts/github'
 import { fileSchema, folderSchema, repositoriesSchema, repositoryBranchesSchema } from './schemas'
 import { v4 as uuid } from 'uuid'
@@ -295,7 +298,8 @@ export const actions: Actions = {
 
 		if (!userId || !docId || !form.valid) return fail(400, { form })
 
-		const { owner, repo, commitMessage, branch } = form.data
+		const { owner, repo, commitMessage, branch, createPullRequest, prDescription, prTitle } =
+			form.data
 
 		let file = await getGithubFileById(docId, userId)
 		if (!file) return fail(404, { form })
@@ -308,17 +312,23 @@ export const actions: Actions = {
 		if (!token) return fail(400, { form })
 
 		const pathParams = { owner, repo, path: file.path ?? '' }
+
+		const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
+		if (!branchContent) return fail(400, { form })
+
 		const bodyParams = {
 			message: commitMessage,
 			content: file.content ?? '',
-			sha: file.sha,
+			sha: branchContent.sha ?? file.sha,
 			branch
 		}
 		const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
 		if (!updatedFile) return fail(400, { form })
 
 		const repository = await getGithubRepository(owner, repo, token)
-		if (repository?.default_branch === branch) {
+		if (repository && repository.default_branch === branch) {
+			// Since we are pulling from the default branch
+			// we only want to update the sha if we are pushing to the default branch
 			await updateGithubFileShaAndPath([
 				{
 					sha: file.sha,
@@ -329,6 +339,16 @@ export const actions: Actions = {
 					id: file.id
 				}
 			])
+		}
+
+		if (repository && repository.default_branch !== branch && createPullRequest) {
+			const body: CreatePullRequestBodyParams = {
+				title: prTitle,
+				head: branch,
+				base: repository.default_branch,
+				body: prDescription
+			}
+			await createGithubPullRequest(pathParams, body, token)
 		}
 
 		return { form }

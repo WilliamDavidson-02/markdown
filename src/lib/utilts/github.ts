@@ -16,6 +16,7 @@ import type {
 	GithubFolderData,
 	GithubFormatedFile,
 	GithubRepository,
+	GithubRepositoryContent,
 	GithubShaItem,
 	GithubTree,
 	GithubTreeItem
@@ -387,6 +388,28 @@ export const createOrUpdateGithubFile = async (
 	return res.ok ? await res.json() : null
 }
 
+export const getGithubRepositoryContent = async (
+	pathParams: PathParams,
+	branch: string,
+	token: string | null
+): Promise<GithubRepositoryContent | null> => {
+	if (!token) return null
+
+	const { owner, repo, path } = pathParams
+	const res = await fetch(
+		`https://api.github.com/repos/${owner}/${repo}/contents/${path}?ref=${branch}`,
+		{
+			method: 'GET',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/vnd.github+json'
+			}
+		}
+	)
+
+	return res.ok ? await res.json() : null
+}
+
 export const getGithubRepository = async (
 	owner: string,
 	repo: string,
@@ -400,6 +423,42 @@ export const getGithubRepository = async (
 			Accept: 'application/vnd.github+json'
 		}
 	})
+
+	return res.ok ? await res.json() : null
+}
+
+export type CreatePullRequestBodyParams = {
+	title?: string
+	head: string
+	head_repo?: string
+	base: string
+	body?: string
+	maintainer_can_modify?: boolean
+	draft?: boolean
+	issue?: number
+}
+type CreatePullRequestPathParams = {
+	owner: string
+	repo: string
+}
+export const createGithubPullRequest = async (
+	pathParams: CreatePullRequestPathParams,
+	bodyParams: CreatePullRequestBodyParams,
+	token: string | null
+) => {
+	if (!token) return null
+
+	const res = await fetch(
+		`https://api.github.com/repos/${pathParams.owner}/${pathParams.repo}/pulls`,
+		{
+			method: 'POST',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/vnd.github+json'
+			},
+			body: JSON.stringify(bodyParams)
+		}
+	)
 
 	return res.ok ? await res.json() : null
 }
