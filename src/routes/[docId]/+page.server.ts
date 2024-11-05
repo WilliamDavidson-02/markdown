@@ -11,9 +11,10 @@ import {
 	getFileIdsByRepositoryIds,
 	getFolderIdsByRepositoryIds,
 	getRepositoryFilesAndFolders,
+	listAllBranches,
 	mergeReposWithInstallation
 } from '$lib/utilts/github'
-import { fileSchema, folderSchema, repositoriesSchema } from './schemas'
+import { fileSchema, folderSchema, repositoriesSchema, repositoryBranchesSchema } from './schemas'
 import { v4 as uuid } from 'uuid'
 import {
 	getAllFiles,
@@ -30,6 +31,8 @@ import {
 	removeRepository
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
+import type { GithubBranchListItem } from '$lib/utilts/githubTypes'
+import { getFoldersToFilePos } from '$lib/utilts/helpers'
 
 export const load = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -131,6 +134,17 @@ export const load = async ({ locals, params }) => {
 		mergeReposWithInstallation(selectedRepositories, installation.id)
 	)
 
+	let repositoryBranches: GithubBranchListItem[] = []
+	if (githubIds.fileIds.includes(currentDoc?.[0].id)) {
+		const rootFolder = getFoldersToFilePos(builtGithubTree, currentDoc?.[0].id)[0]
+		const installationId = mergedRepositories.find((r) =>
+			r.repositories.some((repo) => repo.full_name === rootFolder?.name)
+		)?.installationId
+		if (rootFolder && installationId) {
+			repositoryBranches = await listAllBranches(rootFolder.name ?? '', installationId)
+		}
+	}
+
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
 	const repositoriesForm = await superValidate(
@@ -140,6 +154,7 @@ export const load = async ({ locals, params }) => {
 			})
 		)
 	)
+	const repositoryBranchesForm = await superValidate(zod(repositoryBranchesSchema))
 
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
@@ -152,7 +167,9 @@ export const load = async ({ locals, params }) => {
 		availableRepositories,
 		repositoriesForm,
 		githubTree,
-		githubIds
+		githubIds,
+		repositoryBranchesForm,
+		repositoryBranches
 	}
 }
 
@@ -262,6 +279,16 @@ export const actions: Actions = {
 				await removeRepository(userId, removedRepositories, folderIds, fileIds)
 			}
 		}
+
+		return { form }
+	},
+	gitPush: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(repositoryBranchesSchema))
+		const userId = locals.user?.id
+
+		if (!userId || !form.valid) return fail(400, { form })
+
+		console.log(form.data)
 
 		return { form }
 	}

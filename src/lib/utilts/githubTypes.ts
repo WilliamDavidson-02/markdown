@@ -65,3 +65,23 @@ export type GithubFileUpdate = GithubFile & {
 	id: string
 	newSha: string
 }
+
+export type GithubCommitListItem = {
+	sha: string
+	url: string
+}
+
+export type GithubProtectionListItem = {
+	required_status_checks: {
+		enforcement_level: string
+		contexts: string[]
+	}
+}
+
+export type GithubBranchListItem = {
+	name: string
+	commit: GithubCommitListItem
+	protected: boolean
+	protection: GithubProtectionListItem
+	protection_url: string
+}

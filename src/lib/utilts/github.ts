@@ -9,6 +9,7 @@ import {
 import jwt from 'jsonwebtoken'
 import type {
 	GithubBlob,
+	GithubBranchListItem,
 	GithubFile,
 	GithubFolder,
 	GithubFolderData,
@@ -334,4 +335,21 @@ export const filterTreeIntoStatus = (
 	)
 
 	return { removedItems, newItems, existingItems }
+}
+
+export const listAllBranches = async (
+	fullName: string,
+	installationId: number
+): Promise<GithubBranchListItem[]> => {
+	const token = await getGithubAccessToken(installationId)
+	if (!token) return []
+
+	const res = await fetch(`https://api.github.com/repos/${fullName}/branches`, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		}
+	})
+
+	return res.ok ? await res.json() : []
 }

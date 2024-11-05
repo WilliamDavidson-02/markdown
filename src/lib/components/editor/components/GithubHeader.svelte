@@ -7,6 +7,7 @@
 	import { isFolder } from '$lib/utilts/tree'
 	import { slide } from 'svelte/transition'
 	import PullDialog from './PullDialog.svelte'
+	import { GitPushForm } from '$lib/components/git-push-form'
 
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
 	$: rootFolder = getFoldersToFilePos(folders, $selectedFile?.id ?? '')[0]
@@ -14,9 +15,11 @@
 	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
 
 	let pullDialog: HTMLDialogElement
+	let showGitPushForm = false
 </script>
 
 <PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<GitPushForm bind:showGitPushForm />
 
 <div transition:slide={{ axis: 'y' }} class="github-header">
 	<div>
@@ -27,7 +30,7 @@
 	</div>
 	<div>
 		<Button variant="outline" on:click={() => pullDialog.showModal()}>Pull</Button>
-		<Button variant="outline">Push</Button>
+		<Button variant="outline" on:click={() => (showGitPushForm = true)}>Push</Button>
 	</div>
 </div>
 

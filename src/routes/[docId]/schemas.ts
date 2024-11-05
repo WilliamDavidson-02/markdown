@@ -35,3 +35,11 @@ export const repositoriesSchema = z.object({
 		)
 		.default([])
 })
+
+export const repositoryBranchesSchema = z.object({
+	commitMessage: z.string().min(1, { message: 'Commit message is required' }),
+	branch: z.string().min(1, { message: 'Branch is required' }),
+	createPullRequest: z.boolean().default(false),
+	prTitle: z.string(),
+	prDescription: z.string()
+})

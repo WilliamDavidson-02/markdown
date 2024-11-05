@@ -31,7 +31,7 @@
 		if (left < padding) {
 			left = padding
 		} else if (left + contentRect.width > innerWidth - padding) {
-			left = targetRect.right - contentRect.width
+			left = targetRect.left
 		}
 
 		position = { top, left }
@@ -82,7 +82,7 @@
 <style>
 	div {
 		position: fixed;
-		z-index: 9999;
+		z-index: 99999;
 		min-width: 200px;
 		width: max-content;
 		box-shadow: var(--shadow-overlay);
