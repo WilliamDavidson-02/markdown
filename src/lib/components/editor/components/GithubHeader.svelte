@@ -19,7 +19,11 @@
 </script>
 
 <PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
-<GitPushForm bind:showGitPushForm {rootFolder} />
+<GitPushForm
+	bind:showGitPushForm
+	{rootFolder}
+	selectedItem={{ id: $selectedFile?.id ?? '', name: $selectedFile?.name ?? '', type: 'file' }}
+/>
 
 <div transition:slide={{ axis: 'y' }} class="github-header">
 	<div>

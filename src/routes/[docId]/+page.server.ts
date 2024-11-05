@@ -291,21 +291,28 @@ export const actions: Actions = {
 
 		return { form }
 	},
-	gitPush: async ({ request, locals, params }) => {
+	gitPush: async ({ request, locals }) => {
 		const form = await superValidate(request, zod(repositoryBranchesSchema))
 		const userId = locals.user?.id
-		const docId = params.docId
 
-		if (!userId || !docId || !form.valid) return fail(400, { form })
+		if (!userId || !form.valid) return fail(400, { form })
 
-		const { owner, repo, commitMessage, branch, createPullRequest, prDescription, prTitle } =
-			form.data
+		const {
+			owner,
+			repo,
+			commitMessage,
+			branch,
+			createPullRequest,
+			prDescription,
+			prTitle,
+			selectedItem
+		} = form.data
 
-		let file = await getGithubFileById(docId, userId)
+		let file = await getGithubFileById(selectedItem.id, userId)
 		if (!file) return fail(404, { form })
 		if (file.content) file.content = btoa(file.content)
 
-		const installationId = await getGithubInstallationIdByFileId(docId, userId)
+		const installationId = await getGithubInstallationIdByFileId(selectedItem.id, userId)
 		if (!installationId) return fail(404, { form })
 
 		const token = await getGithubAccessToken(installationId)

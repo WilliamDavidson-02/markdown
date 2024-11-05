@@ -43,5 +43,10 @@ export const repositoryBranchesSchema = z.object({
 	prTitle: z.string(),
 	prDescription: z.string(),
 	owner: z.string(),
-	repo: z.string()
+	repo: z.string(),
+	selectedItem: z.object({
+		id: z.string(),
+		name: z.string(),
+		type: z.enum(['file', 'folder'])
+	})
 })

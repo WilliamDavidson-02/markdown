@@ -20,6 +20,7 @@
 	import PullDialog from '$lib/components/editor/components/PullDialog.svelte'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
 	import { getFoldersToFilePos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
+	import { GitPushForm } from '$lib/components/git-push-form'
 
 	export let name: string
 	export let id: string
@@ -30,6 +31,7 @@
 	let isMovingToTrash = false
 	let isOpen = false
 	let pullDialog: HTMLDialogElement
+	let showGitPushForm = false
 
 	const moveToTrash = async () => {
 		try {
@@ -55,6 +57,11 @@
 		isOpen = false
 	}
 
+	const openGitPushForm = () => {
+		showGitPushForm = true
+		isOpen = false
+	}
+
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
@@ -64,6 +71,7 @@
 </script>
 
 <PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<GitPushForm bind:showGitPushForm {rootFolder} selectedItem={{ id, name, type: 'file' }} />
 
 <li
 	class="tree-file-item"
@@ -112,7 +120,7 @@
 							<span>Pull</span>
 						</div>
 					</DropdownItem>
-					<DropdownItem>
+					<DropdownItem on:click={openGitPushForm} on:keydown={openGitPushForm}>
 						<div class="dropdown-item">
 							<ArrowUpToLine size={16} stroke-width={1.5} />
 							<span>Push</span>

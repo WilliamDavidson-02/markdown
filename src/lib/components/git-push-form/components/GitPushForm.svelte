@@ -7,21 +7,23 @@
 	import { Label } from '$lib/components/label'
 	import { Input } from '$lib/components/input'
 	import { ErrorMessage } from '$lib/components/error-message'
-	import { Loader2, GitBranch, Check } from 'lucide-svelte'
+	import { Loader2, GitBranch, Check, File, Folder as FolderIcon } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Command, CommandInput, CommandItem, CommandList } from '$lib/components/command'
 	import { Textarea } from '$lib/components/textarea'
 	import type { Folder } from '$lib/components/file-tree/treeStore'
 	import { invalidateAll } from '$app/navigation'
+	import type { SelectedItem } from '../types'
 
 	export let showGitPushForm = false
 	export let rootFolder: Folder
+	export let selectedItem: SelectedItem
 
 	const repositoryBranches = getRepositoryBranches()
 	const { form, submitting, enhance, errors, reset } = superForm($repositoryBranchesFormStore!, {
 		onSubmit: () => {
 			const [owner, repo] = rootFolder.name?.split('/') ?? []
-			form.update((f) => ({ ...f, owner, repo }), { taint: 'untaint-all' })
+			form.update((f) => ({ ...f, owner, repo, selectedItem }), { taint: 'untaint-all' })
 		},
 		onResult: async ({ result }) => {
 			if (result.type === 'success') {
@@ -66,6 +68,14 @@
 		out:slide={{ axis: 'x', duration: 350 }}
 		role="dialog"
 	>
+		<div class="selected-item">
+			{#if selectedItem.type === 'file'}
+				<File size={20} stroke-width={1.5} color="var(--interactive-active)" />
+			{:else}
+				<FolderIcon size={20} stroke-width={1.5} color="var(--foreground-md)" />
+			{/if}
+			<p>{selectedItem.name}</p>
+		</div>
 		<form use:enhance action="?/gitPush" method="POST">
 			<div class="form-fields">
 				<div class="form-field">
@@ -187,6 +197,10 @@
 		border-left: 1px solid var(--secondary-dk);
 		padding: var(--space-base);
 		box-shadow: var(--shadow-overlay);
+		max-height: 100svh;
+		display: grid;
+		grid-template-rows: auto 1fr;
+		gap: var(--space-3xl);
 	}
 
 	.backdrop {
@@ -209,6 +223,16 @@
 	.form-fields {
 		overflow-y: auto;
 		overscroll-behavior: contain;
+	}
+
+	.selected-item {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-sm);
+		border-radius: var(--border-radius-sm);
+		background-color: var(--secondary);
+		user-select: none;
 	}
 
 	.form-fields,
