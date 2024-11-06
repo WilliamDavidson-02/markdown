@@ -9,6 +9,8 @@ import {
 	trashTable
 } from '$lib/db/schema'
 import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
+import { generateCaseThen } from '../github/git-pull/queries'
+import type { GithubShaItemUpdate } from '$lib/utilts/githubTypes'
 
 export const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
 	return await db
@@ -136,7 +138,7 @@ export const getGithubFilesAndFoldersIds = async (userId: string) => {
 	return { fileIds, folderIds }
 }
 
-export const getGithubFileById = async (id: string, userId: string) => {
+export const getGithubFileByIds = async (ids: string[], userId: string) => {
 	const files = await db
 		.select({
 			id: fileTable.id,
@@ -145,11 +147,26 @@ export const getGithubFileById = async (id: string, userId: string) => {
 			path: githubFileTable.path
 		})
 		.from(fileTable)
-		.where(and(eq(fileTable.id, id), eq(fileTable.userId, userId)))
+		.where(and(inArray(fileTable.id, ids), eq(fileTable.userId, userId)))
 		.innerJoin(githubFileTable, eq(fileTable.id, githubFileTable.fileId))
-		.limit(1)
 
-	return files.length > 0 ? files[0] : null
+	return files
+}
+
+export const getGithubFolderByIds = async (ids: string[], userId: string) => {
+	if (ids.length === 0) return []
+
+	const folders = await db
+		.select({
+			id: folderTable.id,
+			sha: githubFolderTable.sha,
+			path: githubFolderTable.path
+		})
+		.from(folderTable)
+		.where(and(inArray(folderTable.id, ids), eq(folderTable.userId, userId)))
+		.innerJoin(githubFolderTable, eq(folderTable.id, githubFolderTable.folderId))
+
+	return folders
 }
 
 export const getGithubInstallationIdByFileId = async (fileId: string, userId: string) => {
@@ -168,4 +185,35 @@ export const getGithubInstallationIdByFileId = async (fileId: string, userId: st
 		.limit(1)
 
 	return installations.length > 0 ? installations[0].id : null
+}
+
+export const getGithubInstallationIdByFolderId = async (folderId: string, userId: string) => {
+	const installations = await db
+		.select({
+			id: githubInstallationTable.id
+		})
+		.from(folderTable)
+		.where(and(eq(folderTable.id, folderId), eq(folderTable.userId, userId)))
+		.innerJoin(githubFolderTable, eq(folderTable.id, githubFolderTable.folderId))
+		.innerJoin(repositoryTable, eq(githubFolderTable.repositoryId, repositoryTable.id))
+		.innerJoin(
+			githubInstallationTable,
+			eq(repositoryTable.installationId, githubInstallationTable.id)
+		)
+		.limit(1)
+
+	return installations.length > 0 ? installations[0].id : null
+}
+
+export const updateGithubFolderShaAndPath = async (folders: GithubShaItemUpdate[]) => {
+	if (folders.length > 0) {
+		const folderShas = folders.map((f) => f.sha)
+		await db
+			.update(githubFolderTable)
+			.set({
+				sha: generateCaseThen(folders, 'sha', 'newSha'),
+				path: generateCaseThen(folders, 'sha', 'path')
+			})
+			.where(inArray(githubFolderTable.sha, folderShas))
+	}
 }

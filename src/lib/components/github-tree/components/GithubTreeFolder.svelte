@@ -22,6 +22,7 @@
 	import { isFolder } from '$lib/utilts/tree'
 	import PullDialog from '$lib/components/editor/components/PullDialog.svelte'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
+	import { GitPushForm } from '$lib/components/git-push-form'
 
 	export let folder: Folder
 
@@ -30,6 +31,7 @@
 	let isMovingToTrash = false
 	let isMenuOpen = false
 	let pullDialog: HTMLDialogElement
+	let showGitPushForm = false
 
 	const moveToTrash = async () => {
 		try {
@@ -58,13 +60,31 @@
 		isMenuOpen = false
 	}
 
+	const openGitPushForm = () => {
+		showGitPushForm = true
+		isMenuOpen = false
+	}
+
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
 	$: rootFolder = getFoldersToFolderPos(folders, folder.id)[0]
 	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
 	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
+
+	$: childFolderIds = getNestedFolderIds([folder])
+	$: childFileIds = getNestedFileIds([folder])
 </script>
 
 <PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<GitPushForm
+	bind:showGitPushForm
+	{rootFolder}
+	selectedItem={{
+		id: folder.id,
+		name: folder.name ?? '',
+		type: 'folder',
+		childIds: [...childFolderIds, ...childFileIds]
+	}}
+/>
 
 <li class="tree-folder-item">
 	<button
@@ -116,7 +136,7 @@
 								<span>Pull</span>
 							</div>
 						</DropdownItem>
-						<DropdownItem>
+						<DropdownItem on:click={openGitPushForm} on:keydown={openGitPushForm}>
 							<div class="dropdown-item">
 								<ArrowUpToLine size={16} stroke-width={1.5} />
 								<span>Push</span>

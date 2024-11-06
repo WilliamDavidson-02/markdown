@@ -47,6 +47,7 @@ export const repositoryBranchesSchema = z.object({
 	selectedItem: z.object({
 		id: z.string(),
 		name: z.string(),
-		type: z.enum(['file', 'folder'])
+		type: z.enum(['file', 'folder']),
+		childIds: z.array(z.string()).optional()
 	})
 })

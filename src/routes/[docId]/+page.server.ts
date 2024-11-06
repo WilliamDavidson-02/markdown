@@ -5,7 +5,9 @@ import { fail, redirect, type Actions } from '@sveltejs/kit'
 import { fileTable, folderTable } from '$lib/db/schema.js'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
 import {
+	createGithubCommit,
 	createGithubPullRequest,
+	createGithubTree,
 	createOrUpdateGithubFile,
 	formatGithubFiles,
 	formatGithubFolders,
@@ -13,11 +15,14 @@ import {
 	getFileIdsByRepositoryIds,
 	getFolderIdsByRepositoryIds,
 	getGithubAccessToken,
+	getGithubCommit,
+	getGithubReference,
 	getGithubRepository,
 	getGithubRepositoryContent,
 	getRepositoryFilesAndFolders,
 	listAllBranches,
 	mergeReposWithInstallation,
+	updateGithubReference,
 	type CreatePullRequestBodyParams
 } from '$lib/utilts/github'
 import { fileSchema, folderSchema, repositoriesSchema, repositoryBranchesSchema } from './schemas'
@@ -26,9 +31,11 @@ import {
 	getAllFiles,
 	getAllFolders,
 	getCurrentDocById,
-	getGithubFileById,
+	getGithubFileByIds,
 	getGithubFilesAndFoldersIds,
+	getGithubFolderByIds,
 	getGithubInstallationIdByFileId,
+	getGithubInstallationIdByFolderId,
 	getGithubInstallations,
 	getSelectedRepositories,
 	getTrash,
@@ -36,10 +43,17 @@ import {
 	insertNewFile,
 	insertNewFolder,
 	insertNewRepository,
-	removeRepository
+	removeRepository,
+	updateGithubFolderShaAndPath
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
-import type { GithubBranchListItem } from '$lib/utilts/githubTypes'
+import type {
+	CreateGithubCommitBodyParams,
+	GithubBranchListItem,
+	GithubFileUpdate,
+	GithubRepositoryContent,
+	GithubShaItemUpdate
+} from '$lib/utilts/githubTypes'
 import { getFoldersToFilePos } from '$lib/utilts/helpers'
 import { updateGithubFileShaAndPath } from '../github/git-pull/queries'
 
@@ -308,35 +322,47 @@ export const actions: Actions = {
 			selectedItem
 		} = form.data
 
-		let file = await getGithubFileById(selectedItem.id, userId)
-		if (!file) return fail(404, { form })
-		if (file.content) file.content = btoa(file.content)
-
-		const installationId = await getGithubInstallationIdByFileId(selectedItem.id, userId)
+		const installationId =
+			selectedItem.type === 'file'
+				? await getGithubInstallationIdByFileId(selectedItem.id, userId)
+				: await getGithubInstallationIdByFolderId(selectedItem.id, userId)
 		if (!installationId) return fail(404, { form })
 
 		const token = await getGithubAccessToken(installationId)
 		if (!token) return fail(400, { form })
 
-		const pathParams = { owner, repo, path: file.path ?? '' }
+		const fileIds =
+			selectedItem.type === 'folder' && selectedItem.childIds
+				? selectedItem.childIds
+				: [selectedItem.id]
+		let files = await getGithubFileByIds(fileIds, userId)
+		if (files.length === 0) return fail(404, { form })
 
-		const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
-		if (!branchContent) return fail(400, { form })
+		const folders = (await getGithubFolderByIds(selectedItem.childIds ?? [], userId)).filter(
+			(f) => f.path !== null
+		)
 
-		const bodyParams = {
-			message: commitMessage,
-			content: file.content ?? '',
-			sha: branchContent.sha ?? file.sha,
-			branch
-		}
-		const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
-		if (!updatedFile) return fail(400, { form })
+		let fileDataToUpdate: GithubFileUpdate[] = []
+		let folderDataToUpdate: GithubShaItemUpdate[] = []
 
-		const repository = await getGithubRepository(owner, repo, token)
-		if (repository && repository.default_branch === branch) {
-			// Since we are pulling from the default branch
-			// we only want to update the sha if we are pushing to the default branch
-			await updateGithubFileShaAndPath([
+		if (selectedItem.type === 'file') {
+			const file = files[0]
+			const pathParams = { owner, repo, path: file.path ?? '' }
+
+			const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
+			if (!branchContent) return fail(400, { form })
+
+			const bodyParams = {
+				message: commitMessage,
+				content: btoa(file.content ?? ''),
+				sha: branchContent.sha ?? file.sha,
+				branch
+			}
+
+			const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
+			if (!updatedFile) return fail(400, { form })
+
+			fileDataToUpdate = [
 				{
 					sha: file.sha,
 					path: file.path ?? '',
@@ -345,7 +371,67 @@ export const actions: Actions = {
 					name: updatedFile.content.name,
 					id: file.id
 				}
-			])
+			]
+		} else {
+			// Get the latest commit sha for the branch
+			const reference = await getGithubReference(owner, repo, branch, token)
+			if (!reference) return fail(400, { form })
+
+			const commit = await getGithubCommit(owner, repo, reference.object.sha, token)
+			if (!commit) return fail(400, { form })
+
+			const newTree = await createGithubTree(owner, repo, folders, files, commit.tree.sha, token)
+			if (!newTree) return fail(400, { form })
+
+			const bodyParams: CreateGithubCommitBodyParams = {
+				message: commitMessage,
+				tree: newTree.sha,
+				parents: [reference.object.sha]
+			}
+			const newCommit = await createGithubCommit(owner, repo, bodyParams, token)
+			if (!newCommit) return fail(400, { form })
+
+			const updatedReference = await updateGithubReference(
+				owner,
+				repo,
+				branch,
+				newCommit.sha,
+				token
+			)
+			if (!updatedReference) return fail(400, { form })
+
+			fileDataToUpdate = files.map((f) => {
+				const name = f.path?.split('/').pop()?.replace('.md', '')
+				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+				return {
+					sha: f.sha,
+					path: f.path ?? '',
+					newSha: newSha ?? f.sha,
+					content: f.content ?? '',
+					name: name ?? '',
+					id: f.id
+				}
+			})
+
+			folderDataToUpdate = folders.map((f) => {
+				const name = f.path?.split('/').pop()
+				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+				return {
+					sha: f.sha,
+					path: f.path ?? '',
+					newSha: newSha ?? f.sha,
+					name: name ?? '',
+					id: f.id
+				}
+			})
+		}
+
+		const repository = await getGithubRepository(owner, repo, token)
+		if (repository && repository.default_branch === branch) {
+			// Since we are pulling from the default branch
+			// we only want to update the sha if we are pushing to the default branch
+			await updateGithubFileShaAndPath(fileDataToUpdate)
+			await updateGithubFolderShaAndPath(folderDataToUpdate)
 		}
 
 		if (repository && repository.default_branch !== branch && createPullRequest) {
@@ -355,7 +441,7 @@ export const actions: Actions = {
 				base: repository.default_branch,
 				body: prDescription
 			}
-			await createGithubPullRequest(pathParams, body, token)
+			await createGithubPullRequest({ owner, repo }, body, token)
 		}
 
 		return { form }

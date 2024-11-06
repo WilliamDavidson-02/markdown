@@ -59,6 +59,7 @@ export type GithubShaItem = {
 
 export type GithubShaItemUpdate = GithubShaItem & {
 	name: string
+	newSha?: string
 }
 
 export type GithubFileUpdate = GithubFile & {
@@ -109,7 +110,7 @@ export type CreateOrUpdateGithubFileCommitParent = {
 	sha: string
 }
 
-export type CreateOrUpdateGithubFileCommit = {
+export type GithubCommit = {
 	sha: string
 	node_id: string
 	url: string
@@ -140,7 +141,7 @@ export type CreateOrUpdateGithubFileCommit = {
 
 export type CreateOrUpdateGithubFile = {
 	content: CreateOrUpdateGithubFileContent
-	commit: CreateOrUpdateGithubFileCommit
+	commit: GithubCommit
 }
 
 export type GithubUser = {
@@ -306,4 +307,34 @@ export type GithubRepositoryContent = {
 		self: string
 		html: string
 	}
+}
+
+export type GithubReference = {
+	ref: string
+	node_id: string
+	url: string
+	object: {
+		type: string
+		sha: string
+		url: string
+	}
+}
+
+export type CreateGithubTreeItem = {
+	path: string
+	mode: string
+	type: string
+	sha?: string
+	content?: string
+}
+
+export type CreateGithubTree = {
+	tree: CreateGithubTreeItem[]
+	base_tree: string
+}
+
+export type CreateGithubCommitBodyParams = {
+	message: string
+	tree: string
+	parents: string[]
 }

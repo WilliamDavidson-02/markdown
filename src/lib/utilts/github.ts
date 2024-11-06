@@ -8,13 +8,18 @@ import {
 } from '$lib/db/schema'
 import jwt from 'jsonwebtoken'
 import type {
+	CreateGithubCommitBodyParams,
+	CreateGithubTree,
+	CreateGithubTreeItem,
 	CreateOrUpdateGithubFile,
 	GithubBlob,
 	GithubBranchListItem,
+	GithubCommit,
 	GithubFile,
 	GithubFolder,
 	GithubFolderData,
 	GithubFormatedFile,
+	GithubReference,
 	GithubRepository,
 	GithubRepositoryContent,
 	GithubShaItem,
@@ -459,6 +464,138 @@ export const createGithubPullRequest = async (
 			body: JSON.stringify(bodyParams)
 		}
 	)
+
+	return res.ok ? await res.json() : null
+}
+
+export const getGithubReference = async (
+	owner: string,
+	repo: string,
+	branch: string,
+	token: string
+): Promise<GithubReference | null> => {
+	if (!token) return null
+
+	const res = await fetch(
+		`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
+		{
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/vnd.github+json'
+			}
+		}
+	)
+
+	return res.ok ? await res.json() : null
+}
+
+export const updateGithubReference = async (
+	owner: string,
+	repo: string,
+	branch: string,
+	sha: string,
+	token: string
+): Promise<GithubReference | null> => {
+	if (!token) return null
+
+	const res = await fetch(
+		`https://api.github.com/repos/${owner}/${repo}/git/refs/heads/${branch}`,
+		{
+			method: 'PATCH',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/vnd.github+json'
+			},
+			body: JSON.stringify({ sha })
+		}
+	)
+
+	return res.ok ? await res.json() : null
+}
+
+export const getGithubCommit = async (
+	owner: string,
+	repo: string,
+	sha: string,
+	token: string
+): Promise<GithubCommit | null> => {
+	if (!token) return null
+
+	const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits/${sha}`, {
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		}
+	})
+
+	return res.ok ? await res.json() : null
+}
+
+export const createGithubTree = async (
+	owner: string,
+	repo: string,
+	folders: GithubShaItem[],
+	files: (GithubShaItem & { content: string | null })[],
+	baseTreeSha: string,
+	token: string
+): Promise<GithubTree | null> => {
+	if (!token) return null
+
+	const formatedFolders = folders.map((f) => ({
+		path: f.path ?? '',
+		mode: '040000',
+		type: 'tree',
+		sha: f.sha
+	}))
+
+	const formatedFiles = files.map((f) => {
+		const base: CreateGithubTreeItem = {
+			path: f.path ?? '',
+			mode: '100644',
+			type: 'blob'
+		}
+
+		// If content is provided, use content. Otherwise, use sha
+		// It's not possible to propvide both sha and content, you will get a 422 response
+		return f.content ? { ...base, content: f.content } : { ...base, sha: f.sha }
+	})
+
+	const tree: CreateGithubTree = {
+		tree: [...formatedFolders, ...formatedFiles],
+		base_tree: baseTreeSha
+	}
+
+	const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/trees`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		},
+		body: JSON.stringify(tree)
+	})
+
+	const newTree = await res.json()
+	console.log({ newTree })
+
+	return res.ok ? newTree : null
+}
+
+export const createGithubCommit = async (
+	owner: string,
+	repo: string,
+	bodyParams: CreateGithubCommitBodyParams,
+	token: string
+): Promise<GithubCommit | null> => {
+	if (!token) return null
+
+	const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/git/commits`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		},
+		body: JSON.stringify(bodyParams)
+	})
 
 	return res.ok ? await res.json() : null
 }
