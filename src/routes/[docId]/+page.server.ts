@@ -20,7 +20,6 @@ import {
 	getGithubRepository,
 	getGithubRepositoryContent,
 	getRepositoryFilesAndFolders,
-	listAllBranches,
 	mergeReposWithInstallation,
 	updateGithubReference,
 	type CreatePullRequestBodyParams
@@ -49,12 +48,9 @@ import {
 import type { File } from '$lib/components/file-tree/treeStore'
 import type {
 	CreateGithubCommitBodyParams,
-	GithubBranchListItem,
 	GithubFileUpdate,
-	GithubRepositoryContent,
 	GithubShaItemUpdate
 } from '$lib/utilts/githubTypes'
-import { getFoldersToFilePos } from '$lib/utilts/helpers'
 import { updateGithubFileShaAndPath } from '../github/git-pull/queries'
 
 export const load = async ({ locals, params }) => {
@@ -157,17 +153,6 @@ export const load = async ({ locals, params }) => {
 		mergeReposWithInstallation(selectedRepositories, installation.id)
 	)
 
-	let repositoryBranches: GithubBranchListItem[] = []
-	if (githubIds.fileIds.includes(currentDoc?.[0].id)) {
-		const rootFolder = getFoldersToFilePos(builtGithubTree, currentDoc?.[0].id)[0]
-		const installationId = mergedRepositories.find((r) =>
-			r.repositories.some((repo) => repo.full_name === rootFolder?.name)
-		)?.installationId
-		if (rootFolder && installationId) {
-			repositoryBranches = await listAllBranches(rootFolder.name ?? '', installationId)
-		}
-	}
-
 	const fileForm = await superValidate(zod(fileSchema))
 	const folderForm = await superValidate(zod(folderSchema))
 	const repositoriesForm = await superValidate(
@@ -191,8 +176,7 @@ export const load = async ({ locals, params }) => {
 		repositoriesForm,
 		githubTree,
 		githubIds,
-		repositoryBranchesForm,
-		repositoryBranches
+		repositoryBranchesForm
 	}
 }
 

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
 	import { fade, slide } from 'svelte/transition'
-	import { getRepositoryBranches } from '../gitBranchesCtx'
 	import { repositoryBranchesFormStore } from '../repositoryBranchesStore'
 	import { superForm } from 'sveltekit-superforms'
 	import { Label } from '$lib/components/label'
@@ -14,12 +13,16 @@
 	import type { Folder } from '$lib/components/file-tree/treeStore'
 	import { invalidateAll } from '$app/navigation'
 	import type { SelectedItem } from '../types'
+	import type { GithubBranchListItem } from '$lib/utilts/githubTypes'
+	import { getSettings } from '$lib/components/settings/settingsContext'
 
 	export let showGitPushForm = false
 	export let rootFolder: Folder
 	export let selectedItem: SelectedItem
 
-	const repositoryBranches = getRepositoryBranches()
+	const settings = getSettings()
+	let branches: GithubBranchListItem[] = []
+
 	const { form, submitting, enhance, errors, reset } = superForm($repositoryBranchesFormStore!, {
 		onSubmit: () => {
 			const [owner, repo] = rootFolder.name?.split('/') ?? []
@@ -33,6 +36,24 @@
 		},
 		dataType: 'json'
 	})
+
+	const getCurrentBranches = async (rootFolder: Folder): Promise<GithubBranchListItem[]> => {
+		try {
+			const [owner, repo] = rootFolder.name ? rootFolder.name?.split('/') : []
+			const installationId = $settings?.availableRepositories.find((r) =>
+				r.repositories.some((r) => r.full_name === rootFolder.name)
+			)?.id
+			const res = await fetch(
+				`/github/branches?owner=${owner}&repo=${repo}&installationId=${installationId}`
+			)
+			if (!res.ok) return []
+			return (await res.json()).branches as GithubBranchListItem[]
+		} catch (error) {
+			return []
+		}
+	}
+
+	$: getCurrentBranches(rootFolder).then((result) => (branches = result))
 
 	let showBranchPopover = false
 
@@ -105,7 +126,7 @@
 								<Command class="branch-command">
 									<CommandInput placeholder="Search branches" />
 									<CommandList>
-										{#each $repositoryBranches as branch}
+										{#each branches as branch}
 											<CommandItem
 												value={branch.name}
 												onSelect={() => handleBranchSelect(branch.name)}

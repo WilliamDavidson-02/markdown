@@ -65,7 +65,7 @@
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
-	$: rootFolder = getFoldersToFilePos(folders, $selectedFile?.id ?? '')[0]
+	$: rootFolder = getFoldersToFilePos(folders, id)[0]
 	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
 	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
 </script>

@@ -14,7 +14,6 @@
 	import { Settings } from '$lib/components/settings'
 	import { settingsContext } from '$lib/components/settings/settingsContext'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
-	import { setRepositoryBranches } from '$lib/components/git-push-form/gitBranchesCtx'
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
 
 	export let data
@@ -31,7 +30,6 @@
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm
 	})
-	const branchesStore = setRepositoryBranches(data.repositoryBranches)
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		$editorStore?.dispatch({
@@ -63,7 +61,6 @@
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm
 	})
-	$: branchesStore.set(data.repositoryBranches)
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)
 </script>
 
