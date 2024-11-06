@@ -17,12 +17,16 @@ import {
 	defaultHighlightStyle,
 	syntaxHighlighting
 } from '@codemirror/language'
-import { closeBrackets, closeBracketsKeymap } from '@codemirror/autocomplete'
-import { autocompletion, completionKeymap } from '@codemirror/autocomplete'
+import {
+	closeBrackets,
+	closeBracketsKeymap,
+	autocompletion,
+	completionKeymap
+} from '@codemirror/autocomplete'
 
 import { completions, resizeTable, handleLinks } from './assistance'
 import { customKeymaps, reMappedKeymap } from './commands'
-import { theme } from './theme'
+import { theme, themeHighlightStyle } from './theme'
 import { editorAutoSave, editorStore } from './editorStore'
 import { selectedFile } from '$lib/components/file-tree/treeStore'
 
@@ -82,6 +86,7 @@ export const state = EditorState.create({
 			...customKeymaps
 		]),
 		theme,
+		syntaxHighlighting(themeHighlightStyle),
 		resizeTable,
 		handleLinks,
 		autocompletion(),

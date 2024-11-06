@@ -10,6 +10,12 @@
 	--danger: #cb4646;
 	--danger-active: #f14e4e;
 
+	--markdown-yellow: #ff6f00;
+	--markdown-green: #2f8659;
+	--markdown-purple: #493ec8;
+	--markdown-pink: #c839d3;
+	--markdown-blue: #368dd9;
+
 	--interactive-text: #ffffff;
 
 	/* Spacing */
@@ -47,6 +53,12 @@
 		--foreground-md: #787878;
 		--foreground-dk: #ffffff;
 
+		--markdown-yellow: #fbbd60;
+		--markdown-green: #6dcdbb;
+		--markdown-purple: #9a92eb;
+		--markdown-pink: #e48bd4;
+		--markdown-blue: #74bcfc;
+
 		/* Shadows */
 		--shadow-overlay: rgba(0, 0, 0, 0.2) 0px 2px 8px 0px;
 	}
@@ -63,6 +75,9 @@
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	text-rendering: optimizeLegibility;
+	scrollbar-width: thin;
+	scrollbar-color: var(--foreground-li) transparent;
+	outline: none;
 }
 
 body {
