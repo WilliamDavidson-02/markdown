@@ -5,6 +5,8 @@
 	import AccountItem from './AccountItem.svelte'
 	import { getSettings } from '../settingsContext'
 	import { goto } from '$app/navigation'
+	import { selectedFile } from '$lib/components/file-tree/treeStore'
+	import { editorStore } from '$lib/components/editor/editorStore'
 
 	const settings = getSettings()
 
@@ -14,7 +16,11 @@
 		try {
 			isLoggingOut = true
 			const response = await fetch('/sign-out', { method: 'POST' })
-			if (response.ok) await goto('/')
+			if (response.ok) {
+				selectedFile.set(null)
+				editorStore.set(null)
+				await goto('/')
+			}
 		} catch (error) {
 			console.error(error)
 		} finally {
