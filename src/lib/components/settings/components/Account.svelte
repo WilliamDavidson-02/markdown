@@ -1,11 +1,26 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
 	import { Divider } from '$lib/components/divider'
-	import { ChevronRight } from 'lucide-svelte'
+	import { ChevronRight, Loader2 } from 'lucide-svelte'
 	import AccountItem from './AccountItem.svelte'
 	import { getSettings } from '../settingsContext'
+	import { goto } from '$app/navigation'
 
 	const settings = getSettings()
+
+	let isLoggingOut = false
+
+	const logout = async () => {
+		try {
+			isLoggingOut = true
+			const response = await fetch('/sign-out', { method: 'POST' })
+			if (response.ok) await goto('/')
+		} catch (error) {
+			console.error(error)
+		} finally {
+			isLoggingOut = false
+		}
+	}
 </script>
 
 <div class="account">
@@ -49,7 +64,18 @@
 		<AccountItem>
 			<h3 slot="title">Log out</h3>
 			<p slot="description">Log out of this device.</p>
-			<Button slot="action" variant="outline">Log out</Button>
+			<Button
+				slot="action"
+				variant="outline"
+				disabled={isLoggingOut}
+				on:click={logout}
+				on:keydown={logout}
+			>
+				{#if isLoggingOut}
+					<Loader2 size={20} stroke-width={1.5} color="var(--foreground-md)" class="animate-spin" />
+				{/if}
+				Log out</Button
+			>
 		</AccountItem>
 	</div>
 </div>
