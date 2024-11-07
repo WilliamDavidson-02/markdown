@@ -9,7 +9,7 @@
 	import Connections from './Connections.svelte'
 
 	export let settingsDialog: HTMLDialogElement
-	export let selected: SettingsSelected = 'Connections'
+	export let selected: SettingsSelected = 'Account'
 </script>
 
 <Dialog bind:dialog={settingsDialog} withClose={false} class="settings-dialog">

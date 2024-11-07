@@ -5,6 +5,7 @@
 	--foreground-li: #a5a3a0;
 	--foreground-md: #4e4d49;
 	--foreground-dk: #34322e;
+	--foreground-dk-muted: #434240;
 	--interactive: #007ad9;
 	--interactive-active: #008fff;
 	--danger: #cb4646;
@@ -52,6 +53,7 @@
 		--foreground-li: #474747;
 		--foreground-md: #787878;
 		--foreground-dk: #ffffff;
+		--foreground-dk-muted: #e5e5e5;
 
 		--markdown-yellow: #fbbd60;
 		--markdown-green: #6dcdbb;

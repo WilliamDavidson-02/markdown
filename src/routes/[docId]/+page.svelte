@@ -29,7 +29,8 @@
 	const settings = settingsContext({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
-		repositoriesForm: data.repositoriesForm
+		repositoriesForm: data.repositoriesForm,
+		user: data.user
 	})
 	workspaceContext()
 
@@ -61,7 +62,8 @@
 	$: settings.set({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
-		repositoriesForm: data.repositoriesForm
+		repositoriesForm: data.repositoriesForm,
+		user: data.user
 	})
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)
 </script>
