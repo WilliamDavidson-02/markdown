@@ -31,7 +31,7 @@
 		if (left < padding) {
 			left = padding
 		} else if (left + contentRect.width > innerWidth - padding) {
-			left = targetRect.left
+			left = targetRect.right - contentRect.width - padding
 		}
 
 		position = { top, left }
