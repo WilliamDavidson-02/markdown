@@ -15,6 +15,7 @@
 	import { settingsContext } from '$lib/components/settings/settingsContext'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
+	import { Workspace, workspaceContext } from '$lib/components/workspace'
 
 	export let data
 
@@ -25,11 +26,12 @@
 
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
 
-	const store = settingsContext({
+	const settings = settingsContext({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm
 	})
+	workspaceContext()
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		$editorStore?.dispatch({
@@ -56,7 +58,7 @@
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
 	$: githubTree.set(data.githubTree)
-	$: store.set({
+	$: settings.set({
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm
@@ -70,7 +72,7 @@
 	<Trash bind:trashDialog />
 	<Settings bind:settingsDialog />
 	<Nav {trashDialog} {fileDialog} {folderDialog} {settingsDialog} {isCurrentDocGithub} />
-	<Editor />
+	<Workspace />
 </main>
 
 <style>

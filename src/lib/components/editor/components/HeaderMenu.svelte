@@ -1,18 +1,30 @@
 <script lang="ts">
 	import { Popover, PopoverTrigger, PopoverContent } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
-	import { Ellipsis, CornerUpRight, Trash2, Loader2 } from 'lucide-svelte'
+	import {
+		Ellipsis,
+		CornerUpRight,
+		Trash2,
+		Loader2,
+		Columns2,
+		Eye,
+		PanelsTopLeft,
+		Check
+	} from 'lucide-svelte'
 	import { Divider } from '$lib/components/divider'
 	import { editorStore } from '../editorStore'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
 	import { invalidateAll } from '$app/navigation'
+	import { getWorkspaceContext, type WorkspaceView } from '$lib/components/workspace'
 
 	$: doc = $editorStore?.state.doc.toString()
 	$: lastEdited = $selectedFile?.updatedAt
 
 	let isMovingToTrash = false
+	let isOpen = false
+	const workspace = getWorkspaceContext()
 
 	const moveToTrash = async () => {
 		try {
@@ -29,11 +41,17 @@
 			console.log(error)
 		} finally {
 			isMovingToTrash = false
+			isOpen = false
 		}
+	}
+
+	const setView = (view: WorkspaceView) => {
+		workspace.set({ view })
+		isOpen = false
 	}
 </script>
 
-<Popover>
+<Popover bind:isOpen>
 	<PopoverTrigger>
 		<Ellipsis size={20} stroke-width={1.5} />
 	</PopoverTrigger>
@@ -53,6 +71,36 @@
 					</div>
 					{#if isMovingToTrash}
 						<Loader2 class="animate-spin" size={14} />
+					{/if}
+				</DropdownItem>
+			</DropdownGroup>
+			<Divider />
+			<DropdownGroup>
+				<DropdownItem on:click={() => setView('editor')} on:keydown={() => setView('editor')}>
+					<div class="dropdown-item">
+						<PanelsTopLeft size={16} stroke-width={1.5} />
+						<span>Editor view</span>
+					</div>
+					{#if $workspace.view === 'editor'}
+						<Check size={16} stroke-width={1.5} />
+					{/if}
+				</DropdownItem>
+				<DropdownItem on:click={() => setView('split')} on:keydown={() => setView('split')}>
+					<div class="dropdown-item">
+						<Columns2 size={16} stroke-width={1.5} />
+						<span>Split view</span>
+					</div>
+					{#if $workspace.view === 'split'}
+						<Check size={16} stroke-width={1.5} />
+					{/if}
+				</DropdownItem>
+				<DropdownItem on:click={() => setView('preview')} on:keydown={() => setView('preview')}>
+					<div class="dropdown-item">
+						<Eye size={16} stroke-width={1.5} />
+						<span>Preview</span>
+					</div>
+					{#if $workspace.view === 'preview'}
+						<Check size={16} stroke-width={1.5} />
 					{/if}
 				</DropdownItem>
 			</DropdownGroup>

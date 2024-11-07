@@ -5,9 +5,11 @@
 	import { HeaderMenu, HeaderTitle } from '../'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import GithubHeader from './GithubHeader.svelte'
+
+	export let headerElement: HTMLElement
 </script>
 
-<header>
+<header bind:this={headerElement}>
 	{#if $selectedFile?.isGithub}
 		<GithubHeader />
 	{/if}

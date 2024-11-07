@@ -22,6 +22,8 @@ const colors = {
 
 export const theme = EditorView.theme({
 	'&': {
+		maxHeight: 'inherit',
+		height: 'inherit',
 		backgroundColor: colors.secondary,
 		color: colors.foregroundDk
 	},
@@ -31,6 +33,9 @@ export const theme = EditorView.theme({
 		fontSize: '16px',
 		whiteSpace: 'pre-wrap',
 		marginBottom: '100%'
+	},
+	'.cm-scroller': {
+		overflowY: 'scroll'
 	},
 
 	'.cm-cursor, .cm-dropCursor': { borderLeftColor: colors.interactive },

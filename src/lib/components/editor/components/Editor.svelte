@@ -2,13 +2,12 @@
 	import { EditorView } from '@codemirror/view'
 	import { onMount } from 'svelte'
 	import { state } from '../state'
-	import Header from './Header.svelte'
 	import { editorStore } from '../editorStore'
 
-	let parent: HTMLDivElement
+	export let editorElement: HTMLDivElement
 
 	onMount(() => {
-		const view = new EditorView({ state, parent })
+		const view = new EditorView({ state, parent: editorElement })
 		view.focus()
 		editorStore.set(view)
 
@@ -19,22 +18,15 @@
 	})
 </script>
 
-<section>
-	<Header />
-	<div bind:this={parent} />
-</section>
+<div bind:this={editorElement} {...$$restProps} />
 
 <style>
-	section {
-		flex-grow: 1;
-		display: grid;
-		grid-template-rows: auto 1fr;
-		max-height: 100svh;
+	div {
+		max-height: inherit;
+		height: inherit;
 	}
 
-	div {
-		max-height: 100%;
-		height: 100%;
-		overflow-y: auto;
+	div :global(.cm-focused) {
+		outline: none !important;
 	}
 </style>
