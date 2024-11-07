@@ -9,7 +9,7 @@
 	const settings = getSettings()
 
 	let isLoggingOut = false
-
+	let isLoggingOutAll = false
 	const logout = async () => {
 		try {
 			isLoggingOut = true
@@ -19,6 +19,17 @@
 			console.error(error)
 		} finally {
 			isLoggingOut = false
+		}
+	}
+
+	const logoutAll = async () => {
+		try {
+			isLoggingOutAll = true
+			await fetch('/sign-out/all', { method: 'POST' })
+		} catch (error) {
+			console.error(error)
+		} finally {
+			isLoggingOutAll = false
 		}
 	}
 </script>
@@ -59,7 +70,18 @@
 			<p slot="description">
 				Log out of all other active sessions on other devices besides this one.
 			</p>
-			<Button slot="action" variant="outline">Log out of all devices</Button>
+			<Button
+				slot="action"
+				variant="outline"
+				disabled={isLoggingOutAll}
+				on:click={logoutAll}
+				on:keydown={logoutAll}
+			>
+				{#if isLoggingOutAll}
+					<Loader2 size={20} stroke-width={1.5} color="var(--foreground-md)" class="animate-spin" />
+				{/if}
+				Log out of all devices</Button
+			>
 		</AccountItem>
 		<AccountItem>
 			<h3 slot="title">Log out</h3>
