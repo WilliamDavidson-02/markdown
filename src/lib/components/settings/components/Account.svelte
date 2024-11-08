@@ -7,11 +7,13 @@
 	import { goto } from '$app/navigation'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { editorStore } from '$lib/components/editor/editorStore'
+	import AccountDelete from './AccountDelete.svelte'
 
 	const settings = getSettings()
 
 	let isLoggingOut = false
 	let isLoggingOutAll = false
+
 	const logout = async () => {
 		try {
 			isLoggingOut = true
@@ -60,13 +62,7 @@
 	<div class="section">
 		<h2>Support</h2>
 		<Divider />
-		<AccountItem>
-			<h3 slot="title" style="color: var(--danger)">Delete account</h3>
-			<p slot="description">Permanently delete the account and remove all associated data.</p>
-			<Button slot="action" variant="ghost" icon>
-				<ChevronRight size={20} stroke-width={1.5} color="var(--foreground-md)" />
-			</Button>
-		</AccountItem>
+		<AccountDelete />
 	</div>
 	<div class="section">
 		<h2>Devices</h2>

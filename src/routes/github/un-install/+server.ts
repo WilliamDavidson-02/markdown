@@ -1,6 +1,7 @@
 import { db, dbPool } from '$lib/db'
 import { fileTable, folderTable, githubInstallationTable, repositoryTable } from '$lib/db/schema'
 import {
+	deleteGithubInstallation,
 	generateGitHubJWT,
 	getFileIdsByRepositoryIds,
 	getFolderIdsByRepositoryIds
@@ -17,16 +18,8 @@ export const DELETE = async ({ request, locals }) => {
 	}
 
 	const jwtToken = generateGitHubJWT()
-
-	const deleteResponse = await fetch(`https://api.github.com/app/installations/${installationId}`, {
-		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${jwtToken}`,
-			Accept: 'application/vnd.github+json'
-		}
-	})
-
-	if (!deleteResponse.ok) {
+	const deleteResponse = await deleteGithubInstallation(installationId, jwtToken)
+	if (!deleteResponse) {
 		return json({ success: false }, { status: 500 })
 	}
 

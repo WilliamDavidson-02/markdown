@@ -12,7 +12,12 @@
 	export let selected: SettingsSelected = 'Account'
 </script>
 
-<Dialog bind:dialog={settingsDialog} withClose={false} class="settings-dialog">
+<Dialog
+	bind:dialog={settingsDialog}
+	on:close={() => (selected = 'Account')}
+	withClose={false}
+	class="settings-dialog"
+>
 	<div class="settings">
 		<SettingsMenu bind:selected />
 		<div class="settings-content">

@@ -599,3 +599,17 @@ export const createGithubCommit = async (
 
 	return res.ok ? await res.json() : null
 }
+
+export const deleteGithubInstallation = async (installationId: number, token: string) => {
+	if (!token) return null
+
+	const res = await fetch(`https://api.github.com/app/installations/${installationId}`, {
+		method: 'DELETE',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/vnd.github+json'
+		}
+	})
+
+	return res.ok
+}
