@@ -56,3 +56,7 @@ export const passwordResetSchema = z.object({
 	currentPassword: z.string().min(8, { message: 'Current password is required' }),
 	newPassword: z.string().min(8, { message: 'New password is required' })
 })
+
+export const emailSchema = z.object({
+	email: z.string().email({ message: 'Invalid email address' })
+})

@@ -31,6 +31,7 @@
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm,
 		passwordResetForm: data.passwordResetForm,
+		emailForm: data.emailForm,
 		user: data.user
 	})
 	workspaceContext()
@@ -65,6 +66,7 @@
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm,
 		passwordResetForm: data.passwordResetForm,
+		emailForm: data.emailForm,
 		user: data.user
 	})
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)

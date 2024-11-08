@@ -25,6 +25,7 @@ import {
 	type CreatePullRequestBodyParams
 } from '$lib/utilts/github'
 import {
+	emailSchema,
 	fileSchema,
 	folderSchema,
 	passwordResetSchema,
@@ -51,6 +52,7 @@ import {
 	insertNewRepository,
 	removeRepository,
 	updateGithubFolderShaAndPath,
+	updateUserEmail,
 	updateUserPassword
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
@@ -173,6 +175,8 @@ export const load = async ({ locals, params }) => {
 	)
 	const repositoryBranchesForm = await superValidate(zod(repositoryBranchesSchema))
 	const passwordResetForm = await superValidate(zod(passwordResetSchema))
+	const emailForm = await superValidate(zod(emailSchema))
+
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
 		tree,
@@ -186,7 +190,8 @@ export const load = async ({ locals, params }) => {
 		githubTree,
 		githubIds,
 		repositoryBranchesForm,
-		passwordResetForm
+		passwordResetForm,
+		emailForm
 	}
 }
 
@@ -474,6 +479,21 @@ export const actions: Actions = {
 		})
 
 		await updateUserPassword(user.id, newPasswordHash)
+
+		return { form }
+	},
+	changeEmail: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(emailSchema))
+
+		if (!locals.user || !form.valid) return fail(400, { form })
+
+		const email = form.data.email.trim().toLowerCase()
+		if (email === locals.user.email) return fail(400, { form, error: 'Email unchanged' })
+
+		const existingUser = await getUserByEmail(email)
+		if (existingUser.length > 0) return fail(400, { form, error: 'Email unavailable' })
+
+		await updateUserEmail(locals.user.id, email)
 
 		return { form }
 	}

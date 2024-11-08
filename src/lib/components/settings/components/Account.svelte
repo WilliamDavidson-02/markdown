@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
 	import { Divider } from '$lib/components/divider'
-	import { ChevronRight, Loader2 } from 'lucide-svelte'
+	import { Loader2 } from 'lucide-svelte'
 	import AccountItem from './AccountItem.svelte'
 	import { getSettings } from '../settingsContext'
 	import { goto } from '$app/navigation'
@@ -9,6 +9,7 @@
 	import { editorStore } from '$lib/components/editor/editorStore'
 	import AccountDelete from './AccountDelete.svelte'
 	import AccountPassword from './AccountPassword.svelte'
+	import AccountEmail from './AccountEmail.svelte'
 
 	const settings = getSettings()
 
@@ -48,11 +49,7 @@
 		<div class="section">
 			<h2>Account security</h2>
 			<Divider />
-			<AccountItem>
-				<h3 slot="title">Email</h3>
-				<p slot="description">{$settings?.user.email ?? ''}</p>
-				<Button slot="action" variant="outline">Change email</Button>
-			</AccountItem>
+			<AccountEmail />
 			<AccountPassword />
 		</div>
 	{/if}

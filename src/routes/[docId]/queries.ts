@@ -226,3 +226,7 @@ export const getUserByEmail = async (email: string) => {
 export const updateUserPassword = async (userId: string, newPasswordHash: string) => {
 	await db.update(userTable).set({ passwordHash: newPasswordHash }).where(eq(userTable.id, userId))
 }
+
+export const updateUserEmail = async (userId: string, newEmail: string) => {
+	await db.update(userTable).set({ email: newEmail }).where(eq(userTable.id, userId))
+}
