@@ -1,11 +1,20 @@
 import { sql } from 'drizzle-orm'
-import { pgTable, text, timestamp, integer, uuid, foreignKey } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, integer, uuid, foreignKey, jsonb } from 'drizzle-orm/pg-core'
+import { defaultEditorSettings } from '../components/settings/defaultSettings'
 
 export const userTable = pgTable('user', {
 	id: text('id').primaryKey(),
 	githubId: integer('github_id').unique(),
 	email: text('email').unique(),
 	passwordHash: text('password_hash')
+})
+
+export const settingsTable = pgTable('settings', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	settings: jsonb('settings').$type<typeof defaultEditorSettings>().default(defaultEditorSettings),
+	userId: text('user_id')
+		.notNull()
+		.references(() => userTable.id, { onDelete: 'cascade' })
 })
 
 export const sessionTable = pgTable('session', {

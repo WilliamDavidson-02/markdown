@@ -15,7 +15,8 @@ import {
 	bracketMatching,
 	indentOnInput,
 	defaultHighlightStyle,
-	syntaxHighlighting
+	syntaxHighlighting,
+	indentUnit
 } from '@codemirror/language'
 import {
 	closeBrackets,
@@ -29,6 +30,7 @@ import { customKeymaps, reMappedKeymap } from './commands'
 import { theme, themeHighlightStyle } from './theme'
 import { editorAutoSave, editorStore } from './editorStore'
 import { selectedFile } from '$lib/components/file-tree/treeStore'
+import type { defaultEditorSettings } from '../settings/defaultSettings'
 
 const autoSave = async (view: EditorView) => {
 	let status: 'saved' | 'error' = 'saved'
@@ -50,14 +52,12 @@ const autoSave = async (view: EditorView) => {
 	return status
 }
 
-export const state = EditorState.create({
-	doc: '',
-	extensions: [
-		EditorView.lineWrapping,
+export const state = (editorSettings: typeof defaultEditorSettings) => {
+	let extensions = [
 		EditorState.allowMultipleSelections.of(true),
 		EditorView.updateListener.of((update) => {
 			if (update.docChanged || update.selectionSet) editorStore.set(update.view)
-			if (update.docChanged) {
+			if (update.docChanged && editorSettings.autoSave) {
 				editorAutoSave.update((state) => {
 					if (state.timer) clearTimeout(state.timer)
 					let id: string | undefined = undefined
@@ -85,7 +85,7 @@ export const state = EditorState.create({
 			indentWithTab,
 			...customKeymaps
 		]),
-		theme,
+		theme(editorSettings),
 		syntaxHighlighting(themeHighlightStyle),
 		resizeTable,
 		handleLinks,
@@ -107,6 +107,14 @@ export const state = EditorState.create({
 		markdownLanguage.data.of({
 			autocomplete: completions
 		}),
-		syntaxHighlighting(defaultHighlightStyle, { fallback: true })
+		syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+		indentUnit.of(' '.repeat(editorSettings.tabSize))
 	]
-})
+
+	if (editorSettings.wordWrap) extensions.push(EditorView.lineWrapping)
+
+	return EditorState.create({
+		doc: '',
+		extensions
+	})
+}

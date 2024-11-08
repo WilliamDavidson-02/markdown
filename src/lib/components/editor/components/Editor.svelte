@@ -3,11 +3,14 @@
 	import { onMount } from 'svelte'
 	import { state } from '../state'
 	import { editorStore } from '../editorStore'
+	import { getSettings } from '$lib/components/settings/settingsContext'
 
 	export let editorElement: HTMLDivElement
+	const settings = getSettings()
 
 	onMount(() => {
-		const view = new EditorView({ state, parent: editorElement })
+		const view = new EditorView({ state: state($settings?.editorSettings!), parent: editorElement })
+
 		view.focus()
 		editorStore.set(view)
 

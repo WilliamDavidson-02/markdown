@@ -47,6 +47,7 @@ import {
 	getTrash,
 	getUpdatedAtDoc,
 	getUserByEmail,
+	getEditorSettings,
 	insertNewFile,
 	insertNewFolder,
 	insertNewRepository,
@@ -72,6 +73,8 @@ export const load = async ({ locals, params }) => {
 	let currentDoc: (typeof fileTable.$inferSelect)[] | null = null
 	const { docId } = params
 	const userId = locals.user.id
+
+	const editorSettings = await getEditorSettings(userId)
 
 	const trash = await getTrash(userId)
 	const trashIds = trash.map((t) => t.fileId).filter((id) => id !== null)
@@ -183,6 +186,7 @@ export const load = async ({ locals, params }) => {
 		fileForm,
 		folderForm,
 		user: locals.user,
+		editorSettings,
 		trashedTree,
 		installations,
 		availableRepositories,

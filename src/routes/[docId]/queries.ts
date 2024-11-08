@@ -6,12 +6,14 @@ import {
 	githubFolderTable,
 	githubInstallationTable,
 	repositoryTable,
+	settingsTable,
 	trashTable,
 	userTable
 } from '$lib/db/schema'
 import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
 import { generateCaseThen } from '../github/git-pull/queries'
 import type { GithubShaItemUpdate } from '$lib/utilts/githubTypes'
+import { defaultEditorSettings } from '$lib/components/settings/defaultSettings'
 
 export const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
 	return await db
@@ -229,4 +231,22 @@ export const updateUserPassword = async (userId: string, newPasswordHash: string
 
 export const updateUserEmail = async (userId: string, newEmail: string) => {
 	await db.update(userTable).set({ email: newEmail }).where(eq(userTable.id, userId))
+}
+
+export const getEditorSettings = async (userId: string): Promise<typeof defaultEditorSettings> => {
+	const settings = await db
+		.select({ settings: settingsTable.settings })
+		.from(settingsTable)
+		.where(eq(settingsTable.userId, userId))
+		.limit(1)
+
+	if (settings.length === 0) return defaultEditorSettings
+	return settings[0].settings ?? defaultEditorSettings
+}
+
+export const updateEditorSettings = async (
+	userId: string,
+	settings: typeof settingsTable.$inferInsert.settings
+) => {
+	await db.update(settingsTable).set({ settings }).where(eq(settingsTable.userId, userId))
 }

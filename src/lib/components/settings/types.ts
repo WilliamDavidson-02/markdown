@@ -9,6 +9,7 @@ import type {
 	repositoriesSchema
 } from '../../../routes/[docId]/schemas'
 import type { User } from 'lucia'
+import type { defaultEditorSettings } from './defaultSettings'
 
 export type SettingsSelected = 'Account' | 'Editor' | 'Shortcut keys' | 'Connections'
 export type SettingsItem = {
@@ -28,4 +29,5 @@ export type SettingsContext = {
 	passwordResetForm: SuperValidated<z.infer<typeof passwordResetSchema>>
 	emailForm: SuperValidated<z.infer<typeof emailSchema>>
 	user: User
+	editorSettings: typeof defaultEditorSettings
 }
