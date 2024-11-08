@@ -4,6 +4,7 @@ import type { ComponentType } from 'svelte'
 import type { SuperValidated } from 'sveltekit-superforms'
 import type { z } from 'zod'
 import type {
+	editorSettingsSchema,
 	emailSchema,
 	passwordResetSchema,
 	repositoriesSchema
@@ -30,4 +31,5 @@ export type SettingsContext = {
 	emailForm: SuperValidated<z.infer<typeof emailSchema>>
 	user: User
 	editorSettings: typeof defaultEditorSettings
+	editorSettingsForm: SuperValidated<z.infer<typeof editorSettingsSchema>>
 }

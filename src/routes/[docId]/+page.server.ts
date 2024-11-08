@@ -25,6 +25,7 @@ import {
 	type CreatePullRequestBodyParams
 } from '$lib/utilts/github'
 import {
+	editorSettingsSchema,
 	emailSchema,
 	fileSchema,
 	folderSchema,
@@ -54,7 +55,8 @@ import {
 	removeRepository,
 	updateGithubFolderShaAndPath,
 	updateUserEmail,
-	updateUserPassword
+	updateUserPassword,
+	updateEditorSettings
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
 import type {
@@ -179,6 +181,7 @@ export const load = async ({ locals, params }) => {
 	const repositoryBranchesForm = await superValidate(zod(repositoryBranchesSchema))
 	const passwordResetForm = await superValidate(zod(passwordResetSchema))
 	const emailForm = await superValidate(zod(emailSchema))
+	const editorSettingsForm = await superValidate(zod(editorSettingsSchema.default(editorSettings)))
 
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
@@ -195,7 +198,8 @@ export const load = async ({ locals, params }) => {
 		githubIds,
 		repositoryBranchesForm,
 		passwordResetForm,
-		emailForm
+		emailForm,
+		editorSettingsForm
 	}
 }
 
@@ -498,6 +502,16 @@ export const actions: Actions = {
 		if (existingUser.length > 0) return fail(400, { form, error: 'Email unavailable' })
 
 		await updateUserEmail(locals.user.id, email)
+
+		return { form }
+	},
+	editorSettings: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(editorSettingsSchema))
+
+		if (!locals.user || !form.valid) return fail(400, { form })
+		console.log(form.data)
+
+		await updateEditorSettings(locals.user.id, form.data)
 
 		return { form }
 	}

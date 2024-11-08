@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Editor } from '$lib/components/editor'
 	import { Nav } from '$lib/components/nav'
 	import { FileForm } from '$lib/components/file-form'
 	import { FolderForm } from '$lib/components/folder-form'
@@ -25,16 +24,18 @@
 	let settingsDialog: HTMLDialogElement
 
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
-
-	const settings = settingsContext({
+	$: initialSettings = {
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
 		repositoriesForm: data.repositoriesForm,
 		passwordResetForm: data.passwordResetForm,
 		emailForm: data.emailForm,
 		user: data.user,
-		editorSettings: data.editorSettings
-	})
+		editorSettings: data.editorSettings,
+		editorSettingsForm: data.editorSettingsForm
+	}
+
+	const settings = settingsContext(initialSettings)
 	workspaceContext()
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
@@ -62,15 +63,7 @@
 	$: treeStore.set(data.tree)
 	$: trashStore.set(data.trashedTree)
 	$: githubTree.set(data.githubTree)
-	$: settings.set({
-		installations: data.installations,
-		availableRepositories: data.availableRepositories,
-		repositoriesForm: data.repositoriesForm,
-		passwordResetForm: data.passwordResetForm,
-		emailForm: data.emailForm,
-		user: data.user,
-		editorSettings: data.editorSettings
-	})
+	$: settings.set(initialSettings)
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)
 </script>
 

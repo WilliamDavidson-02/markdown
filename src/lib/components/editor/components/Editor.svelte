@@ -6,6 +6,7 @@
 	import { getSettings } from '$lib/components/settings/settingsContext'
 
 	export let editorElement: HTMLDivElement
+
 	const settings = getSettings()
 
 	onMount(() => {

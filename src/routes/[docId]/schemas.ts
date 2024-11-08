@@ -60,3 +60,10 @@ export const passwordResetSchema = z.object({
 export const emailSchema = z.object({
 	email: z.string().email({ message: 'Invalid email address' })
 })
+
+export const editorSettingsSchema = z.object({
+	fontSize: z.number().min(1, { message: 'Font size must be at least 1' }),
+	tabSize: z.number().min(1, { message: 'Tab size must be at least 1' }),
+	wordWrap: z.boolean(),
+	autoSave: z.boolean()
+})
