@@ -44,6 +44,7 @@
 		width: 100%;
 		height: 100%;
 		padding: var(--space-base);
+		overflow: hidden;
 	}
 
 	:global(.settings-dialog) {

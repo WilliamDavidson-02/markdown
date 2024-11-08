@@ -15,6 +15,7 @@
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
 	import { Workspace, workspaceContext } from '$lib/components/workspace'
+	import { editorKeymaps } from '$lib/components/editor/commands.js'
 
 	export let data
 
@@ -22,6 +23,8 @@
 	let folderDialog: HTMLDialogElement
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
+
+	$: if (settingsDialog) settingsDialog.showModal()
 
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
 	$: initialSettings = {
@@ -32,7 +35,8 @@
 		emailForm: data.emailForm,
 		user: data.user,
 		editorSettings: data.editorSettings,
-		editorSettingsForm: data.editorSettingsForm
+		editorSettingsForm: data.editorSettingsForm,
+		editorKeymaps: editorKeymaps()
 	}
 
 	const settings = settingsContext(initialSettings)

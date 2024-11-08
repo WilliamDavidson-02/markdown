@@ -56,3 +56,10 @@ export const reMappedKeymap = defaultKeymap.map((keymap: KeyBinding) => {
 
 	return keymap
 })
+
+export const editorKeymaps = () => {
+	const initialKeymaps = [...reMappedKeymap, ...customKeymaps]
+	return initialKeymaps.map((keymap) => {
+		return keymap
+	})
+}

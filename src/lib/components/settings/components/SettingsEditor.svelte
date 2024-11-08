@@ -17,7 +17,7 @@
 		onResult: async ({ result }) => {
 			if (result.type === 'success') {
 				initialSettings = $form
-				$editorStore?.setState(state($form))
+				$editorStore?.setState(state($form, $settings?.editorKeymaps ?? []))
 				await invalidateAll()
 			}
 		},

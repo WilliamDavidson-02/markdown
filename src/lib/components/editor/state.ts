@@ -6,7 +6,8 @@ import {
 	highlightSpecialChars,
 	drawSelection,
 	dropCursor,
-	rectangularSelection
+	rectangularSelection,
+	type KeyBinding
 } from '@codemirror/view'
 import { indentWithTab, history, historyKeymap } from '@codemirror/commands'
 import { markdown, markdownLanguage } from '@codemirror/lang-markdown'
@@ -26,7 +27,6 @@ import {
 } from '@codemirror/autocomplete'
 
 import { completions, resizeTable, handleLinks } from './assistance'
-import { customKeymaps, reMappedKeymap } from './commands'
 import { theme, themeHighlightStyle } from './theme'
 import { editorAutoSave, editorStore } from './editorStore'
 import { selectedFile } from '$lib/components/file-tree/treeStore'
@@ -52,7 +52,10 @@ const autoSave = async (view: EditorView) => {
 	return status
 }
 
-export const state = (editorSettings: typeof defaultEditorSettings) => {
+export const state = (
+	editorSettings: typeof defaultEditorSettings,
+	editorKeymaps: KeyBinding[]
+) => {
 	let extensions = [
 		EditorState.allowMultipleSelections.of(true),
 		EditorView.updateListener.of((update) => {
@@ -79,11 +82,10 @@ export const state = (editorSettings: typeof defaultEditorSettings) => {
 		}),
 		keymap.of([
 			...closeBracketsKeymap,
-			...reMappedKeymap,
+			...editorKeymaps,
 			...historyKeymap,
 			...completionKeymap,
-			indentWithTab,
-			...customKeymaps
+			indentWithTab
 		]),
 		theme(editorSettings),
 		syntaxHighlighting(themeHighlightStyle),

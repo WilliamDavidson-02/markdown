@@ -10,7 +10,10 @@
 	const settings = getSettings()
 
 	onMount(() => {
-		const view = new EditorView({ state: state($settings?.editorSettings!), parent: editorElement })
+		const view = new EditorView({
+			state: state($settings?.editorSettings!, $settings?.editorKeymaps ?? []),
+			parent: editorElement
+		})
 
 		view.focus()
 		editorStore.set(view)

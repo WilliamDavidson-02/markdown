@@ -11,6 +11,7 @@ import type {
 } from '../../../routes/[docId]/schemas'
 import type { User } from 'lucia'
 import type { defaultEditorSettings } from './defaultSettings'
+import type { KeyBinding } from '@codemirror/view'
 
 export type SettingsSelected = 'Account' | 'Editor' | 'Shortcut keys' | 'Connections'
 export type SettingsItem = {
@@ -32,4 +33,5 @@ export type SettingsContext = {
 	user: User
 	editorSettings: typeof defaultEditorSettings
 	editorSettingsForm: SuperValidated<z.infer<typeof editorSettingsSchema>>
+	editorKeymaps: KeyBinding[]
 }
