@@ -6,7 +6,8 @@ import {
 	githubFolderTable,
 	githubInstallationTable,
 	repositoryTable,
-	trashTable
+	trashTable,
+	userTable
 } from '$lib/db/schema'
 import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
 import { generateCaseThen } from '../github/git-pull/queries'
@@ -216,4 +217,12 @@ export const updateGithubFolderShaAndPath = async (folders: GithubShaItemUpdate[
 			})
 			.where(inArray(githubFolderTable.sha, folderShas))
 	}
+}
+
+export const getUserByEmail = async (email: string) => {
+	return await db.select().from(userTable).where(eq(userTable.email, email)).limit(1)
+}
+
+export const updateUserPassword = async (userId: string, newPasswordHash: string) => {
+	await db.update(userTable).set({ passwordHash: newPasswordHash }).where(eq(userTable.id, userId))
 }

@@ -8,6 +8,7 @@
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { editorStore } from '$lib/components/editor/editorStore'
 	import AccountDelete from './AccountDelete.svelte'
+	import AccountPassword from './AccountPassword.svelte'
 
 	const settings = getSettings()
 
@@ -52,11 +53,7 @@
 				<p slot="description">{$settings?.user.email ?? ''}</p>
 				<Button slot="action" variant="outline">Change email</Button>
 			</AccountItem>
-			<AccountItem>
-				<h3 slot="title">Password</h3>
-				<p slot="description">Change your password to login to you account.</p>
-				<Button slot="action" variant="outline">Change password</Button>
-			</AccountItem>
+			<AccountPassword />
 		</div>
 	{/if}
 	<div class="section">

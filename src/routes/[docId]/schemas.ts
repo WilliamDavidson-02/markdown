@@ -51,3 +51,8 @@ export const repositoryBranchesSchema = z.object({
 		childIds: z.array(z.string()).optional()
 	})
 })
+
+export const passwordResetSchema = z.object({
+	currentPassword: z.string().min(8, { message: 'Current password is required' }),
+	newPassword: z.string().min(8, { message: 'New password is required' })
+})
