@@ -4,7 +4,6 @@
 	import type { SettingsSelected } from '../types'
 	import Account from './Account.svelte'
 	import SettingsEditor from './SettingsEditor.svelte'
-	import General from './General.svelte'
 	import ShortcutKeys from './ShortcutKeys.svelte'
 	import Connections from './Connections.svelte'
 
@@ -25,8 +24,6 @@
 				<Account />
 			{:else if selected === 'Editor'}
 				<SettingsEditor />
-			{:else if selected === 'General'}
-				<General />
 			{:else if selected === 'Shortcut keys'}
 				<ShortcutKeys />
 			{:else if selected === 'Connections'}

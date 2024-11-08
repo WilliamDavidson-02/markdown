@@ -10,7 +10,7 @@ import type {
 } from '../../../routes/[docId]/schemas'
 import type { User } from 'lucia'
 
-export type SettingsSelected = 'Account' | 'Editor' | 'General' | 'Shortcut keys' | 'Connections'
+export type SettingsSelected = 'Account' | 'Editor' | 'Shortcut keys' | 'Connections'
 export type SettingsItem = {
 	icon: ComponentType
 	label: SettingsSelected

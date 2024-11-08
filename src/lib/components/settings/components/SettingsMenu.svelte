@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
-	import { User, PencilIcon, Settings2, Command, Cable } from 'lucide-svelte'
+	import { User, PencilIcon, Command, Cable } from 'lucide-svelte'
 	import type { SettingsItem, SettingsSelected } from '../types'
 
 	export let selected: SettingsSelected
@@ -8,7 +8,6 @@
 	const list: SettingsItem[] = [
 		{ icon: User, label: 'Account' },
 		{ icon: PencilIcon, label: 'Editor' },
-		{ icon: Settings2, label: 'General' },
 		{ icon: Command, label: 'Shortcut keys' },
 		{ icon: Cable, label: 'Connections' }
 	]
