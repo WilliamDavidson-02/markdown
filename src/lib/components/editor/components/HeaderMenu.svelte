@@ -9,22 +9,28 @@
 		Columns2,
 		Eye,
 		PanelsTopLeft,
-		Check
+		Check,
+		Save
 	} from 'lucide-svelte'
 	import { Divider } from '$lib/components/divider'
-	import { editorStore } from '../editorStore'
+	import { editorSave, editorStore } from '../editorStore'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
 	import { invalidateAll } from '$app/navigation'
 	import { getWorkspaceContext, type WorkspaceView } from '$lib/components/workspace'
+	import { getSettings } from '$lib/components/settings/settingsContext'
+	import { handleManualSave } from '../save'
+	import { onMount } from 'svelte'
 
 	$: doc = $editorStore?.state.doc.toString()
 	$: lastEdited = $selectedFile?.updatedAt
 
 	let isMovingToTrash = false
+	let isSaving = false
 	let isOpen = false
 	const workspace = getWorkspaceContext()
+	const settings = getSettings()
 
 	const moveToTrash = async () => {
 		try {
@@ -49,6 +55,37 @@
 		workspace.set({ view })
 		isOpen = false
 	}
+
+	const saveDoc = async () => {
+		if (!$editorStore) return
+		isSaving = true
+		await handleManualSave($editorStore)
+		isSaving = false
+
+		selectedFile.update((f) => {
+			if (!f) return f
+			return { ...f, doc: $editorStore.state.doc.toString() }
+		})
+	}
+
+	onMount(() => {
+		const saveOnKey = (ev: KeyboardEvent) => {
+			if (ev.key === 's' && ev.metaKey) {
+				ev.preventDefault()
+				saveDoc()
+			}
+		}
+
+		if (!$settings?.editorSettings.autoSave) {
+			window.addEventListener('keydown', saveOnKey)
+		}
+
+		return () => {
+			if (!$settings?.editorSettings.autoSave) {
+				window.removeEventListener('keydown', saveOnKey)
+			}
+		}
+	})
 </script>
 
 <Popover bind:isOpen>
@@ -57,6 +94,24 @@
 	</PopoverTrigger>
 	<PopoverContent>
 		<Dropdown>
+			{#if !$settings?.editorSettings.autoSave}
+				<DropdownGroup>
+					<DropdownItem
+						on:click={saveDoc}
+						on:keydown={saveDoc}
+						disabled={isSaving || $editorSave.status === 'saved'}
+					>
+						<div class="dropdown-item">
+							<Save size={16} stroke-width={1.5} />
+							<span>Save</span>
+						</div>
+						{#if isSaving}
+							<Loader2 class="animate-spin" size={14} color="var(--foreground-dk)" />
+						{/if}
+					</DropdownItem>
+				</DropdownGroup>
+				<Divider />
+			{/if}
 			<DropdownGroup>
 				<DropdownItem>
 					<div class="dropdown-item">

@@ -1,5 +1,10 @@
 <!-- svelte-ignore a11y-no-static-element-interactions -->
-<div on:click|stopPropagation on:keydown|stopPropagation>
+<script>
+	export let disabled = false
+</script>
+
+<!-- Add class based on disabled prop -->
+<div class:disabled on:click|stopPropagation on:keydown|stopPropagation {...$$restProps}>
 	<slot />
 </div>
 
@@ -13,15 +18,23 @@
 		padding: var(--space-xs) var(--space-md);
 		background-color: var(--secondary);
 		transition: background-color 0.25s;
+	}
+
+	div:not(.disabled) {
 		cursor: pointer;
 	}
 
-	div:active {
+	div:active:not(.disabled) {
 		background-color: var(--secondary-dk);
 	}
 
+	div.disabled {
+		color: var(--foreground-md);
+		cursor: not-allowed;
+	}
+
 	@media (pointer: fine) {
-		div:hover {
+		div:hover:not(.disabled) {
 			background-color: var(--secondary-dk);
 		}
 	}

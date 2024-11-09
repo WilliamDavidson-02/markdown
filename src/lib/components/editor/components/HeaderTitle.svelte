@@ -2,9 +2,9 @@
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import { fileIcons } from '$lib/fileIcons'
 	import { Loader2 } from 'lucide-svelte'
-	import { editorAutoSave } from '../editorStore'
+	import { editorSave } from '../editorStore'
 
-	$: status = $editorAutoSave.status
+	$: status = $editorSave.status
 	$: fileIcon = fileIcons.find((icon) => icon.name === $selectedFile?.icon)
 </script>
 
