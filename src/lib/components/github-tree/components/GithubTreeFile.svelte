@@ -14,13 +14,16 @@
 	} from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
-	import { invalidateAll } from '$app/navigation'
+	import { goto, invalidateAll } from '$app/navigation'
 	import { Divider } from '$lib/components/divider'
 	import { isFolder } from '$lib/utilts/tree'
 	import PullDialog from '$lib/components/editor/components/PullDialog.svelte'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
 	import { getFoldersToFilePos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { GitPushForm } from '$lib/components/git-push-form'
+	import { handleSave } from '$lib/components/editor/save'
+	import { editorSave } from '$lib/components/editor/editorStore'
+	import { editorStore } from '$lib/components/editor/editorStore'
 
 	export let name: string
 	export let id: string
@@ -32,6 +35,7 @@
 	let isOpen = false
 	let pullDialog: HTMLDialogElement
 	let showGitPushForm = false
+	let isLoading = false
 
 	const moveToTrash = async () => {
 		try {
@@ -62,6 +66,23 @@
 		isOpen = false
 	}
 
+	const handleFileSelection = async () => {
+		isLoading = true
+		if ($editorSave.status === 'unsaved' && $editorStore) {
+			await handleSave($editorStore.state.doc.toString(), $selectedFile)
+		}
+
+		editorSave.update((s) => {
+			if (s.timer) clearTimeout(s.timer)
+			return { ...s, timer: null, status: 'saved' }
+		})
+
+		selectedFile.set(null)
+
+		await goto(`/${id}`)
+		isLoading = false
+	}
+
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
@@ -81,12 +102,18 @@
 	on:focus={() => (showEllipsis = true)}
 	on:blur={() => (showEllipsis = false)}
 >
-	<a href={`/${id}`}>
+	<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-static-element-interactions -->
+	<!-- svelte-ignore a11y-interactive-supports-focus -->
+	<div class="file-link" role="link" on:click={handleFileSelection}>
 		<span class="icon">
-			<svelte:component this={iconName} color={iconColor} size={20} />
+			{#if isLoading}
+				<Loader2 class="animate-spin" size={20} stroke-width={1.5} color="var(--foreground-md)" />
+			{:else}
+				<svelte:component this={iconName} color={iconColor} size={20} />
+			{/if}
 		</span>
 		<p>{name}</p>
-	</a>
+	</div>
 	<Popover bind:isOpen>
 		<PopoverTrigger>
 			<div class="ellipsis" data-show={showEllipsis}>
