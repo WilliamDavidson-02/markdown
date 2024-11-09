@@ -3,7 +3,7 @@
 	import { getSettings } from '../settingsContext'
 	import { Divider } from '$lib/components/divider'
 	import { Button } from '$lib/components/button'
-	import { Save } from 'lucide-svelte'
+	import { Loader2, Save } from 'lucide-svelte'
 	import { Label } from '$lib/components/label'
 	import { Input } from '$lib/components/input'
 	import { ErrorMessage } from '$lib/components/error-message'
@@ -52,7 +52,11 @@
 		<div>
 			<h2>Editor settings</h2>
 			<Button type="submit" icon size="sm" disabled={$submitting || !hasChanged()}>
-				<Save size={18} stroke-width={1.5} />
+				{#if $submitting}
+					<Loader2 class="animate-spin" size={18} stroke-width={1.5} />
+				{:else}
+					<Save size={18} stroke-width={1.5} />
+				{/if}
 			</Button>
 		</div>
 		<Divider />
