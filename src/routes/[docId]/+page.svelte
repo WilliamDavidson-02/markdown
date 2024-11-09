@@ -42,11 +42,13 @@
 	workspaceContext()
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
+		const doc = currentDoc?.doc ?? ''
+
 		$editorStore?.dispatch({
-			changes: { from: 0, to: $editorStore?.state.doc?.length ?? 0, insert: currentDoc?.doc ?? '' }
+			changes: { from: 0, to: $editorStore?.state.doc?.length ?? 0, insert: doc }
 		})
 
-		selectedFile.set({ ...currentDoc, isGithub: isCurrentDocGithub })
+		selectedFile.set({ ...currentDoc, isGithub: isCurrentDocGithub, doc })
 	}
 
 	onMount(async () => {
