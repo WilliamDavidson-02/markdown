@@ -9,7 +9,9 @@
 </script>
 
 {#if error}
-	<p class={className}>{error}</p>
+	<p class={className} {...$$restProps}>
+		{error}
+	</p>
 {/if}
 
 <style>

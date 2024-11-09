@@ -17,6 +17,15 @@ export const settingsTable = pgTable('settings', {
 		.references(() => userTable.id, { onDelete: 'cascade' })
 })
 
+export const keybindingTable = pgTable('keybinding', {
+	id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+	key: text('key').notNull(),
+	name: text('name').notNull(),
+	userId: text('user_id')
+		.notNull()
+		.references(() => userTable.id, { onDelete: 'cascade' })
+})
+
 export const sessionTable = pgTable('session', {
 	id: text('id').primaryKey(),
 	userId: text('user_id')

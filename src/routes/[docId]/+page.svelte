@@ -24,8 +24,6 @@
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
 
-	$: if (settingsDialog) settingsDialog.showModal()
-
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
 	$: initialSettings = {
 		installations: data.installations,
@@ -36,7 +34,8 @@
 		user: data.user,
 		editorSettings: data.editorSettings,
 		editorSettingsForm: data.editorSettingsForm,
-		editorKeymaps: editorKeymaps()
+		keybindingForm: data.keybindingForm,
+		editorKeymaps: editorKeymaps(data.keybindings)
 	}
 
 	const settings = settingsContext(initialSettings)

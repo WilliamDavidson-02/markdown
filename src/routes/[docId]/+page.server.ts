@@ -29,6 +29,7 @@ import {
 	emailSchema,
 	fileSchema,
 	folderSchema,
+	keybindingSchema,
 	passwordResetSchema,
 	repositoriesSchema,
 	repositoryBranchesSchema
@@ -56,7 +57,12 @@ import {
 	updateGithubFolderShaAndPath,
 	updateUserEmail,
 	updateUserPassword,
-	updateEditorSettings
+	updateEditorSettings,
+	findKeybinding,
+	updateKeybinding,
+	insertKeybinding,
+	deleteKeybinding,
+	getKeybindings
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
 import type {
@@ -77,6 +83,10 @@ export const load = async ({ locals, params }) => {
 	const userId = locals.user.id
 
 	const editorSettings = await getEditorSettings(userId)
+	const keybindings = (await getKeybindings(userId)).map((k) => ({
+		key: k.key,
+		name: k.name
+	}))
 
 	const trash = await getTrash(userId)
 	const trashIds = trash.map((t) => t.fileId).filter((id) => id !== null)
@@ -182,6 +192,7 @@ export const load = async ({ locals, params }) => {
 	const passwordResetForm = await superValidate(zod(passwordResetSchema))
 	const emailForm = await superValidate(zod(emailSchema))
 	const editorSettingsForm = await superValidate(zod(editorSettingsSchema.default(editorSettings)))
+	const keybindingForm = await superValidate(zod(keybindingSchema))
 
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
@@ -199,7 +210,9 @@ export const load = async ({ locals, params }) => {
 		repositoryBranchesForm,
 		passwordResetForm,
 		emailForm,
-		editorSettingsForm
+		editorSettingsForm,
+		keybindingForm,
+		keybindings
 	}
 }
 
@@ -509,9 +522,29 @@ export const actions: Actions = {
 		const form = await superValidate(request, zod(editorSettingsSchema))
 
 		if (!locals.user || !form.valid) return fail(400, { form })
-		console.log(form.data)
 
 		await updateEditorSettings(locals.user.id, form.data)
+
+		return { form }
+	},
+	keybinding: async ({ request, locals }) => {
+		const form = await superValidate(request, zod(keybindingSchema))
+		const userId = locals.user?.id
+
+		if (!userId || !form.valid) return fail(400, { form })
+
+		const existingKeybinding = await findKeybinding(form.data.name, userId)
+
+		if (form.data.reset) {
+			if (existingKeybinding) await deleteKeybinding(form.data.name, userId)
+			return { form }
+		}
+
+		if (existingKeybinding) {
+			await updateKeybinding({ ...form.data, userId })
+		} else {
+			await insertKeybinding({ ...form.data, userId })
+		}
 
 		return { form }
 	}

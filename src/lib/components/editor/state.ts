@@ -30,7 +30,7 @@ import { completions, resizeTable, handleLinks } from './assistance'
 import { theme, themeHighlightStyle } from './theme'
 import { editorAutoSave, editorStore } from './editorStore'
 import { selectedFile } from '$lib/components/file-tree/treeStore'
-import type { defaultEditorSettings } from '../settings/defaultSettings'
+import { defaultEditorSettings } from '../settings/defaultSettings'
 
 const autoSave = async (view: EditorView) => {
 	let status: 'saved' | 'error' = 'saved'
@@ -53,8 +53,8 @@ const autoSave = async (view: EditorView) => {
 }
 
 export const state = (
-	editorSettings: typeof defaultEditorSettings,
-	editorKeymaps: KeyBinding[]
+	editorSettings: typeof defaultEditorSettings = defaultEditorSettings,
+	editorKeymaps: KeyBinding[] = []
 ) => {
 	let extensions = [
 		EditorState.allowMultipleSelections.of(true),

@@ -6,6 +6,7 @@ import type { z } from 'zod'
 import type {
 	editorSettingsSchema,
 	emailSchema,
+	keybindingSchema,
 	passwordResetSchema,
 	repositoriesSchema
 } from '../../../routes/[docId]/schemas'
@@ -34,4 +35,5 @@ export type SettingsContext = {
 	editorSettings: typeof defaultEditorSettings
 	editorSettingsForm: SuperValidated<z.infer<typeof editorSettingsSchema>>
 	editorKeymaps: KeyBinding[]
+	keybindingForm: SuperValidated<z.infer<typeof keybindingSchema>>
 }

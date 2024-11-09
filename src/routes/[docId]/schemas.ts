@@ -67,3 +67,9 @@ export const editorSettingsSchema = z.object({
 	wordWrap: z.boolean(),
 	autoSave: z.boolean()
 })
+
+export const keybindingSchema = z.object({
+	key: z.string(),
+	name: z.string(),
+	reset: z.boolean().default(false)
+})

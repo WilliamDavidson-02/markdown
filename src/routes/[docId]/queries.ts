@@ -5,6 +5,7 @@ import {
 	githubFileTable,
 	githubFolderTable,
 	githubInstallationTable,
+	keybindingTable,
 	repositoryTable,
 	settingsTable,
 	trashTable,
@@ -249,4 +250,37 @@ export const updateEditorSettings = async (
 	settings: typeof settingsTable.$inferInsert.settings
 ) => {
 	await db.update(settingsTable).set({ settings }).where(eq(settingsTable.userId, userId))
+}
+
+export const getKeybindings = async (userId: string) => {
+	return await db.select().from(keybindingTable).where(eq(keybindingTable.userId, userId))
+}
+
+export const findKeybinding = async (name: string, userId: string) => {
+	const keybinding = await db
+		.select()
+		.from(keybindingTable)
+		.where(and(eq(keybindingTable.name, name), eq(keybindingTable.userId, userId)))
+		.limit(1)
+
+	return keybinding.length > 0 ? keybinding[0] : null
+}
+
+export const insertKeybinding = async (keybinding: typeof keybindingTable.$inferInsert) => {
+	await db.insert(keybindingTable).values(keybinding)
+}
+
+export const updateKeybinding = async (keybinding: typeof keybindingTable.$inferInsert) => {
+	await db
+		.update(keybindingTable)
+		.set({ key: keybinding.key })
+		.where(
+			and(eq(keybindingTable.name, keybinding.name), eq(keybindingTable.userId, keybinding.userId))
+		)
+}
+
+export const deleteKeybinding = async (name: string, userId: string) => {
+	await db
+		.delete(keybindingTable)
+		.where(and(eq(keybindingTable.name, name), eq(keybindingTable.userId, userId)))
 }
