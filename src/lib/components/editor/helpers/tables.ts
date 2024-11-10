@@ -49,8 +49,22 @@ const formatTableCell = (lines: LineChange[], update: ViewUpdate): LineChange[] 
 	if (!line) return lines
 
 	const basedCursorPos = main.from - line.from
+	const startingPipeIndex = line.insert.lastIndexOf('|', basedCursorPos)
 	const closingPipeIndex = line.insert.indexOf('|', basedCursorPos)
 	const charBetweenCursorAndPipe = line.insert.slice(basedCursorPos, closingPipeIndex)
+
+	const lineChars = line.insert.split('')
+
+	// Prevent more the one space between the starting pipe and first char for the delimiter cells
+	if (tableRegex.delimiter.test(line.insert)) {
+		const firstCharIndex = line.insert.slice(startingPipeIndex, closingPipeIndex).search(/[^|\s]/)
+		const spaces = getSpacesBeforeFirstChar(line, startingPipeIndex, closingPipeIndex)
+
+		if (basedCursorPos - startingPipeIndex <= firstCharIndex && spaces.length > 1) {
+			lineChars.splice(startingPipeIndex + 1, spaces.length, ' ')
+			line.insert = lineChars.join('')
+		}
+	}
 
 	// If there is a character between the cursor and the pipe, we should not replace a white space with the inserted characters
 	if (charBetweenCursorAndPipe.trim().length > 0) return lines
@@ -58,7 +72,6 @@ const formatTableCell = (lines: LineChange[], update: ViewUpdate): LineChange[] 
 	const insertedLength = update.changes.newLength - update.changes.length
 
 	if (insertedLength > 0) {
-		const lineChars = line.insert.split('')
 		lineChars.splice(
 			basedCursorPos,
 			charBetweenCursorAndPipe.length >= insertedLength
@@ -112,11 +125,18 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 		const columnBoundaries = getColumnBoundaries(line)
 		const currentCellStartIndex = columnBoundaries[i]
 		const currentCellEndIndex = columnBoundaries[i + 1] + 1
+		const currentCell = line.insert.slice(currentCellStartIndex, currentCellEndIndex)
 		const spacesBeforeFirstChar = getSpacesBeforeFirstChar(
 			line,
 			currentCellStartIndex,
 			currentCellEndIndex
 		)
+		const spacesAfterLastChar = getSpacesAfterLastChar(
+			line,
+			currentCellStartIndex,
+			currentCellEndIndex
+		)
+		const isCurrentCellDelimiter = tableRegex.delimiter.test(currentCell)
 
 		// add spaces before the first character of the cell
 		lines = lines.map((row): LineChange => {
@@ -124,14 +144,19 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 			const startIndex = columnBoundaries[i]
 			const endIndex = columnBoundaries[i + 1]
 			const rowChars = row.insert.split('')
+			const isRowDelimiter = tableRegex.delimiter.test(row.insert)
 			if (startIndex < basedCursorPos && row.from !== line.from) {
 				const currentSpaces = getSpacesBeforeFirstChar(row, startIndex, endIndex)
 				const spacesToAdd = spacesBeforeFirstChar.length - currentSpaces.length
+				const totalSpaces = currentSpaces.length + spacesToAdd
 				if (spacesToAdd > 0) {
 					rowChars.splice(
 						startIndex + 1,
 						currentSpaces.length,
-						currentSpaces + ' '.repeat(spacesToAdd)
+						currentSpaces +
+							' '.repeat(
+								isRowDelimiter ? (totalSpaces > 1 && currentSpaces.length > 0 ? 0 : 1) : spacesToAdd
+							)
 					)
 				} else if (spacesToAdd < 0) {
 					rowChars.splice(startIndex + 1, currentSpaces.length, currentSpaces.slice(0, spacesToAdd))
@@ -141,12 +166,6 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 			return { ...row, insert: rowChars.join('') }
 		})
 
-		const currentCell = line.insert.slice(currentCellStartIndex, currentCellEndIndex)
-		const spacesAfterLastChar = getSpacesAfterLastChar(
-			line,
-			currentCellStartIndex,
-			currentCellEndIndex
-		)
 		let widestCell = lines.reduce(
 			(widest, row) => {
 				const columnBoundaries = getColumnBoundaries(row)
@@ -154,18 +173,19 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 				const endIndex = columnBoundaries[i + 1] + 1
 				const cell = row.insert.slice(startIndex, endIndex)
 				const spaces = getSpacesAfterLastChar(row, startIndex, endIndex)
-				const isDelimiter = tableRegex.delimiter.test(cell)
 
-				if (row.from !== line.from && !isDelimiter) {
+				if (tableRegex.delimiter.test(cell)) return widest
+
+				if (row.from !== line.from) {
 					const currentCellContent = cell.length - spaces.length
 					const widestCellContent = widest.insert.length - widest.spaces.length
 
-					if (currentCellContent > widestCellContent) {
+					if (currentCellContent > widestCellContent && currentCell.length < currentCellContent) {
 						return { insert: cell, from: row.from, spaces }
 					}
 				}
 
-				if (cell.length > widest.insert.length && !isDelimiter) {
+				if (cell.length > widest.insert.length) {
 					return { insert: cell, from: row.from, spaces }
 				}
 
@@ -195,6 +215,7 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 			const startIndex = columnBoundaries[i]
 			const endIndex = columnBoundaries[i + 1] + 1
 			const rowChars = row.insert.split('')
+			const isDelimiter = tableRegex.delimiter.test(row.insert)
 			if (startIndex < basedCursorPos) {
 				const currentSpaces = getSpacesAfterLastChar(row, startIndex, endIndex)
 				const spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
