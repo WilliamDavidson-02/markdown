@@ -26,14 +26,12 @@ export const GET = async (event: RequestEvent): Promise<Response> => {
 			}
 		})
 		const githubUser: GitHubUser = await githubUserResponse.json()
-		console.log('gh user', githubUser)
 
 		const existingUser = await db
 			.select()
 			.from(userTable)
 			.where(eq(userTable.githubId, githubUser.id))
 			.limit(1)
-		console.log('existing user', existingUser)
 
 		if (existingUser.length > 0) {
 			const session = await lucia.createSession(existingUser[0].id, {})

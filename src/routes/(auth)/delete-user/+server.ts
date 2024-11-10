@@ -44,7 +44,6 @@ export const DELETE = async ({ locals, cookies }) => {
 		await Promise.all(installationIds.map((id) => deleteGithubInstallation(id, token)))
 	}
 
-	// Clear cookie session
 	const sessionCookie = lucia.createBlankSessionCookie()
 	cookies.set(sessionCookie.name, sessionCookie.value, {
 		path: '.',
