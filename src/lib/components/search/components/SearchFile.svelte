@@ -53,7 +53,7 @@
 		user-select: none;
 		cursor: pointer;
 		height: 36px;
-		padding-right: var(--space-sm);
+		padding: 0 var(--space-sm);
 	}
 
 	.file-link {
