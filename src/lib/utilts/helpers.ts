@@ -1,4 +1,4 @@
-import type { Folder } from '$lib/components/file-tree/treeStore'
+import type { File, Folder } from '$lib/components/file-tree/treeStore'
 
 export const getWordCount = (value: string) => {
 	const wordBoundaries = value.match(/\b\w+\b/g)
@@ -117,4 +117,20 @@ export const getFoldersToFolderPos = (folders: Folder[], id: string): Folder[] =
 		return null
 	}
 	return traverse(folders) || []
+}
+
+export const getAllFilesFromTree = (tree: Folder[]): File[] => {
+	const traverse = (folders: Folder[]): File[] => {
+		const files: File[] = []
+		for (const folder of folders) {
+			if (folder.files.length > 0) {
+				files.push(...folder.files)
+			}
+			if (folder.children.length > 0) {
+				files.push(...traverse(folder.children))
+			}
+		}
+		return files
+	}
+	return traverse(tree)
 }

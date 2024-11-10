@@ -13,6 +13,7 @@
 	export let folderDialog: HTMLDialogElement
 	export let trashDialog: HTMLDialogElement
 	export let settingsDialog: HTMLDialogElement
+	export let searchDialog: HTMLDialogElement
 	export let isCurrentDocGithub: boolean
 
 	const settings = getSettings()
@@ -49,7 +50,7 @@
 	<aside>
 		<div class="between">
 			<div class="btn-icons">
-				<Button size="sm" variant="ghost" icon>
+				<Button on:click={() => searchDialog.showModal()} size="sm" variant="ghost" icon>
 					<Search size={20} stroke-width={1.5} />
 				</Button>
 				<Button

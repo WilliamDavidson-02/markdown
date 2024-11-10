@@ -16,6 +16,7 @@
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
 	import { Workspace, workspaceContext } from '$lib/components/workspace'
 	import { editorKeymaps } from '$lib/components/editor/commands.js'
+	import { Search } from '$lib/components/search'
 
 	export let data
 
@@ -23,7 +24,7 @@
 	let folderDialog: HTMLDialogElement
 	let trashDialog: HTMLDialogElement
 	let settingsDialog: HTMLDialogElement
-
+	let searchDialog: HTMLDialogElement
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
 	$: initialSettings = {
 		installations: data.installations,
@@ -77,7 +78,15 @@
 	<FolderForm bind:folderDialog form={data.folderForm} />
 	<Trash bind:trashDialog />
 	<Settings bind:settingsDialog />
-	<Nav {trashDialog} {fileDialog} {folderDialog} {settingsDialog} {isCurrentDocGithub} />
+	<Search bind:searchDialog />
+	<Nav
+		{searchDialog}
+		{trashDialog}
+		{fileDialog}
+		{folderDialog}
+		{settingsDialog}
+		{isCurrentDocGithub}
+	/>
 	<Workspace />
 </main>
 

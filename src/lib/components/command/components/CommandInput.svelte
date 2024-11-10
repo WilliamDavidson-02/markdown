@@ -2,7 +2,6 @@
 	import { Input, type Events, type Props } from '$lib/components/input'
 	import { derived, get } from 'svelte/store'
 	import { getCtx, getState, ITEM_SELECTOR, VALUE_ATTR } from '../command'
-	import type { Action } from 'svelte/action'
 
 	type $$Props = Props
 	type $$Events = Events
