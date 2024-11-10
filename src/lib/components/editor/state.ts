@@ -26,11 +26,11 @@ import {
 	completionKeymap
 } from '@codemirror/autocomplete'
 
-import { completions, resizeTable, handleLinks } from './assistance'
 import { theme, themeHighlightStyle } from './theme'
 import { editorSave, editorStore, type EditorSave } from './editorStore'
 import { defaultEditorSettings } from '../settings/defaultSettings'
 import { handleAutoSave, handleDocChange } from './save'
+import { resizeTable, completions, handleLinks } from './helpers'
 
 export const state = (
 	editorSettings: typeof defaultEditorSettings = defaultEditorSettings,

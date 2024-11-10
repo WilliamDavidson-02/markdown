@@ -9,7 +9,7 @@ export const getWorkspaceContext = () => {
 }
 
 export const workspaceContext = () => {
-	const store = writable<{ view: WorkspaceView }>({ view: 'split' })
+	const store = writable<{ view: WorkspaceView }>({ view: 'editor' })
 	setContext(NAME, store)
 	return store
 }

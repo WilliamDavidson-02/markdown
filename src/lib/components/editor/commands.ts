@@ -1,4 +1,5 @@
 import { defaultKeymap, insertBlankLine } from '@codemirror/commands'
+import type { KeyBinding } from '@codemirror/view'
 import {
 	contractSelectionToChild,
 	extendSelectionToParent,
@@ -6,8 +7,7 @@ import {
 	insertBlankLineAbove,
 	toggleBold,
 	toggleItalic
-} from './assistance'
-import type { KeyBinding } from '@codemirror/view'
+} from './helpers'
 
 /**
  * Custom keymaps
