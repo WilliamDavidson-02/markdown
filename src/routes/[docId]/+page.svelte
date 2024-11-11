@@ -14,9 +14,10 @@
 	import { settingsContext } from '$lib/components/settings/settingsContext'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
-	import { Workspace, workspaceContext } from '$lib/components/workspace'
+	import { Workspace, WORKSPACE_CONTEXT_NAME, workspaceContext } from '$lib/components/workspace'
 	import { editorKeymaps } from '$lib/components/editor/commands.js'
 	import { Search } from '$lib/components/search'
+	import { NAV_CONTEXT_NAME, navContext } from '$lib/components/nav/store'
 
 	export let data
 
@@ -40,7 +41,8 @@
 	}
 
 	const settings = settingsContext(initialSettings)
-	workspaceContext()
+	const workspaceStore = workspaceContext()
+	const navStore = navContext()
 
 	const setDoc = (currentDoc: typeof fileTable.$inferSelect) => {
 		const doc = currentDoc?.doc ?? ''
@@ -56,6 +58,12 @@
 		if (data.currentDoc?.id !== $page.url.pathname.split('/').pop()) {
 			await goto(`/${data.currentDoc?.id}`)
 		}
+
+		const localNavContext = window.localStorage.getItem(NAV_CONTEXT_NAME)
+		if (localNavContext) navStore.set(JSON.parse(localNavContext))
+
+		const localWorkspaceContext = window.localStorage.getItem(WORKSPACE_CONTEXT_NAME)
+		if (localWorkspaceContext) workspaceStore.set(JSON.parse(localWorkspaceContext))
 	})
 
 	$: if (

@@ -1,12 +1,19 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
-	import { navStore } from '$lib/components/nav/store'
+	import { getNavContext, NAV_CONTEXT_NAME } from '$lib/components/nav/store'
 	import { ChevronsRight, ChevronsLeft } from 'lucide-svelte'
 	import { HeaderMenu, HeaderTitle } from '../'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import GithubHeader from './GithubHeader.svelte'
 
 	export let headerElement: HTMLElement
+	const navContext = getNavContext()
+
+	const toggleNav = () => {
+		const open = !$navContext.open
+		navContext.update((state) => ({ ...state, open }))
+		window.localStorage.setItem(NAV_CONTEXT_NAME, JSON.stringify({ ...$navContext, open }))
+	}
 </script>
 
 <header bind:this={headerElement}>
@@ -14,8 +21,8 @@
 		<GithubHeader />
 	{/if}
 	<nav>
-		<Button icon size="sm" variant="ghost" on:click={() => navStore.update((state) => !state)}>
-			{#if $navStore}
+		<Button icon size="sm" variant="ghost" on:click={toggleNav}>
+			{#if $navContext.open}
 				<ChevronsLeft size={20} stroke-width={1.5} />
 			{:else}
 				<ChevronsRight size={20} stroke-width={1.5} />

@@ -18,7 +18,11 @@
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
 	import { invalidateAll } from '$app/navigation'
-	import { getWorkspaceContext, type WorkspaceView } from '$lib/components/workspace'
+	import {
+		getWorkspaceContext,
+		WORKSPACE_CONTEXT_NAME,
+		type WorkspaceView
+	} from '$lib/components/workspace'
 	import { getSettings } from '$lib/components/settings/settingsContext'
 	import { handleManualSave } from '../save'
 	import { onMount } from 'svelte'
@@ -53,6 +57,7 @@
 
 	const setView = (view: WorkspaceView) => {
 		workspace.set({ view })
+		window.localStorage.setItem(WORKSPACE_CONTEXT_NAME, JSON.stringify({ view }))
 		isOpen = false
 	}
 

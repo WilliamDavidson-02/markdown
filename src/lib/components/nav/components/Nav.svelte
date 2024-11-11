@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
 	import { Search, TableOfContents, Folder, SquarePen, Trash2, Settings } from 'lucide-svelte'
-	import { navStore } from '../store'
+	import { getNavContext, NAV_CONTEXT_NAME } from '../store'
 	import { onMount } from 'svelte'
 	import { FileTree } from '$lib/components/file-tree'
 	import { OutlinePanel } from '$lib/components/outline-panel'
@@ -17,24 +17,29 @@
 	export let isCurrentDocGithub: boolean
 
 	const settings = getSettings()
+	const navContext = getNavContext()
 
 	let isResizing = false
-	let navWidth = 400
 	let showOutlinePanel = false
 	let showGithubPanel = isCurrentDocGithub ? true : false
 
 	onMount(() => {
-		navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
+		const localNavContext = window.localStorage.getItem(NAV_CONTEXT_NAME)
+		if (localNavContext) {
+			navContext.update((state) => ({ ...state, ...JSON.parse(localNavContext) }))
+		}
+
+		// navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
 
 		const handleMove = (ev: PointerEvent) => {
 			if (!isResizing) return
 			if (ev.clientX < 300 || ev.clientX > 500) return
-			navWidth = ev.clientX
+			navContext.update((state) => ({ ...state, width: ev.clientX }))
 		}
 
 		const handleUp = () => {
 			isResizing = false
-			window.localStorage.setItem('navWidth', navWidth.toString())
+			window.localStorage.setItem(NAV_CONTEXT_NAME, JSON.stringify({ ...$navContext }))
 		}
 
 		window.addEventListener('pointermove', handleMove)
@@ -46,7 +51,7 @@
 	})
 </script>
 
-<nav style:width={`${!$navStore ? 0 : navWidth}px`}>
+<nav style:width={`${!$navContext.open ? 0 : $navContext.width}px`}>
 	<aside>
 		<div class="between">
 			<div class="btn-icons">
