@@ -6,9 +6,9 @@ import { generateIdFromEntropySize } from 'lucia'
 import { hash } from '@node-rs/argon2'
 import { fail, redirect } from '@sveltejs/kit'
 import { lucia } from '$lib/server/auth'
-import { userTable } from '$lib/db/schema'
+import { settingsTable, userTable } from '$lib/db/schema'
 import { eq } from 'drizzle-orm'
-import { db } from '$lib/db'
+import { db, dbPool } from '$lib/db'
 
 const emailAndPasswordSchema = z.object({
 	email: z.string().email(),
@@ -51,10 +51,14 @@ export const actions: Actions = {
 		}
 
 		try {
-			await db.insert(userTable).values({
-				id: userId,
-				email,
-				passwordHash
+			await dbPool.transaction(async (tx) => {
+				await tx.insert(userTable).values({
+					id: userId,
+					email,
+					passwordHash
+				})
+
+				await tx.insert(settingsTable).values({ userId })
 			})
 		} catch {
 			return fail(500, { form, error: 'Failed to create user' })

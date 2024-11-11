@@ -3,8 +3,8 @@ import { generateIdFromEntropySize } from 'lucia'
 import { github, lucia } from '$lib/server/auth'
 
 import type { RequestEvent } from '@sveltejs/kit'
-import { db } from '$lib/db'
-import { userTable } from '$lib/db/schema'
+import { db, dbPool } from '$lib/db'
+import { settingsTable, userTable } from '$lib/db/schema'
 import { eq } from 'drizzle-orm'
 
 export const GET = async (event: RequestEvent): Promise<Response> => {
@@ -43,9 +43,13 @@ export const GET = async (event: RequestEvent): Promise<Response> => {
 		} else {
 			const userId = generateIdFromEntropySize(10)
 
-			await db.insert(userTable).values({
-				id: userId,
-				githubId: githubUser.id
+			await dbPool.transaction(async (tx) => {
+				await tx.insert(userTable).values({
+					id: userId,
+					githubId: githubUser.id
+				})
+
+				await tx.insert(settingsTable).values({ userId })
 			})
 
 			const session = await lucia.createSession(userId, {})
