@@ -136,7 +136,6 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 			currentCellStartIndex,
 			currentCellEndIndex
 		)
-		const isCurrentCellDelimiter = tableRegex.delimiter.test(currentCell)
 
 		// add spaces before the first character of the cell
 		lines = lines.map((row): LineChange => {
@@ -230,8 +229,21 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 					endingPipeIndex - startingPipeIndex - currentSpaces.length - (hasRightAlignment ? 2 : 0) // to skip : alignment
 
 				let spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
+
+				// If the widest cell is the delimiter spaces to add will be 0 but the spacing between
+				// last char and ending pipe can be more then 1, that is why need to replace the extra spacing with "-"
+				if (isDelimiter) {
+					spacesToAdd = currentSpaces.length > 1 ? currentSpaces.length - 1 : spacesToAdd
+				}
+
 				if (spacesToAdd > 0) {
 					if (isDelimiter) {
+						if (currentSpaces.length > 1) {
+							rowChars.splice(
+								startingPipeIndex + lastCharIndex + (hasRightAlignment ? 2 : 1),
+								currentSpaces.length - 1
+							)
+						}
 						rowChars[firstCharIndex] = '-'.repeat(spacesToAdd + 1)
 					} else {
 						rowChars.splice(
@@ -299,7 +311,6 @@ export const resizeTable = EditorView.updateListener.of((update: ViewUpdate) => 
 
 		lines = formatColumnWidth(lines, update)
 		/**
-		 * Do the same spacing formating at the end of the cell as the begining for delimiter cells
 		 * Fix removeing from the longest more then the next longest cell not formatting to the new length
 		 */
 
