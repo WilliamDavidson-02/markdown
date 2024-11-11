@@ -226,13 +226,11 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 				// For delimiter
 				const spacesBefore = getSpacesBeforeFirstChar(row, startIndex, endIndex)
 				const startingPipeIndex = row.insert.indexOf('|', startIndex)
-				const endingPipeIndex = row.insert.lastIndexOf('|', endIndex)
 				const hasLeftAlignment = row.insert.slice(startIndex, endIndex).includes(':-')
 				const hasRightAlignment = row.insert.slice(startIndex, endIndex).includes('-:')
 				const firstCharIndex =
 					startingPipeIndex + 1 + spacesBefore.length + (hasLeftAlignment ? 1 : 0) // to skip : alignment
-				const lastCharIndex =
-					endingPipeIndex - startingPipeIndex - currentSpaces.length - (hasRightAlignment ? 2 : 0) // to skip : alignment
+				const lastCharIndex = endIndex - currentSpaces.length - (hasRightAlignment ? 2 : 0) // to skip : alignment
 
 				let spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
 
@@ -245,8 +243,8 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 				if (spacesToAdd > 0) {
 					if (isDelimiter) {
 						if (currentSpaces.length > 1) {
-							rowChars.splice(
-								startingPipeIndex + lastCharIndex + (hasRightAlignment ? 2 : 1),
+							const removed = rowChars.splice(
+								startingPipeIndex + (lastCharIndex - startIndex) + (hasRightAlignment ? 2 : 0),
 								currentSpaces.length - 1
 							)
 						}
@@ -302,6 +300,60 @@ const getNewCursorPosition = (lines: LineChange[], range: SelectionRange, state:
 	return lengthChangeBefore
 }
 
+const isWritingNewHeader = (lines: LineChange[], state: EditorState, range: SelectionRange) => {
+	const line = state.doc.lineAt(range.from)
+	if (lines[0].from !== line.from) return false
+	const lastPipeIndex = lines[0].insert.lastIndexOf('|')
+	const contentAfterLastPipe = line.text.slice(lastPipeIndex)
+
+	if (contentAfterLastPipe.startsWith('|') && contentAfterLastPipe.length - 1 === 0) {
+		return false
+	}
+
+	return true
+}
+
+const formatNewColumns = (lines: LineChange[]) => {
+	if (lines.length < 2) return []
+
+	const headerColumnBoundaries = getColumnBoundaries(lines[0])
+	const delimiterColumnBoundaries = getColumnBoundaries(lines[1])
+
+	if (headerColumnBoundaries.length === delimiterColumnBoundaries.length) return []
+	let newLines = [...lines]
+	if (headerColumnBoundaries.length < delimiterColumnBoundaries.length) {
+		const lastPipeIndex = headerColumnBoundaries[headerColumnBoundaries.length - 1]
+		newLines = newLines.map((row) => {
+			return {
+				...row,
+				insert: row.insert.slice(0, lastPipeIndex + 1)
+			}
+		})
+	} else {
+		const newBoundaries = headerColumnBoundaries.slice(delimiterColumnBoundaries.length - 1)
+
+		const newHeaders = lines[0].insert.slice(newBoundaries[0] + 1)
+		const newColumns = newHeaders
+			.split('')
+			.map((c) => (c !== '|' ? ' ' : '|'))
+			.join('')
+
+		newLines = newLines.map((row, index) => {
+			if (index === 0) return row
+			const isDelimiter = tableRegex.delimiter.test(row.insert)
+
+			const columns = row.insert.slice(0, newBoundaries[0] + 1)
+
+			return {
+				...row,
+				insert: columns + (isDelimiter ? newColumns.replaceAll(' ', '-') : newColumns)
+			}
+		})
+	}
+
+	return newLines
+}
+
 let resized = false
 
 /**
@@ -318,8 +370,21 @@ export const resizeTable = EditorView.updateListener.of((update: ViewUpdate) => 
 		let lines = getTableLines(update.state, range)
 
 		if (lines.length < 1) return { range }
-		lines = formatTableCell(lines, update)
 
+		// Prevent table resize when writing new header
+		if (isWritingNewHeader(lines, update.state, range)) {
+			return { range }
+		} else {
+			// Add columns if there is new headers
+			const newColumns = formatNewColumns(lines)
+
+			if (newColumns.length > 0) {
+				resized = true
+				return { range: EditorSelection.cursor(range.from), changes: newColumns }
+			}
+		}
+
+		lines = formatTableCell(lines, update)
 		lines = formatColumnWidth(lines, update)
 
 		const newCursorPos = getNewCursorPosition(lines, range, update.state)
