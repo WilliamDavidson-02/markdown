@@ -54,22 +54,22 @@ const formatTableCell = (lines: LineChange[], update: ViewUpdate): LineChange[] 
 	const charBetweenCursorAndPipe = line.insert.slice(basedCursorPos, closingPipeIndex)
 
 	const lineChars = line.insert.split('')
+	const insertedLength = update.changes.newLength - update.changes.length
 
 	// Prevent more the one space between the starting pipe and first char for the delimiter cells
 	if (tableRegex.delimiter.test(line.insert)) {
-		const firstCharIndex = line.insert.slice(startingPipeIndex, closingPipeIndex).search(/[^|\s]/)
-		const spaces = getSpacesBeforeFirstChar(line, startingPipeIndex, closingPipeIndex)
+		const spacesBefore = getSpacesBeforeFirstChar(line, startingPipeIndex, closingPipeIndex)
+		const firstCharIndex = spacesBefore.length + 1
+		const startingCellIndex = basedCursorPos - startingPipeIndex
 
-		if (basedCursorPos - startingPipeIndex <= firstCharIndex && spaces.length > 1) {
-			lineChars.splice(startingPipeIndex + 1, spaces.length, ' ')
+		if (startingCellIndex <= firstCharIndex && spacesBefore.length > 1) {
+			lineChars.splice(startingPipeIndex + 1, spacesBefore.length, ' ')
 			line.insert = lineChars.join('')
 		}
 	}
 
 	// If there is a character between the cursor and the pipe, we should not replace a white space with the inserted characters
 	if (charBetweenCursorAndPipe.trim().length > 0) return lines
-
-	const insertedLength = update.changes.newLength - update.changes.length
 
 	if (insertedLength > 0) {
 		lineChars.splice(
@@ -218,19 +218,39 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 			const isDelimiter = tableRegex.delimiter.test(row.insert)
 			if (startIndex < basedCursorPos) {
 				const currentSpaces = getSpacesAfterLastChar(row, startIndex, endIndex)
-				const spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
+				// For delimiter
+				const spacesBefore = getSpacesBeforeFirstChar(row, startIndex, endIndex)
+				const startingPipeIndex = row.insert.indexOf('|', startIndex)
+				const endingPipeIndex = row.insert.lastIndexOf('|', endIndex)
+				const hasLeftAlignment = row.insert.slice(startIndex, endIndex).includes(':-')
+				const hasRightAlignment = row.insert.slice(startIndex, endIndex).includes('-:')
+				const firstCharIndex =
+					startingPipeIndex + 1 + spacesBefore.length + (hasLeftAlignment ? 1 : 0) // to skip : alignment
+				const lastCharIndex =
+					endingPipeIndex - startingPipeIndex - currentSpaces.length - (hasRightAlignment ? 2 : 0) // to skip : alignment
+
+				let spacesToAdd = widestCell.insert.length - row.insert.slice(startIndex, endIndex).length
 				if (spacesToAdd > 0) {
-					rowChars.splice(
-						endIndex - 1 - currentSpaces.length,
-						currentSpaces.length,
-						currentSpaces + ' '.repeat(spacesToAdd)
-					)
+					if (isDelimiter) {
+						rowChars[firstCharIndex] = '-'.repeat(spacesToAdd + 1)
+					} else {
+						rowChars.splice(
+							endIndex - 1 - currentSpaces.length,
+							currentSpaces.length,
+							currentSpaces + ' '.repeat(spacesToAdd)
+						)
+					}
 				} else if (spacesToAdd < 0) {
-					rowChars.splice(
-						endIndex - 1 - currentSpaces.length,
-						currentSpaces.length,
-						currentSpaces.slice(0, spacesToAdd)
-					)
+					if (isDelimiter) {
+						spacesToAdd = spacesToAdd > lastCharIndex - firstCharIndex ? 0 : spacesToAdd
+						rowChars.splice(firstCharIndex, Math.abs(spacesToAdd))
+					} else {
+						rowChars.splice(
+							endIndex - 1 - currentSpaces.length,
+							currentSpaces.length,
+							currentSpaces.slice(0, spacesToAdd)
+						)
+					}
 				}
 			}
 
@@ -278,6 +298,10 @@ export const resizeTable = EditorView.updateListener.of((update: ViewUpdate) => 
 		lines = formatTableCell(lines, update)
 
 		lines = formatColumnWidth(lines, update)
+		/**
+		 * Do the same spacing formating at the end of the cell as the begining for delimiter cells
+		 * Fix removeing from the longest more then the next longest cell not formatting to the new length
+		 */
 
 		const newCursorPos = getNewCursorPosition(lines, range, update.state)
 
