@@ -1,20 +1,51 @@
-import { insertBlankLine } from '@codemirror/commands'
 import { indentString } from '@codemirror/language'
 import { countColumn, EditorSelection, Line, Transaction, type ChangeSpec } from '@codemirror/state'
 import type { EditorView } from '@codemirror/view'
+import { getTableLines, tableRegex } from './tables'
 
-/**
- * Insert new blank line above cursor position
- */
-export const insertBlankLineAbove = ({ state, dispatch }: EditorView) => {
+const createBlankTableLine = (delimiter: string) => {
+	const delChars = delimiter.split('')
+	return (
+		delChars
+			.map((c, i) => {
+				if (c === '|') return '|'
+				return ' '
+			})
+			.join('') + '\n'
+	)
+}
+
+export const insertNewBlankLine = (
+	{ state, dispatch }: EditorView,
+	direction: 'above' | 'below' = 'above'
+) => {
 	const changes = state.changeByRange((range) => {
 		const line = state.doc.lineAt(range.from)
-		const from = line.from
-		const to = line.from
+		const from = direction === 'above' ? line.from : line.to + 1
+		const to = direction === 'above' ? line.from : line.to + 1
 		const indent = countColumn(/^\s*/.exec(state.doc.lineAt(from).text)![0], state.tabSize)
+		let toInsert = '\n'
+
+		const tableLines = getTableLines(state, range)
+
+		if (tableLines.length > 0) {
+			const delimiter = tableLines[1]
+			const { number } = state.doc.lineAt(delimiter.from)
+			if (
+				tableRegex.delimiter.test(delimiter.insert) &&
+				((direction === 'above' && number < line.number) ||
+					(direction === 'below' && number <= line.number))
+			) {
+				toInsert = createBlankTableLine(delimiter.insert)
+			}
+		}
 
 		return {
-			changes: { from, to, insert: `${indentString(state, indent)}\n` },
+			changes: {
+				from,
+				to,
+				insert: `${indentString(state, indent)}${toInsert}`
+			},
 			range: EditorSelection.cursor(from + indent)
 		}
 	})
@@ -61,7 +92,7 @@ export const handleInsertBlankLine = (editor: EditorView) => {
 	})
 
 	if (changes.changes.empty) {
-		return insertBlankLine(editor)
+		return insertNewBlankLine(editor, 'below')
 	}
 
 	editor.dispatch(changes, {

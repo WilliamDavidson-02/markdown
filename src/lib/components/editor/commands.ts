@@ -4,7 +4,7 @@ import {
 	contractSelectionToChild,
 	extendSelectionToParent,
 	handleInsertBlankLine,
-	insertBlankLineAbove,
+	insertNewBlankLine,
 	toggleBold,
 	toggleItalic
 } from './helpers'
@@ -35,7 +35,7 @@ export const customKeymaps: KeyBinding[] = [
 	},
 	{
 		key: 'Mod-Shift-Enter',
-		run: insertBlankLineAbove,
+		run: (editor) => insertNewBlankLine(editor, 'above'),
 		preventDefault: true
 	}
 ]

@@ -2,12 +2,12 @@ import { EditorSelection, EditorState, type SelectionRange } from '@codemirror/s
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import type { LineChange } from '../types'
 
-const tableRegex = {
+export const tableRegex = {
 	delimiter: /^\|\s*(?:(:?-+:?)\s*\|)+/,
 	row: /^\|(.*?)\|/
 }
 
-const getTableLines = (state: EditorState, range: SelectionRange): LineChange[] => {
+export const getTableLines = (state: EditorState, range: SelectionRange): LineChange[] => {
 	let lines: LineChange[] = []
 	let { number } = state.doc.lineAt(range.from)
 
@@ -310,9 +310,6 @@ export const resizeTable = EditorView.updateListener.of((update: ViewUpdate) => 
 		lines = formatTableCell(lines, update)
 
 		lines = formatColumnWidth(lines, update)
-		/**
-		 * Fix removeing from the longest more then the next longest cell not formatting to the new length
-		 */
 
 		const newCursorPos = getNewCursorPosition(lines, range, update.state)
 
