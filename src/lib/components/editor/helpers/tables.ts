@@ -109,6 +109,10 @@ const getColumnBoundaries = (line: LineChange) => {
 	}, [] as number[])
 }
 
+const isCellEmpty = (cell: string) => {
+	return cell.replaceAll('|', '').trim().length === 0
+}
+
 const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[] => {
 	const { main } = update.state.selection
 	const line = getCurrentLine(lines, main)
@@ -174,6 +178,8 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 				const spaces = getSpacesAfterLastChar(row, startIndex, endIndex)
 
 				if (tableRegex.delimiter.test(cell)) return widest
+
+				if (isCellEmpty(cell)) return widest
 
 				if (row.from !== line.from) {
 					const currentCellContent = cell.length - spaces.length
@@ -257,11 +263,16 @@ const formatColumnWidth = (lines: LineChange[], update: ViewUpdate): LineChange[
 						spacesToAdd = spacesToAdd > lastCharIndex - firstCharIndex ? 0 : spacesToAdd
 						rowChars.splice(firstCharIndex, Math.abs(spacesToAdd))
 					} else {
-						rowChars.splice(
-							endIndex - 1 - currentSpaces.length,
-							currentSpaces.length,
-							currentSpaces.slice(0, spacesToAdd)
-						)
+						const cell = row.insert.slice(startIndex, endIndex)
+						if (isCellEmpty(cell)) {
+							rowChars.splice(startIndex + 1, Math.abs(spacesToAdd))
+						} else {
+							rowChars.splice(
+								endIndex - 1 - currentSpaces.length,
+								currentSpaces.length,
+								currentSpaces.slice(0, spacesToAdd)
+							)
+						}
 					}
 				}
 			}
