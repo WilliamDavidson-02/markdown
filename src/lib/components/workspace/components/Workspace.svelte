@@ -17,11 +17,14 @@
 	let container: HTMLDivElement
 
 	const workspace = getWorkspaceContext()
+	let resizeObserver: ResizeObserver | null = null
 
 	$: if (headerElement) {
 		headerHeight = headerElement.clientHeight
-		const resizeObserver = new ResizeObserver(() => {
-			headerHeight = headerElement.clientHeight
+		resizeObserver = new ResizeObserver(() => {
+			if (headerElement) {
+				headerHeight = headerElement.clientHeight
+			}
 		})
 		resizeObserver.observe(headerElement)
 	}
@@ -85,6 +88,10 @@
 			previewElement?.removeEventListener('mouseover', () => setCurrentScrollTarget(previewElement))
 			window.removeEventListener('pointermove', handleResize)
 			window.removeEventListener('pointerup', handleUp)
+
+			if (resizeObserver) {
+				resizeObserver.disconnect()
+			}
 		}
 	})
 </script>
