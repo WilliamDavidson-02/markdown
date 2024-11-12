@@ -12,7 +12,7 @@
 	import { trashStore } from '$lib/components/trash/trashStore.js'
 	import { Settings } from '$lib/components/settings'
 	import { settingsContext } from '$lib/components/settings/settingsContext'
-	import { githubTree } from '$lib/components/github-tree/githubTreeStore.js'
+	import { githubIds, githubTree } from '$lib/components/github-tree/githubTreeStore.js'
 	import { repositoryBranchesFormStore } from '$lib/components/git-push-form/repositoryBranchesStore.js'
 	import { Workspace, WORKSPACE_CONTEXT_NAME, workspaceContext } from '$lib/components/workspace'
 	import { editorKeymaps } from '$lib/components/editor/commands.js'
@@ -79,6 +79,7 @@
 	$: githubTree.set(data.githubTree)
 	$: settings.set(initialSettings)
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)
+	$: githubIds.set(data.githubIds)
 </script>
 
 <main>

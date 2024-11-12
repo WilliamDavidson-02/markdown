@@ -37,8 +37,6 @@ export const POST = async ({ request, locals }) => {
 		const trashedFiles = fileIds?.map((id) => ({ userId, fileId: id })) ?? []
 		const trashedFolders = folderIds?.map((id) => ({ userId, folderId: id })) ?? []
 
-		console.log({ trashedFiles, trashedFolders })
-
 		await db.insert(trashTable).values([...trashedFiles, ...trashedFolders])
 
 		return json({ success: true })

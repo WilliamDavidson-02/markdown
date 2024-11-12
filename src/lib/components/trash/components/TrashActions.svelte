@@ -6,6 +6,7 @@
 	import type { File, Folder } from '$lib/components/file-tree/treeStore'
 	import { invalidateAll } from '$app/navigation'
 	import { treeStore } from '$lib/components/file-tree/treeStore'
+	import { githubIds } from '$lib/components/github-tree/githubTreeStore'
 
 	export let item: File | Folder // item from trash not file tree
 
@@ -56,12 +57,15 @@
 				}
 			}
 
+			const isGithub =
+				$githubIds.fileIds.includes(item.id) || $githubIds.folderIds.includes(item.id)
+
 			const res = await fetch(`/${item.id}/delete`, {
 				method: 'DELETE',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ children, parentFolderId: folder?.id })
+				body: JSON.stringify({ children, parentFolderId: folder?.id, isGithub })
 			})
 			if (res.ok) {
 				await invalidateAll()

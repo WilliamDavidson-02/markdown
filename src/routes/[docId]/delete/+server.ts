@@ -1,11 +1,19 @@
-import { fileTable, folderTable, trashTable } from '$lib/db/schema.js'
+import {
+	fileTable,
+	folderTable,
+	githubFileTable,
+	githubFolderTable,
+	repositoryTable,
+	trashTable
+} from '$lib/db/schema.js'
 import { json } from '@sveltejs/kit'
-import { and, eq, inArray, or } from 'drizzle-orm'
-import { dbPool as db } from '$lib/db'
+import { and, eq, inArray, isNull, or } from 'drizzle-orm'
+import { dbPool, db } from '$lib/db'
 
 type DeleteBody = {
 	children: string[] | null
 	parentFolderId: string | undefined
+	isGithub?: boolean
 }
 
 export const DELETE = async ({ locals, params, request }) => {
@@ -15,11 +23,53 @@ export const DELETE = async ({ locals, params, request }) => {
 	}
 
 	try {
-		const { children, parentFolderId }: DeleteBody = await request.json()
+		const { children, parentFolderId, isGithub }: DeleteBody = await request.json()
 		const ids = children ?? [params.docId]
 		const trashDeleteIds = parentFolderId ? [...ids, parentFolderId] : ids
 
-		await db.transaction(async (tx) => {
+		if (isGithub) {
+			const rootFolder = await db
+				.select({
+					repositoryId: githubFolderTable.repositoryId
+				})
+				.from(githubFolderTable)
+				.where(
+					and(inArray(githubFolderTable.folderId, trashDeleteIds), isNull(githubFolderTable.path))
+				)
+				.limit(1)
+
+			if (rootFolder.length > 0) {
+				await dbPool.transaction(async (tx) => {
+					const repoId = rootFolder[0].repositoryId
+
+					await tx.delete(githubFolderTable).where(eq(githubFolderTable.repositoryId, repoId))
+					await tx.delete(githubFileTable).where(eq(githubFileTable.repositoryId, repoId))
+
+					await tx
+						.delete(trashTable)
+						.where(
+							or(
+								inArray(trashTable.folderId, trashDeleteIds),
+								inArray(trashTable.fileId, trashDeleteIds)
+							)
+						)
+
+					await tx
+						.delete(folderTable)
+						.where(and(inArray(folderTable.id, trashDeleteIds), eq(folderTable.userId, userId)))
+					await tx
+						.delete(fileTable)
+						.where(and(inArray(fileTable.id, trashDeleteIds), eq(fileTable.userId, userId)))
+
+					await tx
+						.delete(repositoryTable)
+						.where(and(eq(repositoryTable.id, repoId), eq(repositoryTable.userId, userId)))
+				})
+				return json({ success: true })
+			}
+		}
+
+		await dbPool.transaction(async (tx) => {
 			await tx
 				.delete(trashTable)
 				.where(

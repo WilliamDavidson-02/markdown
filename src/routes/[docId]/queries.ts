@@ -112,6 +112,10 @@ export const removeRepository = async (
 		await tx.delete(githubFileTable).where(inArray(githubFileTable.fileId, fileIds))
 
 		await tx
+			.delete(trashTable)
+			.where(or(inArray(trashTable.folderId, folderIds), inArray(trashTable.fileId, fileIds)))
+
+		await tx
 			.delete(folderTable)
 			.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
 		await tx
