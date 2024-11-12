@@ -42,8 +42,8 @@ import {
 	getGithubFileByIds,
 	getGithubFilesAndFoldersIds,
 	getGithubFolderByIds,
-	getGithubInstallationIdByFileId,
-	getGithubInstallationIdByFolderId,
+	getGithubRepoDataByFileId,
+	getGithubRepoDataByFolderId,
 	getGithubInstallations,
 	getSelectedRepositories,
 	getTrash,
@@ -62,13 +62,17 @@ import {
 	updateKeybinding,
 	insertKeybinding,
 	deleteKeybinding,
-	getKeybindings
+	getKeybindings,
+	deleteGithubFiles,
+	deleteGithubFolders
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
 import type {
 	CreateGithubCommitBodyParams,
 	GithubFileUpdate,
-	GithubShaItemUpdate
+	GithubFolderData,
+	GithubShaItemUpdate,
+	GithubTreePushFile
 } from '$lib/utilts/githubTypes'
 import { updateGithubFileShaAndPath } from '../github/git-pull/queries'
 import { hash, verify } from '@node-rs/argon2'
@@ -137,13 +141,14 @@ export const load = async ({ locals, params }) => {
 		if (folderInTrash && folderHasNonTrashedContent) {
 			trashedFolders.push(folder)
 			return true
-		} else if (githubIds.folderIds.includes(folder.id)) {
-			githubFolders.push(folder)
-			return false
 		} else if (folderInTrash) {
 			trashedFolders.push(folder)
 			return false
+		} else if (githubIds.folderIds.includes(folder.id)) {
+			githubFolders.push(folder)
+			return false
 		}
+
 		return true
 	})
 
@@ -342,31 +347,34 @@ export const actions: Actions = {
 			selectedItem
 		} = form.data
 
-		const installationId =
+		const installationData =
 			selectedItem.type === 'file'
-				? await getGithubInstallationIdByFileId(selectedItem.id, userId)
-				: await getGithubInstallationIdByFolderId(selectedItem.id, userId)
-		if (!installationId) return fail(404, { form })
+				? await getGithubRepoDataByFileId(selectedItem.id, userId)
+				: await getGithubRepoDataByFolderId(selectedItem.id, userId)
+		if (!installationData) return fail(404, { form })
 
-		const token = await getGithubAccessToken(installationId)
+		const token = await getGithubAccessToken(installationData.id)
 		if (!token) return fail(400, { form })
 
 		const fileIds =
 			selectedItem.type === 'folder' && selectedItem.childIds
 				? selectedItem.childIds
 				: [selectedItem.id]
-		let files = await getGithubFileByIds(fileIds, userId)
-		if (files.length === 0) return fail(404, { form })
+		let files = await getGithubFileByIds(fileIds, userId, installationData.repoId)
 
-		const folders = (await getGithubFolderByIds(selectedItem.childIds ?? [], userId)).filter(
-			(f) => f.path !== null
+		const folders = await getGithubFolderByIds(
+			selectedItem.childIds ?? [],
+			userId,
+			installationData.repoId
 		)
 
 		let fileDataToUpdate: GithubFileUpdate[] = []
 		let folderDataToUpdate: GithubShaItemUpdate[] = []
 
 		if (selectedItem.type === 'file') {
-			const file = files[0]
+			const file = files.find((f) => f.id === selectedItem.id)
+			if (!file) return fail(404, { form })
+
 			const pathParams = { owner, repo, path: file.path ?? '' }
 
 			const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
@@ -382,16 +390,20 @@ export const actions: Actions = {
 			const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
 			if (!updatedFile) return fail(400, { form })
 
-			fileDataToUpdate = [
-				{
-					sha: file.sha,
-					path: file.path ?? '',
-					newSha: updatedFile.content.sha,
-					content: file.content ?? '',
-					name: updatedFile.content.name,
-					id: file.id
-				}
-			]
+			// File id and sha is possibly null when pushing multiple files
+			// If a folder has been deleted, this is not relevent for a single file push
+			if (file.id && file.sha) {
+				fileDataToUpdate = [
+					{
+						sha: file.sha,
+						path: file.path ?? '',
+						newSha: updatedFile.content.sha,
+						content: file.content ?? '',
+						name: updatedFile.content.name,
+						id: file.id
+					}
+				]
+			}
 		} else {
 			// Get the latest commit sha for the branch
 			const reference = await getGithubReference(owner, repo, branch, token)
@@ -400,7 +412,25 @@ export const actions: Actions = {
 			const commit = await getGithubCommit(owner, repo, reference.object.sha, token)
 			if (!commit) return fail(400, { form })
 
-			const newTree = await createGithubTree(owner, repo, folders, files, commit.tree.sha, token)
+			const selectedFolder = folders.find((f) => f.id === selectedItem.id)
+			const filteredFolders = folders.filter((f) => {
+				if (f.path === null) return false
+				if (selectedFolder?.path === null) return true
+				return f.path.includes(selectedFolder?.path ?? '')
+			})
+			const filteredFiles = files.filter((f) => {
+				if (selectedFolder?.path === null) return true
+				return f.path?.includes(selectedFolder?.path ?? '')
+			})
+
+			const newTree = await createGithubTree(
+				owner,
+				repo,
+				filteredFolders,
+				filteredFiles,
+				commit.tree.sha,
+				token
+			)
 			if (!newTree) return fail(400, { form })
 
 			const bodyParams: CreateGithubCommitBodyParams = {
@@ -420,28 +450,50 @@ export const actions: Actions = {
 			)
 			if (!updatedReference) return fail(400, { form })
 
-			fileDataToUpdate = files.map((f) => {
+			const [treeFilesToUpdate, treeFilesToDelete] = files.reduce(
+				(prev, cur) => {
+					prev[cur.sha ? 0 : 1].push(cur)
+					return prev
+				},
+				[[], []] as GithubTreePushFile[][]
+			)
+
+			await deleteGithubFiles(treeFilesToDelete.map((f) => f.ghRowId ?? ''))
+
+			fileDataToUpdate = treeFilesToUpdate.map((f) => {
 				const name = f.path?.split('/').pop()?.replace('.md', '')
 				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+				const sha = f.sha ?? ''
 				return {
-					sha: f.sha,
+					sha,
 					path: f.path ?? '',
-					newSha: newSha ?? f.sha,
+					newSha: newSha ?? sha,
 					content: f.content ?? '',
 					name: name ?? '',
-					id: f.id
+					id: f.id ?? ''
 				}
 			})
 
-			folderDataToUpdate = folders.map((f) => {
+			const [treeFoldersToUpdate, treeFoldersToDelete] = folders.reduce(
+				(prev, cur) => {
+					prev[cur.sha ? 0 : 1].push(cur)
+					return prev
+				},
+				[[], []] as GithubFolderData[][]
+			)
+
+			await deleteGithubFolders(treeFoldersToDelete.map((f) => f.ghRowId ?? ''))
+
+			folderDataToUpdate = treeFoldersToUpdate.map((f) => {
 				const name = f.path?.split('/').pop()
 				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+				const sha = f.sha ?? ''
 				return {
-					sha: f.sha,
+					sha,
 					path: f.path ?? '',
-					newSha: newSha ?? f.sha,
+					newSha: newSha ?? sha,
 					name: name ?? '',
-					id: f.id
+					id: f.id ?? ''
 				}
 			})
 		}

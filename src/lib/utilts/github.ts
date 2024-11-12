@@ -24,7 +24,8 @@ import type {
 	GithubRepositoryContent,
 	GithubShaItem,
 	GithubTree,
-	GithubTreeItem
+	GithubTreeItem,
+	GithubTreePushFile
 } from './githubTypes'
 import { v4 as uuid } from 'uuid'
 import { db } from '$lib/db'
@@ -217,20 +218,20 @@ export const formatGithubFolders = (
 	for (const folder of ghFolderData) {
 		const folderId = folder.id ?? uuid()
 
-		const parentPath = folder.path.split('/').slice(0, -1).join('/')
+		const parentPath = folder.path?.split('/').slice(0, -1).join('/') ?? ''
 		const parentId = foldersWithPath.find((f) => f.path === parentPath)?.id ?? rootFolderId
 
 		formatedFolders.push({
 			id: folderId,
-			name: folder.path.split('/').pop() ?? '',
+			name: folder.path?.split('/').pop() ?? '',
 			parentId,
-			path: folder.path
+			path: folder.path ?? ''
 		})
 
-		foldersWithPath.push({ path: folder.path, id: folderId })
+		foldersWithPath.push({ path: folder.path ?? '', id: folderId })
 
 		formatedGithubFoldersData.push({
-			sha: folder.sha,
+			sha: folder.sha ?? '',
 			repositoryId: repoId,
 			folderId,
 			path: folder.path
@@ -534,8 +535,8 @@ export const getGithubCommit = async (
 export const createGithubTree = async (
 	owner: string,
 	repo: string,
-	folders: GithubShaItem[],
-	files: (GithubShaItem & { content: string | null })[],
+	folders: GithubFolderData[],
+	files: GithubTreePushFile[],
 	baseTreeSha: string,
 	token: string
 ): Promise<GithubTree | null> => {
@@ -575,7 +576,6 @@ export const createGithubTree = async (
 	})
 
 	const newTree = await res.json()
-	console.log({ newTree })
 
 	return res.ok ? newTree : null
 }

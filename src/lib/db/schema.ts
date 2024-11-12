@@ -142,7 +142,7 @@ export const githubFileTable = pgTable('github_file', {
 		.notNull()
 		.references(() => repositoryTable.id, { onDelete: 'cascade' }),
 	fileId: uuid('file_id')
-		.references(() => fileTable.id, { onDelete: 'cascade' })
+		.references(() => fileTable.id, { onDelete: 'set null' })
 		.unique()
 })
 
@@ -156,6 +156,6 @@ export const githubFolderTable = pgTable('github_folder', {
 		.notNull()
 		.references(() => repositoryTable.id, { onDelete: 'cascade' }),
 	folderId: uuid('folder_id')
-		.references(() => folderTable.id, { onDelete: 'cascade' })
+		.references(() => folderTable.id, { onDelete: 'set null' })
 		.unique()
 })

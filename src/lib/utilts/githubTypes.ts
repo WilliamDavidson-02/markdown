@@ -31,9 +31,10 @@ export type GithubFolder = {
 }
 
 export type GithubFolderData = {
-	id?: string
-	sha: string
-	path: string
+	id?: string | null
+	ghRowId?: string | null
+	sha: string | null
+	path: string | null
 }
 
 export type GithubFile = {
@@ -324,7 +325,7 @@ export type CreateGithubTreeItem = {
 	path: string
 	mode: string
 	type: string
-	sha?: string
+	sha?: string | null
 	content?: string
 }
 
@@ -337,4 +338,12 @@ export type CreateGithubCommitBodyParams = {
 	message: string
 	tree: string
 	parents: string[]
+}
+
+export type GithubTreePushFile = {
+	id?: string | null
+	ghRowId?: string | null
+	sha?: string | null
+	path: string | null
+	content?: string | null
 }

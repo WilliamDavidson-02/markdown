@@ -1,5 +1,12 @@
 import { db, dbPool } from '$lib/db'
-import { fileTable, folderTable, githubInstallationTable, repositoryTable } from '$lib/db/schema'
+import {
+	fileTable,
+	folderTable,
+	githubFileTable,
+	githubFolderTable,
+	githubInstallationTable,
+	repositoryTable
+} from '$lib/db/schema'
 import {
 	deleteGithubInstallation,
 	generateGitHubJWT,
@@ -36,6 +43,11 @@ export const DELETE = async ({ request, locals }) => {
 	const fileIds = await getFileIdsByRepositoryIds(removedRepositories)
 
 	await dbPool.transaction(async (tx) => {
+		// GH file and folder tables need to be delted before main table
+		// Since the gh table has cascade set null on folderId and fileId
+		await tx.delete(githubFolderTable).where(inArray(githubFolderTable.folderId, folderIds))
+		await tx.delete(githubFileTable).where(inArray(githubFileTable.fileId, fileIds))
+
 		await tx
 			.delete(folderTable)
 			.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))

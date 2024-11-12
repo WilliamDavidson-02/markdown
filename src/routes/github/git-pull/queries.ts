@@ -187,29 +187,20 @@ export const deleteFoldersAndFiles = async (
 	files: GithubShaItem[],
 	userId: string
 ) => {
-	// Github files and folders table fk to main tables has cascade
 	return await dbPool.transaction(async (tx) => {
 		if (folders.length > 0) {
-			await tx.delete(folderTable).where(
-				and(
-					inArray(
-						folderTable.id,
-						folders.map((f) => f.id)
-					),
-					eq(folderTable.userId, userId)
-				)
-			)
+			const folderIds = folders.map((f) => f.id)
+			await tx.delete(githubFolderTable).where(inArray(githubFolderTable.folderId, folderIds))
+			await tx
+				.delete(folderTable)
+				.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
 		}
 		if (files.length > 0) {
-			await tx.delete(fileTable).where(
-				and(
-					inArray(
-						fileTable.id,
-						files.map((f) => f.id)
-					),
-					eq(fileTable.userId, userId)
-				)
-			)
+			const fileIds = files.map((f) => f.id)
+			await tx
+				.delete(fileTable)
+				.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
+			await tx.delete(githubFileTable).where(inArray(githubFileTable.fileId, fileIds))
 		}
 	})
 }

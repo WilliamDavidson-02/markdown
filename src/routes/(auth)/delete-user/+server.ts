@@ -5,10 +5,13 @@ import {
 	githubInstallationTable,
 	trashTable,
 	sessionTable,
-	userTable
+	userTable,
+	githubFileTable,
+	githubFolderTable,
+	repositoryTable
 } from '$lib/db/schema.js'
 import { json } from '@sveltejs/kit'
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { deleteGithubInstallation, generateGitHubJWT } from '$lib/utilts/github.js'
 import { lucia } from '$lib/server/auth.js'
 
@@ -26,12 +29,20 @@ export const DELETE = async ({ locals, cookies }) => {
 	await dbPool.transaction(async (tx) => {
 		await tx.delete(fileTable).where(eq(fileTable.userId, userId))
 		await tx.delete(folderTable).where(eq(folderTable.userId, userId))
-		// Github file and folder table is deleted on file and folder table cascade
+
 		await tx.delete(trashTable).where(eq(trashTable.userId, userId))
 
 		if (installationIds.length > 0) {
+			const deletedRepos = await tx
+				.delete(repositoryTable)
+				.where(eq(repositoryTable.userId, userId))
+				.returning({ id: repositoryTable.id })
+
+			const ids = deletedRepos.map((r) => r.id)
+			await tx.delete(githubFileTable).where(inArray(githubFileTable.repositoryId, ids))
+			await tx.delete(githubFolderTable).where(inArray(githubFolderTable.repositoryId, ids))
+
 			await tx.delete(githubInstallationTable).where(eq(githubInstallationTable.userId, userId))
-			// Github repository table is deleted on github installation table cascade
 		}
 
 		await tx.delete(sessionTable).where(eq(sessionTable.userId, userId))

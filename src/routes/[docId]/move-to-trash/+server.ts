@@ -24,12 +24,12 @@ export const POST = async ({ request, locals }) => {
 
 		if (folderIds) {
 			const folder = await db.$count(folderTable, inArray(folderTable.id, folderIds))
-			if (!folder) {
+			if (folder === 0) {
 				return json({ success: false, message: 'Folder not found' }, { status: 404 })
 			}
 		} else if (fileIds) {
 			const file = await db.$count(fileTable, inArray(fileTable.id, fileIds))
-			if (!file) {
+			if (file === 0) {
 				return json({ success: false, message: 'File not found' }, { status: 404 })
 			}
 		}
@@ -37,10 +37,13 @@ export const POST = async ({ request, locals }) => {
 		const trashedFiles = fileIds?.map((id) => ({ userId, fileId: id })) ?? []
 		const trashedFolders = folderIds?.map((id) => ({ userId, folderId: id })) ?? []
 
+		console.log({ trashedFiles, trashedFolders })
+
 		await db.insert(trashTable).values([...trashedFiles, ...trashedFolders])
 
 		return json({ success: true })
 	} catch (error) {
+		console.error(error)
 		return json({ success: false, message: 'Failed to move to trash' }, { status: 500 })
 	}
 }

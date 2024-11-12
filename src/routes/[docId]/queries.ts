@@ -11,7 +11,7 @@ import {
 	trashTable,
 	userTable
 } from '$lib/db/schema'
-import { and, desc, eq, inArray, notInArray } from 'drizzle-orm'
+import { and, desc, eq, inArray, notInArray, or, like, isNull } from 'drizzle-orm'
 import { generateCaseThen } from '../github/git-pull/queries'
 import type { GithubShaItemUpdate } from '$lib/utilts/githubTypes'
 import { defaultEditorSettings } from '$lib/components/settings/defaultSettings'
@@ -106,6 +106,11 @@ export const removeRepository = async (
 	fileIds: string[]
 ) => {
 	await dbPool.transaction(async (tx) => {
+		// GH file and folder tables need to be delted before main table
+		// Since the gh table has cascade set null on folderId and fileId
+		await tx.delete(githubFolderTable).where(inArray(githubFolderTable.folderId, folderIds))
+		await tx.delete(githubFileTable).where(inArray(githubFileTable.fileId, fileIds))
+
 		await tx
 			.delete(folderTable)
 			.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
@@ -142,41 +147,83 @@ export const getGithubFilesAndFoldersIds = async (userId: string) => {
 	return { fileIds, folderIds }
 }
 
-export const getGithubFileByIds = async (ids: string[], userId: string) => {
+export const getGithubFileByIds = async (ids: string[], userId: string, repoId: number) => {
 	const files = await db
 		.select({
-			id: fileTable.id,
+			id: githubFileTable.fileId,
+			ghRowId: githubFileTable.id,
 			content: fileTable.doc,
 			sha: githubFileTable.sha,
 			path: githubFileTable.path
 		})
-		.from(fileTable)
-		.where(and(inArray(fileTable.id, ids), eq(fileTable.userId, userId)))
-		.innerJoin(githubFileTable, eq(fileTable.id, githubFileTable.fileId))
+		.from(githubFileTable)
+		.leftJoin(
+			fileTable,
+			and(eq(githubFileTable.fileId, fileTable.id), eq(fileTable.userId, userId))
+		)
+		.innerJoin(
+			repositoryTable,
+			and(
+				eq(githubFileTable.repositoryId, repositoryTable.id),
+				eq(repositoryTable.userId, userId),
+				eq(repositoryTable.id, repoId)
+			)
+		)
+		.where(or(inArray(githubFileTable.fileId, ids), isNull(githubFileTable.fileId)))
 
-	return files
+	return files.map((f) => ({
+		id: f.id,
+		content: f.content,
+		sha: f.id ? f.sha : null, // if null file is deleted
+		path: f.path,
+		ghRowId: f.ghRowId
+	}))
 }
 
-export const getGithubFolderByIds = async (ids: string[], userId: string) => {
-	if (ids.length === 0) return []
-
+export const getGithubFolderByIds = async (ids: string[], userId: string, repoId: number) => {
 	const folders = await db
 		.select({
-			id: folderTable.id,
+			id: githubFolderTable.folderId,
+			ghRowId: githubFolderTable.id,
 			sha: githubFolderTable.sha,
 			path: githubFolderTable.path
 		})
-		.from(folderTable)
-		.where(and(inArray(folderTable.id, ids), eq(folderTable.userId, userId)))
-		.innerJoin(githubFolderTable, eq(folderTable.id, githubFolderTable.folderId))
+		.from(githubFolderTable)
+		.leftJoin(
+			folderTable,
+			and(eq(githubFolderTable.folderId, folderTable.id), eq(folderTable.userId, userId))
+		)
+		.innerJoin(
+			repositoryTable,
+			and(
+				eq(githubFolderTable.repositoryId, repositoryTable.id),
+				eq(repositoryTable.userId, userId),
+				eq(repositoryTable.id, repoId)
+			)
+		)
+		.where(or(inArray(githubFolderTable.folderId, ids), isNull(githubFolderTable.folderId)))
 
-	return folders
+	return folders.map((f) => ({
+		id: f.id,
+		sha: f.id ? f.sha : null, // if null folder is deleted
+		path: f.path,
+		ghRowId: f.ghRowId
+	}))
 }
 
-export const getGithubInstallationIdByFileId = async (fileId: string, userId: string) => {
+export const deleteGithubFiles = async (ids: string[]) => {
+	await db.delete(githubFileTable).where(inArray(githubFileTable.id, ids))
+}
+
+export const deleteGithubFolders = async (ids: string[]) => {
+	await db.delete(githubFolderTable).where(inArray(githubFolderTable.id, ids))
+}
+
+export const getGithubRepoDataByFileId = async (fileId: string, userId: string) => {
 	const installations = await db
 		.select({
-			id: githubInstallationTable.id
+			id: githubInstallationTable.id,
+			repoId: repositoryTable.id
 		})
 		.from(fileTable)
 		.where(and(eq(fileTable.id, fileId), eq(fileTable.userId, userId)))
@@ -188,13 +235,14 @@ export const getGithubInstallationIdByFileId = async (fileId: string, userId: st
 		)
 		.limit(1)
 
-	return installations.length > 0 ? installations[0].id : null
+	return installations.length > 0 ? installations[0] : null
 }
 
-export const getGithubInstallationIdByFolderId = async (folderId: string, userId: string) => {
+export const getGithubRepoDataByFolderId = async (folderId: string, userId: string) => {
 	const installations = await db
 		.select({
-			id: githubInstallationTable.id
+			id: githubInstallationTable.id,
+			repoId: repositoryTable.id
 		})
 		.from(folderTable)
 		.where(and(eq(folderTable.id, folderId), eq(folderTable.userId, userId)))
@@ -206,7 +254,7 @@ export const getGithubInstallationIdByFolderId = async (folderId: string, userId
 		)
 		.limit(1)
 
-	return installations.length > 0 ? installations[0].id : null
+	return installations.length > 0 ? installations[0] : null
 }
 
 export const updateGithubFolderShaAndPath = async (folders: GithubShaItemUpdate[]) => {
