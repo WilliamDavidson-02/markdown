@@ -16,7 +16,7 @@
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
 	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { invalidateAll } from '$app/navigation'
-	import { selectedFile } from '../treeStore'
+	import { selectedFile, moveToDialog } from '../treeStore'
 
 	export let folder: Folder
 	let isOpen = false
@@ -44,6 +44,13 @@
 		} finally {
 			isMovingToTrash = false
 		}
+	}
+
+	const handleMoveTo = () => {
+		if (!$moveToDialog?.element) return
+		moveToDialog.update((m) => ({ ...m, target: folder }))
+		$moveToDialog.element.showModal()
+		isMenuOpen = false
 	}
 </script>
 
@@ -73,7 +80,7 @@
 			<PopoverContent>
 				<Dropdown>
 					<DropdownGroup>
-						<DropdownItem>
+						<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>
 							<div class="dropdown-item">
 								<CornerUpRight size={16} stroke-width={1.5} />
 								<span>Move to</span>
@@ -99,12 +106,7 @@
 				<svelte:self folder={child} />
 			{/each}
 			{#each folder.files as file}
-				<TreeFile
-					name={file.name ?? 'Untitled'}
-					icon={file.icon}
-					iconColor={file.iconColor ?? ''}
-					id={file.id}
-				/>
+				<TreeFile {file} />
 			{/each}
 		</ul>
 	{/if}

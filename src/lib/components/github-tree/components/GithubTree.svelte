@@ -3,7 +3,30 @@
 	import { isFolder } from '$lib/utilts/tree'
 	import { githubTree } from '../githubTreeStore'
 	import GithubTreeFolder from './GithubTreeFolder.svelte'
+	import { moveToDialog, type Folder } from '$lib/components/file-tree/treeStore'
+	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
+	import { MoveTo } from '$lib/components/move-to'
+
+	let folder: Folder | null = null
+
+	$: if ($moveToDialog.target) {
+		folder =
+			$githubTree
+				.flat()
+				.filter(isFolder)
+				.find((f) => {
+					if (!$moveToDialog.target) return false
+					if (isFolder($moveToDialog.target)) {
+						const nestedIds = getNestedFolderIds([f])
+						return nestedIds.includes($moveToDialog.target.id)
+					}
+					const nestedFileIds = getNestedFileIds([f])
+					return nestedFileIds.includes($moveToDialog.target.id)
+				}) ?? null
+	}
 </script>
+
+<MoveTo folders={folder ? [folder] : []} />
 
 <ul class="file-tree">
 	{#each $githubTree as group}

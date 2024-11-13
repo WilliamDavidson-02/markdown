@@ -16,7 +16,7 @@
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
 	import { getFoldersToFolderPos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { invalidateAll } from '$app/navigation'
-	import { type Folder, selectedFile } from '$lib/components/file-tree/treeStore'
+	import { type Folder, moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
 	import GithubTreeFile from './GithubTreeFile.svelte'
 	import { Divider } from '$lib/components/divider'
 	import { isFolder } from '$lib/utilts/tree'
@@ -62,6 +62,13 @@
 
 	const openGitPushForm = () => {
 		showGitPushForm = true
+		isMenuOpen = false
+	}
+
+	const handleMoveTo = () => {
+		if (!$moveToDialog?.element) return
+		moveToDialog.update((m) => ({ ...m, target: folder }))
+		$moveToDialog.element.showModal()
 		isMenuOpen = false
 	}
 
@@ -123,12 +130,14 @@
 			<PopoverContent>
 				<Dropdown>
 					<DropdownGroup>
-						<DropdownItem>
-							<div class="dropdown-item">
-								<CornerUpRight size={16} stroke-width={1.5} />
-								<span>Move to</span>
-							</div>
-						</DropdownItem>
+						{#if folder.parentId}
+							<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>
+								<div class="dropdown-item">
+									<CornerUpRight size={16} stroke-width={1.5} />
+									<span>Move to</span>
+								</div>
+							</DropdownItem>
+						{/if}
 						<DropdownItem on:click={moveToTrash} on:keydown={moveToTrash}>
 							<div class="dropdown-item">
 								<Trash2 size={16} stroke-width={1.5} />
@@ -164,12 +173,7 @@
 				<svelte:self folder={child} />
 			{/each}
 			{#each folder.files as file}
-				<GithubTreeFile
-					name={file.name ?? 'Untitled'}
-					icon={file.icon}
-					iconColor={file.iconColor ?? ''}
-					id={file.id}
-				/>
+				<GithubTreeFile {file} />
 			{/each}
 		</ul>
 	{/if}

@@ -2,8 +2,8 @@
 	import '../../file-tree/styles/file.css'
 
 	import { type ComponentType } from 'svelte'
-	import { fileIcons, iconColors, type FileIcon } from '$lib/fileIcons'
-	import { selectedFile } from '$lib/components/file-tree/treeStore'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
+	import { moveToDialog, selectedFile, type File } from '$lib/components/file-tree/treeStore'
 	import {
 		Ellipsis,
 		Loader2,
@@ -25,10 +25,7 @@
 	import { editorSave } from '$lib/components/editor/editorStore'
 	import { editorStore } from '$lib/components/editor/editorStore'
 
-	export let name: string
-	export let id: string
-	export let icon: FileIcon['name'] | null = 'File'
-	export let iconColor: string
+	export let file: File
 
 	let showEllipsis = false
 	let isMovingToTrash = false
@@ -40,9 +37,9 @@
 	const moveToTrash = async () => {
 		try {
 			isMovingToTrash = true
-			const res = await fetch(`/${id}/move-to-trash`, {
+			const res = await fetch(`/${file.id}/move-to-trash`, {
 				method: 'POST',
-				body: JSON.stringify({ fileIds: [id] })
+				body: JSON.stringify({ fileIds: [file.id] })
 			})
 
 			if (res.ok) {
@@ -79,37 +76,48 @@
 
 		selectedFile.set(null)
 
-		await goto(`/${id}`)
+		await goto(`/${file.id}`)
 		isLoading = false
 	}
 
-	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
-	$: color = iconColors.find((c) => c.color === iconColor)?.color ?? iconColors[0].color
+	const handleMoveTo = () => {
+		if (!$moveToDialog?.element) return
+		moveToDialog.update((m) => ({ ...m, target: file }))
+		$moveToDialog.element.showModal()
+		isOpen = false
+	}
+
+	$: iconName = fileIcons.find((i) => i.name === file.icon)?.icon as ComponentType
+	$: color = iconColors.find((c) => c.color === file.iconColor)?.color ?? iconColors[0].color
 
 	$: folders = getFoldersToFilePos(
 		$githubTree.flat().filter((f) => isFolder(f)),
-		id
+		file.id
 	)
 	$: rootFolder = folders[0]
 	$: folderIds = folders.map((f) => f.id)
 	$: target = {
-		id,
+		id: file.id,
 		path:
 			folders.length > 1
 				? folders
 						.slice(1)
 						.map((f) => f.name)
-						.join('/') + `/${name}`
-				: name
+						.join('/') + `/${file.name}`
+				: (file.name ?? '')
 	}
 </script>
 
-<PullDialog bind:pullDialog {rootFolder} fileIds={[id]} {folderIds} {target} />
-<GitPushForm bind:showGitPushForm {rootFolder} selectedItem={{ id, name, type: 'file' }} />
+<PullDialog bind:pullDialog {rootFolder} fileIds={[file.id]} {folderIds} {target} />
+<GitPushForm
+	bind:showGitPushForm
+	{rootFolder}
+	selectedItem={{ id: file.id, name: file.name ?? '', type: 'file' }}
+/>
 
 <li
 	class="tree-file-item"
-	data-selected={$selectedFile?.id === id}
+	data-selected={$selectedFile?.id === file.id}
 	on:mouseover={() => (showEllipsis = true)}
 	on:mouseleave={() => (showEllipsis = false)}
 	on:focus={() => (showEllipsis = true)}
@@ -125,7 +133,7 @@
 				<svelte:component this={iconName} {color} size={20} />
 			{/if}
 		</span>
-		<p>{name}</p>
+		<p>{file.name ?? 'Untitled'}</p>
 	</div>
 	<Popover bind:isOpen>
 		<PopoverTrigger>
@@ -136,7 +144,7 @@
 		<PopoverContent>
 			<Dropdown>
 				<DropdownGroup>
-					<DropdownItem>
+					<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>
 						<div class="dropdown-item">
 							<CornerUpRight size={16} stroke-width={1.5} />
 							<span>Move to</span>

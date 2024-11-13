@@ -2,8 +2,8 @@
 	import '../styles/file.css'
 
 	import { type ComponentType } from 'svelte'
-	import { fileIcons, iconColors, type FileIcon } from '$lib/fileIcons'
-	import { selectedFile } from '../treeStore'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
+	import { selectedFile, moveToDialog, type File } from '../treeStore'
 	import { Ellipsis, Loader2, Trash2, CornerUpRight } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
@@ -12,10 +12,7 @@
 	import { handleSave } from '$lib/components/editor/save'
 	import { editorStore } from '$lib/components/editor/editorStore'
 
-	export let name: string
-	export let id: string
-	export let icon: FileIcon['name'] | null = 'File'
-	export let iconColor: string
+	export let file: File
 
 	let showEllipsis = false
 	let isMovingToTrash = false
@@ -25,9 +22,9 @@
 	const moveToTrash = async () => {
 		try {
 			isMovingToTrash = true
-			const res = await fetch(`/${id}/move-to-trash`, {
+			const res = await fetch(`/${file.id}/move-to-trash`, {
 				method: 'POST',
-				body: JSON.stringify({ fileIds: [id] })
+				body: JSON.stringify({ fileIds: [file.id] })
 			})
 
 			if (res.ok) {
@@ -54,17 +51,24 @@
 
 		selectedFile.set(null)
 
-		await goto(`/${id}`)
+		await goto(`/${file.id}`)
 		isLoading = false
 	}
 
-	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
-	$: color = iconColors.find((c) => c.color === iconColor)?.color ?? iconColors[0].color
+	const handleMoveTo = () => {
+		if (!$moveToDialog?.element) return
+		moveToDialog.update((m) => ({ ...m, target: file }))
+		$moveToDialog.element.showModal()
+		isOpen = false
+	}
+
+	$: iconName = fileIcons.find((i) => i.name === file.icon)?.icon as ComponentType
+	$: color = iconColors.find((c) => c.color === file.iconColor)?.color ?? iconColors[0].color
 </script>
 
 <li
 	class="tree-file-item"
-	data-selected={$selectedFile?.id === id}
+	data-selected={$selectedFile?.id === file.id}
 	on:mouseover={() => (showEllipsis = true)}
 	on:mouseleave={() => (showEllipsis = false)}
 	on:focus={() => (showEllipsis = true)}
@@ -80,7 +84,7 @@
 				<svelte:component this={iconName} {color} size={20} />
 			{/if}
 		</span>
-		<p>{name}</p>
+		<p>{file.name}</p>
 	</div>
 	<Popover bind:isOpen>
 		<PopoverTrigger>
@@ -91,7 +95,7 @@
 		<PopoverContent>
 			<Dropdown>
 				<DropdownGroup>
-					<DropdownItem>
+					<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>
 						<div class="dropdown-item">
 							<CornerUpRight size={16} stroke-width={1.5} />
 							<span>Move to</span>

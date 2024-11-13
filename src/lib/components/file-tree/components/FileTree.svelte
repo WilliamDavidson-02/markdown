@@ -1,8 +1,13 @@
 <script lang="ts">
 	import { TreeFile, TreeFolder, TreeLabel } from '$lib/components/file-tree'
+	import { MoveTo } from '$lib/components/move-to'
 	import { isFolder } from '$lib/utilts/tree'
 	import { treeStore } from '../treeStore'
+
+	$: folders = $treeStore.flat().filter(isFolder)
 </script>
+
+<MoveTo {folders} />
 
 <ul class="file-tree">
 	{#each $treeStore as group}
@@ -13,12 +18,7 @@
 					{#if isFolder(item)}
 						<TreeFolder folder={item} />
 					{:else}
-						<TreeFile
-							name={item.name ?? 'Untitled'}
-							icon={item.icon}
-							iconColor={item.iconColor ?? ''}
-							id={item.id}
-						/>
+						<TreeFile file={item} />
 					{/if}
 				{/each}
 			</ul>

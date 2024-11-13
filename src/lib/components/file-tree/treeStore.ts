@@ -16,3 +16,9 @@ export type SelectedFile =
 
 export const treeStore = writable<Tree>([])
 export const selectedFile = writable<SelectedFile | null>(null)
+
+export type MoveToDialog = {
+	element: HTMLDialogElement | null
+	target: Folder | File | null
+}
+export const moveToDialog = writable<MoveToDialog>({ element: null, target: null })

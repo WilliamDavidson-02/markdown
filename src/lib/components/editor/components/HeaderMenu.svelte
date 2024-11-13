@@ -14,7 +14,7 @@
 	} from 'lucide-svelte'
 	import { Divider } from '$lib/components/divider'
 	import { editorSave, editorStore } from '../editorStore'
-	import { selectedFile } from '$lib/components/file-tree/treeStore'
+	import { moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
 	import { invalidateAll } from '$app/navigation'
@@ -73,6 +73,13 @@
 		})
 	}
 
+	const handleMoveTo = () => {
+		if (!$moveToDialog?.element) return
+		moveToDialog.update((m) => ({ ...m, target: $selectedFile }))
+		$moveToDialog.element.showModal()
+		isOpen = false
+	}
+
 	onMount(() => {
 		const saveOnKey = (ev: KeyboardEvent) => {
 			if (ev.key === 's' && ev.metaKey) {
@@ -118,7 +125,7 @@
 				<Divider />
 			{/if}
 			<DropdownGroup>
-				<DropdownItem>
+				<DropdownItem on:click={handleMoveTo}>
 					<div class="dropdown-item">
 						<CornerUpRight size={16} stroke-width={1.5} />
 						<span>Move to</span>
