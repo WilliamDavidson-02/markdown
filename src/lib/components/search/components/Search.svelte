@@ -16,8 +16,7 @@
 	$: treeFiles = getAllFilesFromTree($treeStore.flat().filter((i) => isFolder(i)))
 	$: rootFiles = $treeStore.flat().filter((i) => !isFolder(i))
 	$: githubFiles = getAllFilesFromTree($githubTree.flat().filter((i) => isFolder(i)))
-	$: rootGithubFiles = $githubTree.flat().filter((i) => !isFolder(i))
-	$: files = [...treeFiles, ...githubFiles, ...rootFiles, ...rootGithubFiles].sort((a, b) => {
+	$: files = [...treeFiles, ...githubFiles, ...rootFiles].sort((a, b) => {
 		return b.updatedAt.getTime() - a.updatedAt.getTime()
 	}) as File[]
 
@@ -55,14 +54,14 @@
 			<ul>
 				{#each files as file}
 					<CommandItem
-						value={file.name ?? 'Untitled'}
+						value={file.id ?? 'Untitled'}
 						class="search-file-item"
 						onSelect={() => handleSelect(file)}
 					>
 						<SearchFile
 							{file}
 							{isLoading}
-							isGithubFile={[...rootGithubFiles, ...githubFiles].some((i) => i.id === file.id)}
+							isGithubFile={githubFiles.some((i) => i.id === file.id)}
 						/>
 					</CommandItem>
 				{/each}
