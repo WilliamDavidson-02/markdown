@@ -2,7 +2,7 @@
 	import '../styles/file.css'
 
 	import { type ComponentType } from 'svelte'
-	import { fileIcons, type FileIcon } from '$lib/fileIcons'
+	import { fileIcons, iconColors, type FileIcon } from '$lib/fileIcons'
 	import { selectedFile } from '../treeStore'
 	import { Ellipsis, Loader2, Trash2, CornerUpRight } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
@@ -15,7 +15,7 @@
 	export let name: string
 	export let id: string
 	export let icon: FileIcon['name'] | null = 'File'
-	export let iconColor: string = 'var(--interactive-active)'
+	export let iconColor: string
 
 	let showEllipsis = false
 	let isMovingToTrash = false
@@ -59,6 +59,7 @@
 	}
 
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
+	$: color = iconColors.find((c) => c.color === iconColor)?.color ?? iconColors[0].color
 </script>
 
 <li
@@ -76,7 +77,7 @@
 			{#if isLoading}
 				<Loader2 class="animate-spin" size={20} stroke-width={1.5} color="var(--foreground-md)" />
 			{:else}
-				<svelte:component this={iconName} color={iconColor} size={20} />
+				<svelte:component this={iconName} {color} size={20} />
 			{/if}
 		</span>
 		<p>{name}</p>

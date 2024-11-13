@@ -2,7 +2,7 @@
 	import '../../file-tree/styles/file.css'
 
 	import { type ComponentType } from 'svelte'
-	import { fileIcons, type FileIcon } from '$lib/fileIcons'
+	import { fileIcons, iconColors, type FileIcon } from '$lib/fileIcons'
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
 	import {
 		Ellipsis,
@@ -19,7 +19,7 @@
 	import { isFolder } from '$lib/utilts/tree'
 	import PullDialog from '$lib/components/editor/components/PullDialog.svelte'
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
-	import { getFoldersToFilePos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
+	import { getFoldersToFilePos } from '$lib/utilts/helpers'
 	import { GitPushForm } from '$lib/components/git-push-form'
 	import { handleSave } from '$lib/components/editor/save'
 	import { editorSave } from '$lib/components/editor/editorStore'
@@ -28,7 +28,7 @@
 	export let name: string
 	export let id: string
 	export let icon: FileIcon['name'] | null = 'File'
-	export let iconColor: string = 'var(--interactive-active)'
+	export let iconColor: string
 
 	let showEllipsis = false
 	let isMovingToTrash = false
@@ -84,6 +84,7 @@
 	}
 
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
+	$: color = iconColors.find((c) => c.color === iconColor)?.color ?? iconColors[0].color
 
 	$: folders = getFoldersToFilePos(
 		$githubTree.flat().filter((f) => isFolder(f)),
@@ -121,7 +122,7 @@
 			{#if isLoading}
 				<Loader2 class="animate-spin" size={20} stroke-width={1.5} color="var(--foreground-md)" />
 			{:else}
-				<svelte:component this={iconName} color={iconColor} size={20} />
+				<svelte:component this={iconName} {color} size={20} />
 			{/if}
 		</span>
 		<p>{name}</p>

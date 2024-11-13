@@ -50,7 +50,9 @@
 					{/each}
 					{#each folder.files as file}
 						<CommandItem value={file.name ?? 'Untitled'} id={file.id} class="trash-item">
-							<TrashItem item={{ id: file.id, icon: file.icon ?? 'File' }}>
+							<TrashItem
+								item={{ id: file.id, icon: file.icon ?? 'File', color: file.iconColor ?? '' }}
+							>
 								{file.name}
 							</TrashItem>
 							<TrashActions item={file} />

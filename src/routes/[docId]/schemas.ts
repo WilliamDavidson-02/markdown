@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { fileIcons } from '$lib/fileIcons'
+import { fileIcons, iconColors } from '$lib/fileIcons'
 
 export const fileSchema = z.object({
 	name: z.string().min(1, { message: 'File name is required' }).max(256, {
@@ -9,6 +9,10 @@ export const fileSchema = z.object({
 		.string()
 		.refine((value) => fileIcons.map((icon) => icon.name).includes(value))
 		.default(fileIcons[0].name),
+	iconColor: z
+		.string()
+		.refine((value) => iconColors.map(({ color }) => color).includes(value))
+		.default(iconColors[0].color),
 	folderId: z.string().uuid().optional()
 })
 

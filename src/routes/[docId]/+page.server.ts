@@ -229,9 +229,7 @@ export const actions: Actions = {
 		// The page is protected, so there should always be a user but just in case there isn't
 		if (!userId || !form.valid) return fail(400, { form })
 
-		const { icon, name, folderId } = form.data
-
-		const fileData = { userId, icon, name: name.trim(), folderId }
+		const fileData = { ...form.data, userId, name: form.data.name.trim() }
 		const file = await insertNewFile(fileData)
 
 		return { form, id: file[0].id }

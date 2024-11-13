@@ -134,6 +134,13 @@
       "when": 1731416015530,
       "tag": "0018_stormy_human_robot",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1731491149913,
+      "tag": "0019_yellow_gateway",
+      "breakpoints": true
     }
   ]
 }

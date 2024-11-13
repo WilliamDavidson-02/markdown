@@ -72,6 +72,7 @@ export const fileTable = pgTable('file', {
 		.default(sql`gen_random_uuid()`),
 	name: text('name').default('New File'),
 	icon: text('icon').default('File'),
+	iconColor: text('icon_color'),
 	doc: text('doc'),
 	userId: text('user_id')
 		.notNull()

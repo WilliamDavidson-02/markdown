@@ -1,19 +1,16 @@
 <script lang="ts">
 	import type { TrashItem } from '../types'
-	import { fileIcons } from '$lib/fileIcons'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
 
 	export let item: TrashItem
 
 	$: fileIcon = fileIcons.find((icon) => icon.name === item.icon)
+	$: color = iconColors.find((c) => c.color === item.color)?.color ?? iconColors[0].color
 </script>
 
 <div>
 	{#if fileIcon}
-		<svelte:component
-			this={fileIcon?.icon}
-			size={20}
-			color={item.color ?? 'var(--interactive-active)'}
-		/>
+		<svelte:component this={fileIcon?.icon} size={20} {color} />
 	{/if}
 	<slot />
 </div>

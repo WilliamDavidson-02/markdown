@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { selectedFile } from '$lib/components/file-tree/treeStore'
-	import { fileIcons } from '$lib/fileIcons'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
 	import { Loader2 } from 'lucide-svelte'
 	import { editorSave } from '../editorStore'
 
 	$: status = $editorSave.status
 	$: fileIcon = fileIcons.find((icon) => icon.name === $selectedFile?.icon)
+	$: color =
+		iconColors.find((c) => c.color === $selectedFile?.iconColor)?.color ?? iconColors[0].color
 </script>
 
 <div>
-	<svelte:component this={fileIcon?.icon} size={16} color="var(--interactive-active)" />
+	<svelte:component this={fileIcon?.icon} size={16} {color} />
 	<h1>{$selectedFile?.name}</h1>
 	{#if status === 'saving'}
 		<Loader2 size={12} color="var(--foreground-md)" class="animate-spin" />

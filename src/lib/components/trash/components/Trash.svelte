@@ -20,7 +20,9 @@
 					{:else}
 						<CommandItem value={item.name ?? 'Untitled'} id={item.id}>
 							<TrashContent>
-								<TrashItem item={{ id: item.id, icon: item.icon ?? 'File' }}>
+								<TrashItem
+									item={{ id: item.id, icon: item.icon ?? 'File', color: item.iconColor ?? '' }}
+								>
 									{item.name}
 								</TrashItem>
 								<TrashActions {item} />

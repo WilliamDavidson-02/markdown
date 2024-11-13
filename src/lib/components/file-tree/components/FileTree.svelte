@@ -13,7 +13,12 @@
 					{#if isFolder(item)}
 						<TreeFolder folder={item} />
 					{:else}
-						<TreeFile name={item.name ?? 'Untitled'} icon={item.icon} id={item.id} />
+						<TreeFile
+							name={item.name ?? 'Untitled'}
+							icon={item.icon}
+							iconColor={item.iconColor ?? ''}
+							id={item.id}
+						/>
 					{/if}
 				{/each}
 			</ul>

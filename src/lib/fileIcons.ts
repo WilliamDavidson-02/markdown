@@ -226,3 +226,12 @@ export const fileIcons: FileIcon[] = [
 	{ name: 'Pencil', icon: Pencil },
 	{ name: 'Paintbrush', icon: Paintbrush }
 ]
+
+export const iconColors = [
+	{ name: 'White', color: '#ffffff' },
+	{ name: 'Blue', color: '#007ad9' },
+	{ name: 'Yellow', color: '#ff6f00' },
+	{ name: 'Green', color: '#2f8659' },
+	{ name: 'Purple', color: '#493ec8' },
+	{ name: 'Red', color: '#cb4646' }
+]

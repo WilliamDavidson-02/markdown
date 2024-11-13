@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { File } from '$lib/components/file-tree/treeStore'
 	import { type ComponentType } from 'svelte'
-	import { fileIcons } from '$lib/fileIcons'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
 	import { Loader2 } from 'lucide-svelte'
 	import GithubIcon from '$lib/components/GithubIcon.svelte'
 	import { getFoldersToFilePos } from '$lib/utilts/helpers'
@@ -14,6 +14,7 @@
 	export let isGithubFile = false
 
 	$: iconName = fileIcons.find((i) => i.name === file.icon)?.icon as ComponentType
+	$: color = iconColors.find((c) => c.color === file.iconColor)?.color ?? iconColors[0].color
 
 	const formatDate = (date: Date) => {
 		return date.toLocaleDateString('en-US', {
@@ -41,7 +42,7 @@
 				{#if isLoading === file.id}
 					<Loader2 class="animate-spin" size={18} stroke-width={1.5} color="var(--foreground-md)" />
 				{:else}
-					<svelte:component this={iconName} size={18} stroke-width={1.5} />
+					<svelte:component this={iconName} size={18} stroke-width={1.5} {color} />
 				{/if}
 			</span>
 			<p>{file.name}</p>

@@ -99,7 +99,12 @@
 				<svelte:self folder={child} />
 			{/each}
 			{#each folder.files as file}
-				<TreeFile name={file.name ?? 'Untitled'} icon={file.icon} id={file.id} />
+				<TreeFile
+					name={file.name ?? 'Untitled'}
+					icon={file.icon}
+					iconColor={file.iconColor ?? ''}
+					id={file.id}
+				/>
 			{/each}
 		</ul>
 	{/if}

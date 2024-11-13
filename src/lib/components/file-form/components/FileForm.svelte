@@ -4,7 +4,7 @@
 	import { Popover, PopoverTrigger, PopoverContent } from '$lib/components/popover'
 	import { Command, CommandInput, CommandList, CommandItem } from '$lib/components/command'
 	import { Loader2, Folder as FolderIcon, Check } from 'lucide-svelte'
-	import { fileIcons } from '$lib/fileIcons'
+	import { fileIcons, iconColors } from '$lib/fileIcons'
 	import { Label } from '$lib/components/label'
 	import { Input } from '$lib/components/input'
 	import { ErrorMessage } from '$lib/components/error-message'
@@ -20,7 +20,7 @@
 
 	let isIconPopoverOpen = false
 	let isFolderPopoverOpen = false
-
+	let isIconColorPopoverOpen = false
 	const {
 		form: fileForm,
 		submitting,
@@ -33,7 +33,8 @@
 				await goto(`/${result.data?.id}`)
 				await invalidateAll()
 			}
-		}
+		},
+		dataType: 'json'
 	})
 
 	const handleIconSelect = (iconName: string) => {
@@ -47,7 +48,12 @@
 	}
 
 	const resetForm = () => {
-		fileForm.set({ icon: 'File', name: '', folderId: undefined })
+		fileForm.set({
+			icon: 'File',
+			name: '',
+			iconColor: iconColors[0].color,
+			folderId: undefined
+		})
 		isFolderPopoverOpen = false
 		isIconPopoverOpen = false
 	}
@@ -61,13 +67,16 @@
 		}))
 	}
 
+	const selectIconColor = (color: string) => {
+		fileForm.update((form) => ({ ...form, iconColor: color }), { taint: 'untaint-all' })
+		isIconColorPopoverOpen = false
+	}
+
 	$: folders = getFolders($treeStore)
 </script>
 
 <Dialog bind:dialog={fileDialog} on:close={resetForm} class="file-form-dialog">
 	<form method="POST" action="?/file" use:enhance>
-		<input type="hidden" name="icon" bind:value={$fileForm.icon} />
-		<input type="hidden" id="folderId" name="folderId" bind:value={$fileForm.folderId} />
 		<DialogHeader>Create new file</DialogHeader>
 		<div class="fields-container">
 			<div class="form-field file-icon">
@@ -78,12 +87,46 @@
 								this={fileIcons.find((icon) => icon.name === $fileForm.icon)?.icon}
 								size={20}
 								strokeWidth={1.5}
+								color={$fileForm.iconColor}
 							/>
 						</Button>
 					</PopoverTrigger>
 					<PopoverContent closeOnScroll={false}>
 						<Command class="command" label="Search for an icon">
-							<CommandInput placeholder="Search..." autofocus={isIconPopoverOpen} />
+							<div class="command-header">
+								<CommandInput placeholder="Search..." autofocus={isIconPopoverOpen} />
+								<Popover bind:isOpen={isIconColorPopoverOpen}>
+									<PopoverTrigger>
+										<Button variant="outline" type="button" icon>
+											<div
+												class="icon-color-swatch"
+												style="background-color: {$fileForm.iconColor}"
+											/>
+										</Button>
+										<PopoverContent class="icon-color-popover">
+											{#each iconColors as color}
+												<Button
+													variant="ghost"
+													type="button"
+													icon
+													size="sm"
+													on:click={(ev) => {
+														ev.stopPropagation()
+														ev.preventDefault()
+														selectIconColor(color.color)
+													}}
+												>
+													<div
+														class="icon-color-swatch"
+														style="background-color: {color.color}"
+														title={color.name}
+													/>
+												</Button>
+											{/each}
+										</PopoverContent>
+									</PopoverTrigger>
+								</Popover>
+							</div>
 							<CommandList class="command-list">
 								<div class="command-list-items">
 									{#each fileIcons as icon}
@@ -94,7 +137,12 @@
 											title={icon.name}
 											data-is-selected={$fileForm.icon === icon.name}
 										>
-											<svelte:component this={icon.icon} size={20} strokeWidth={1.5} />
+											<svelte:component
+												this={icon.icon}
+												size={20}
+												strokeWidth={1.5}
+												color={$fileForm.iconColor}
+											/>
 										</CommandItem>
 									{/each}
 								</div>
@@ -182,6 +230,31 @@
 		grid-template-columns: auto 1fr;
 		grid-template-rows: repeat(3, auto);
 		gap: var(--space-sm);
+	}
+
+	.command-header {
+		display: grid;
+		grid-template-columns: 1fr auto;
+		gap: var(--space-sm);
+	}
+
+	.icon-color-swatch {
+		width: 0.5rem;
+		height: 0.5rem;
+		border-radius: 100vmax;
+	}
+
+	:global(.icon-color-popover) {
+		display: grid !important;
+		grid-template-columns: repeat(3, 2rem);
+		grid-template-rows: repeat(2, 2rem);
+		width: fit-content !important;
+		min-width: unset !important;
+		gap: var(--space-xs);
+		background-color: var(--base);
+		padding: var(--space-sm);
+		border-radius: var(--border-radius-sm);
+		border: 1px solid var(--secondary-dk);
 	}
 
 	:global(.file-form-dialog) {

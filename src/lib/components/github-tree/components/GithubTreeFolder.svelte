@@ -164,7 +164,12 @@
 				<svelte:self folder={child} />
 			{/each}
 			{#each folder.files as file}
-				<GithubTreeFile name={file.name ?? 'Untitled'} icon={file.icon} id={file.id} />
+				<GithubTreeFile
+					name={file.name ?? 'Untitled'}
+					icon={file.icon}
+					iconColor={file.iconColor ?? ''}
+					id={file.id}
+				/>
 			{/each}
 		</ul>
 	{/if}
