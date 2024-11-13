@@ -9,6 +9,7 @@
 	export let rootFolder: Folder
 	export let folderIds: string[] = []
 	export let fileIds: string[] = []
+	export let target: { id: string; path: string }
 
 	let isPulling = false
 
@@ -25,6 +26,7 @@
 						name: rootFolder.name,
 						id: rootFolder.id
 					},
+					target,
 					folderIds,
 					fileIds
 				})

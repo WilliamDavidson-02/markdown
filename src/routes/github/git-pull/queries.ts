@@ -81,7 +81,7 @@ export const updateFolderAndFileNames = async (
 	folders: GithubShaItemUpdate[]
 ) => {
 	if (files.length > 0) {
-		const fileIds = files.map((f) => f.id)
+		const fileIds = files.map((f) => f.id).filter((id) => id !== null)
 		await db
 			.update(fileTable)
 			.set({ name: generateCaseThen(files, 'id', 'name'), updatedAt: sql`CURRENT_TIMESTAMP` })
@@ -89,7 +89,7 @@ export const updateFolderAndFileNames = async (
 	}
 
 	if (folders.length > 0) {
-		const folderIds = folders.map((f) => f.id)
+		const folderIds = folders.map((f) => f.id).filter((id) => id !== null)
 		await db
 			.update(folderTable)
 			.set({ name: generateCaseThen(folders, 'id', 'name') })
@@ -185,22 +185,40 @@ export const insertNewFilesAndFolders = async (
 export const deleteFoldersAndFiles = async (
 	folders: GithubShaItem[],
 	files: GithubShaItem[],
-	userId: string
+	userId: string,
+	repositoryId: number
 ) => {
 	return await dbPool.transaction(async (tx) => {
 		if (folders.length > 0) {
-			const folderIds = folders.map((f) => f.id)
-			await tx.delete(githubFolderTable).where(inArray(githubFolderTable.folderId, folderIds))
+			const folderShas = folders.map((f) => f.sha)
+			const folderPaths = folders.map((f) => f.path)
+			const folderIds = folders.map((f) => f.id).filter((id) => id !== null)
+			await tx
+				.delete(githubFolderTable)
+				.where(
+					and(
+						inArray(githubFolderTable.sha, folderShas),
+						eq(githubFolderTable.repositoryId, repositoryId)
+					)
+				)
 			await tx
 				.delete(folderTable)
 				.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
 		}
 		if (files.length > 0) {
-			const fileIds = files.map((f) => f.id)
+			const fileShas = files.map((f) => f.sha)
+			const fileIds = files.map((f) => f.id).filter((id) => id !== null)
 			await tx
 				.delete(fileTable)
 				.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
-			await tx.delete(githubFileTable).where(inArray(githubFileTable.fileId, fileIds))
+			await tx
+				.delete(githubFileTable)
+				.where(
+					and(
+						inArray(githubFileTable.sha, fileShas),
+						eq(githubFileTable.repositoryId, repositoryId)
+					)
+				)
 		}
 	})
 }
@@ -210,4 +228,28 @@ export const updateRootFolderSha = async (rootFolderId: string, sha: string) => 
 		.update(githubFolderTable)
 		.set({ sha })
 		.where(eq(githubFolderTable.folderId, rootFolderId))
+}
+
+export const getRepositoryFolders = async (repositoryId: number) => {
+	return await db
+		.select({
+			id: folderTable.id,
+			sha: githubFolderTable.sha,
+			path: githubFolderTable.path
+		})
+		.from(githubFolderTable)
+		.leftJoin(folderTable, eq(githubFolderTable.folderId, folderTable.id))
+		.where(eq(githubFolderTable.repositoryId, repositoryId))
+}
+
+export const getRepositoryFiles = async (repositoryId: number) => {
+	return await db
+		.select({
+			id: fileTable.id,
+			sha: githubFileTable.sha,
+			path: githubFileTable.path
+		})
+		.from(githubFileTable)
+		.leftJoin(fileTable, eq(githubFileTable.fileId, fileTable.id))
+		.where(eq(githubFileTable.repositoryId, repositoryId))
 }

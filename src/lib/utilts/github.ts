@@ -328,19 +328,20 @@ export const filterTreeIntoStatus = (
 	const validTreeItems = [...mdFolders, ...mdFiles]
 
 	const removedItems = [...folders, ...files].filter(
-		(item) => !validTreeItems.some((t) => t.sha === item.sha || t.path === item.path)
+		(item) =>
+			!validTreeItems.some((t) => t.sha === item.sha || t.path === item.path) || item.id === null
 	)
 
 	const newItems = validTreeItems.filter(
 		(item) =>
-			!folders.some((f) => f.sha === item.sha || f.path === item.path) &&
-			!files.some((f) => f.sha === item.sha || f.path === item.path)
+			!folders.some((f) => (f.sha === item.sha || f.path === item.path) && f.id !== null) &&
+			!files.some((f) => (f.sha === item.sha || f.path === item.path) && f.id !== null)
 	)
 
 	const existingItems = validTreeItems.filter(
 		(item) =>
-			folders.some((f) => f.sha === item.sha || f.path === item.path) ||
-			files.some((f) => f.sha === item.sha || f.path === item.path)
+			folders.some((f) => (f.sha === item.sha || f.path === item.path) && f.id !== null) ||
+			files.some((f) => (f.sha === item.sha || f.path === item.path) && f.id !== null)
 	)
 
 	return { removedItems, newItems, existingItems }

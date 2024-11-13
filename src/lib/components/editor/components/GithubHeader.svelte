@@ -9,16 +9,28 @@
 	import PullDialog from './PullDialog.svelte'
 	import { GitPushForm } from '$lib/components/git-push-form'
 
-	$: folders = $githubTree.flat().filter((f) => isFolder(f))
-	$: rootFolder = getFoldersToFilePos(folders, $selectedFile?.id ?? '')[0]
-	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
-	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
+	$: folders = getFoldersToFilePos(
+		$githubTree.flat().filter((f) => isFolder(f)),
+		$selectedFile?.id ?? ''
+	)
+	$: rootFolder = folders[0]
+	$: folderIds = folders.map((f) => f.id)
+	$: target = {
+		id: $selectedFile?.id ?? '',
+		path:
+			folders.length > 1
+				? folders
+						.slice(1)
+						.map((f) => f.name)
+						.join('/') + `/${$selectedFile?.name}`
+				: ($selectedFile?.name ?? '')
+	}
 
 	let pullDialog: HTMLDialogElement
 	let showGitPushForm = false
 </script>
 
-<PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<PullDialog bind:pullDialog {rootFolder} fileIds={[$selectedFile?.id ?? '']} {folderIds} {target} />
 <GitPushForm
 	bind:showGitPushForm
 	{rootFolder}

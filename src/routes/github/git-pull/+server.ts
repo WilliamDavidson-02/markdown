@@ -3,9 +3,9 @@ import { z } from 'zod'
 import { pullRequestSchema } from './schema'
 import {
 	deleteFoldersAndFiles,
-	getFileSha,
-	getFolderSha,
 	getInstallationIdByRootFolder,
+	getRepositoryFiles,
+	getRepositoryFolders,
 	insertNewFilesAndFolders,
 	updateFileContents,
 	updateFolderAndFileNames,
@@ -34,7 +34,7 @@ export const PUT = async ({ request, locals }) => {
 			return json({ success: false }, { status: 400 })
 		}
 
-		const { rootFolder, folderIds, fileIds } = data
+		const { rootFolder, folderIds, fileIds, target } = data
 
 		const installation = await getInstallationIdByRootFolder(rootFolder.id, userId)
 		if (!installation) return json({ success: false }, { status: 400 })
@@ -42,24 +42,29 @@ export const PUT = async ({ request, locals }) => {
 		const token = await getGithubAccessToken(installation.installationId)
 		if (!token) return json({ success: false }, { status: 400 })
 
-		const resFileSha = await getFileSha(fileIds, userId)
-		const resFolderSha = await getFolderSha(folderIds, userId)
+		const repoFiles = await getRepositoryFiles(installation.repositoryId)
+		const repoFolders = await getRepositoryFolders(installation.repositoryId)
 
 		const treeData = await getFullTree(installation.installationId, rootFolder.name, token)
 		if (!treeData) return json({ success: false }, { status: 400 })
 
 		const filteredTree = filterTreeIntoStatus(
 			treeData.tree,
-			resFolderSha.filter((f) => f.id !== rootFolder.id),
-			resFileSha
+			repoFolders.filter((f) => f.id !== rootFolder.id),
+			repoFiles
+		)
+
+		const selectedFolders = repoFolders.filter((f) => folderIds.includes(f.id ?? ''))
+		const selectedFiles = repoFiles.filter(
+			(f) => fileIds.includes(f.id ?? '') && f.id !== rootFolder.id
 		)
 
 		if (filteredTree.existingItems.length > 0) {
 			const itemsPathChanged = filteredTree.existingItems
 				.filter((item) => {
 					return (
-						resFolderSha.find((f) => f.path !== item.path && f.sha === item.sha) ||
-						resFileSha.find((f) => f.path !== item.path && f.sha === item.sha)
+						selectedFolders.find((f) => f.path !== item.path && f.sha === item.sha) ||
+						selectedFiles.find((f) => f.path !== item.path && f.sha === item.sha)
 					)
 				})
 				.reduce(
@@ -68,8 +73,8 @@ export const PUT = async ({ request, locals }) => {
 						const shaItem = {
 							id:
 								(isFile
-									? resFileSha.find((f) => f.sha === item.sha)?.id
-									: resFolderSha.find((f) => f.sha === item.sha)?.id) ?? '',
+									? selectedFiles.find((f) => f.sha === item.sha)?.id
+									: selectedFolders.find((f) => f.sha === item.sha)?.id) ?? '',
 							sha: item.sha,
 							path: item.path,
 							name: item.path.split('/').pop()?.replace('.md', '') || ''
@@ -87,7 +92,7 @@ export const PUT = async ({ request, locals }) => {
 				// Only checking for blob, since (md) files is alredy filtered from filterTreeIntoStatus
 				if (item.type !== 'blob') return false
 				// If the files path is the same but the sha is different, that means that the content with in the file has changed
-				return resFileSha.find((f) => f.path === item.path && f.sha !== item.sha)
+				return selectedFiles.find((f) => f.path === item.path && f.sha !== item.sha)
 			})
 
 			if (toRequestNewContent.length > 0) {
@@ -98,7 +103,7 @@ export const PUT = async ({ request, locals }) => {
 				).filter((blob) => blob !== null) as GithubBlob[]
 				const formatedFiles = blobs.map((blob: GithubBlob, index) => {
 					const item = toRequestNewContent[index]
-					const file = resFileSha.find((f) => f.path === item.path && f.sha !== item.sha)
+					const file = selectedFiles.find((f) => f.path === item.path && f.sha !== item.sha)
 					const formatedFile = formatGithubFileBlob(blob, item)
 					return {
 						...formatedFile,
@@ -115,12 +120,17 @@ export const PUT = async ({ request, locals }) => {
 
 		if (filteredTree.newItems.length > 0) {
 			const newFolders = filteredTree.newItems
-				.filter((item) => item.type === 'tree')
+				.filter(
+					(item) =>
+						item.type === 'tree' && (item.path.includes(target.path) || target.path.length === 0)
+				)
 				.map((f) => ({
 					sha: f.sha,
 					path: f.path
 				}))
-			const existingFolders = resFolderSha.map((f) => ({ ...f, path: f.path ?? '' }))
+			const existingFolders = repoFolders
+				.map((f) => ({ ...f, path: f.path ?? '' }))
+				.filter((f) => f.id !== null)
 
 			let { formatedFolders, formatedGithubFoldersData } = formatGithubFolders(
 				[...existingFolders, ...newFolders],
@@ -128,7 +138,10 @@ export const PUT = async ({ request, locals }) => {
 				installation.repositoryId
 			)
 
-			const newFiles = filteredTree.newItems.filter((item) => item.type === 'blob')
+			const newFiles = filteredTree.newItems.filter(
+				(item) =>
+					item.type === 'blob' && (item.path.includes(target.path) || target.path.length === 0)
+			)
 			const blobs: GithubBlob[] = (
 				await Promise.all(newFiles.map((item) => getGithubFileContent(item.url, token)))
 			).filter((blob) => blob !== null)
@@ -162,10 +175,18 @@ export const PUT = async ({ request, locals }) => {
 		}
 
 		if (filteredTree.removedItems.length > 0) {
-			const folders = filteredTree.removedItems.filter((item) => !item.path?.endsWith('.md'))
-			const files = filteredTree.removedItems.filter((item) => item.path?.endsWith('.md'))
+			const folders = filteredTree.removedItems.filter(
+				(item) =>
+					!item.path?.endsWith('.md') &&
+					(selectedFolders.some((f) => f.id === item.id) || item.id === null)
+			)
+			const files = filteredTree.removedItems.filter(
+				(item) =>
+					item.path?.endsWith('.md') &&
+					(selectedFiles.some((f) => f.id === item.id) || item.id === null)
+			)
 
-			await deleteFoldersAndFiles(folders, files, userId)
+			await deleteFoldersAndFiles(folders, files, userId, installation.repositoryId)
 		}
 
 		await updateRootFolderSha(rootFolder.id, treeData.sha)

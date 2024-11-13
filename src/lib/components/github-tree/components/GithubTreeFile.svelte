@@ -85,13 +85,25 @@
 
 	$: iconName = fileIcons.find((i) => i.name === icon)?.icon as ComponentType
 
-	$: folders = $githubTree.flat().filter((f) => isFolder(f))
-	$: rootFolder = getFoldersToFilePos(folders, id)[0]
-	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
-	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
+	$: folders = getFoldersToFilePos(
+		$githubTree.flat().filter((f) => isFolder(f)),
+		id
+	)
+	$: rootFolder = folders[0]
+	$: folderIds = folders.map((f) => f.id)
+	$: target = {
+		id,
+		path:
+			folders.length > 1
+				? folders
+						.slice(1)
+						.map((f) => f.name)
+						.join('/') + `/${name}`
+				: name
+	}
 </script>
 
-<PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<PullDialog bind:pullDialog {rootFolder} fileIds={[id]} {folderIds} {target} />
 <GitPushForm bind:showGitPushForm {rootFolder} selectedItem={{ id, name, type: 'file' }} />
 
 <li

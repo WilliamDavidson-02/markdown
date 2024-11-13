@@ -66,15 +66,26 @@
 	}
 
 	$: folders = $githubTree.flat().filter((f) => isFolder(f))
-	$: rootFolder = getFoldersToFolderPos(folders, folder.id)[0]
-	$: folderIds = rootFolder ? getNestedFolderIds([rootFolder]) : []
-	$: fileIds = rootFolder ? getNestedFileIds([rootFolder]) : []
-
+	$: foldersToFolder = getFoldersToFolderPos(folders, folder.id)
+	$: rootFolder = foldersToFolder[0]
 	$: childFolderIds = getNestedFolderIds([folder])
 	$: childFileIds = getNestedFileIds([folder])
+	$: target = {
+		id: folder.id,
+		path: foldersToFolder
+			.slice(1)
+			.map((f) => f.name)
+			.join('/')
+	}
 </script>
 
-<PullDialog bind:pullDialog {rootFolder} {fileIds} {folderIds} />
+<PullDialog
+	bind:pullDialog
+	{rootFolder}
+	fileIds={childFileIds}
+	folderIds={[...foldersToFolder.map((f) => f.id), ...childFolderIds]}
+	{target}
+/>
 <GitPushForm
 	bind:showGitPushForm
 	{rootFolder}
