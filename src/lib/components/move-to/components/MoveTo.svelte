@@ -6,6 +6,7 @@
 	import MoveToItem from './MoveToItem.svelte'
 
 	export let folders: Folder[]
+
 	let searchValue = ''
 	let dialog: HTMLDialogElement
 

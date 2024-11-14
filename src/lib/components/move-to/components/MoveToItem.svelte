@@ -1,14 +1,24 @@
 <script lang="ts">
-	import type { Folder } from '$lib/components/file-tree/treeStore'
+	import type { File, Folder } from '$lib/components/file-tree/treeStore'
 	import { ChevronRight, Folder as ClosedFolder, FolderOpen, Loader2 } from 'lucide-svelte'
 	import { CommandItem } from '$lib/components/command'
 	import { getState } from '$lib/components/command/command'
-	import { getNestedIds } from '$lib/utilts/helpers'
+	import {
+		getFoldersToFilePos,
+		getFoldersToFolderPos,
+		getNestedFileIds,
+		getNestedFolderIds,
+		getNestedIds
+	} from '$lib/utilts/helpers'
 	import { slide } from 'svelte/transition'
 	import { Button } from '$lib/components/button'
 	import { moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
 	import { isFolder } from '$lib/utilts/tree'
 	import { invalidateAll } from '$app/navigation'
+	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
+	import type { z } from 'zod'
+	import type { moveToSchema } from '../../../../routes/[docId]/move-to/schema'
+	import { githubIds } from '$lib/components/github-tree/githubTreeStore'
 
 	export let folder: Folder
 	let isOpen = false
@@ -28,15 +38,59 @@
 		try {
 			if (!$moveToDialog.target) return
 			isLoading = true
+			let path = ''
+			let nestedFileIds: z.infer<typeof moveToSchema>['target']['children']['fileIds'] = []
+			let nestedFolderIds: string[] = []
+
+			const targetType = isFolder($moveToDialog.target) ? 'folder' : 'file'
+
+			if ($githubIds.folderIds.includes(folder.id)) {
+				const dirs = [
+					...getFoldersToFolderPos(
+						$githubTree.flat().filter((i) => isFolder(i)),
+						folder.id
+					)
+						.slice(1)
+						.map((i) => i.name),
+					$moveToDialog.target.name
+				]
+
+				path = dirs.join('/')
+
+				if (targetType === 'file') {
+					path += '.md'
+				}
+
+				const fileIds = getNestedFileIds(
+					isFolder($moveToDialog.target) ? [$moveToDialog.target] : []
+				)
+
+				for (const id of fileIds) {
+					const dirs = getFoldersToFilePos([$moveToDialog.target as Folder], id).map((i) => i.name)
+					nestedFileIds.push({ id, path: dirs.join('/') })
+				}
+
+				nestedFolderIds = getNestedFolderIds(
+					isFolder($moveToDialog.target) ? [$moveToDialog.target] : []
+				)
+			}
+
+			const body: z.infer<typeof moveToSchema> = {
+				target: {
+					id: $moveToDialog.target.id,
+					type: targetType,
+					children: {
+						folderIds: nestedFolderIds,
+						fileIds: nestedFileIds
+					}
+				},
+				movingTo: { id: folder.id, path },
+				github: $githubIds.folderIds.includes(folder.id)
+			}
+
 			const res = await fetch(`/${$selectedFile?.id}/move-to`, {
 				method: 'PATCH',
-				body: JSON.stringify({
-					target: {
-						id: $moveToDialog.target.id,
-						type: isFolder($moveToDialog.target) ? 'folder' : 'file'
-					},
-					movingTo: folder.id
-				})
+				body: JSON.stringify(body)
 			})
 			if (res.ok) {
 				await invalidateAll()
