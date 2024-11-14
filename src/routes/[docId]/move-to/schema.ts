@@ -1,22 +1,19 @@
 import { z } from 'zod'
 
+const itemSchema = z.object({
+	id: z.string().uuid(),
+	path: z.string()
+})
+
 export const moveToSchema = z.object({
 	target: z.object({
 		id: z.string().uuid(),
 		type: z.enum(['folder', 'file']),
 		children: z.object({
-			folderIds: z.array(z.string().uuid()),
-			fileIds: z.array(
-				z.object({
-					id: z.string().uuid(),
-					path: z.string()
-				})
-			)
+			folderIds: z.array(itemSchema),
+			fileIds: z.array(itemSchema)
 		})
 	}),
-	movingTo: z.object({
-		id: z.string().uuid(),
-		path: z.string()
-	}),
+	movingTo: itemSchema,
 	github: z.boolean()
 })

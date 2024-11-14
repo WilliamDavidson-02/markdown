@@ -40,16 +40,14 @@
 			isLoading = true
 			let path = ''
 			let nestedFileIds: z.infer<typeof moveToSchema>['target']['children']['fileIds'] = []
-			let nestedFolderIds: string[] = []
+			let nestedFolderIds: z.infer<typeof moveToSchema>['target']['children']['folderIds'] = []
 
 			const targetType = isFolder($moveToDialog.target) ? 'folder' : 'file'
 
 			if ($githubIds.folderIds.includes(folder.id)) {
+				const rootFolders = $githubTree.flat().filter((i) => isFolder(i))
 				const dirs = [
-					...getFoldersToFolderPos(
-						$githubTree.flat().filter((i) => isFolder(i)),
-						folder.id
-					)
+					...getFoldersToFolderPos(rootFolders, folder.id)
 						.slice(1)
 						.map((i) => i.name),
 					$moveToDialog.target.name
@@ -61,18 +59,30 @@
 					path += '.md'
 				}
 
-				const fileIds = getNestedFileIds(
-					isFolder($moveToDialog.target) ? [$moveToDialog.target] : []
-				)
+				const target = $moveToDialog.target
+				const fileIds = getNestedFileIds(isFolder(target) ? [target] : [])
 
 				for (const id of fileIds) {
-					const dirs = getFoldersToFilePos([$moveToDialog.target as Folder], id).map((i) => i.name)
+					let dirs = getFoldersToFilePos([target as Folder], id).map((i) => i.name)
+
+					if (!rootFolders.some((f) => f.id === folder.id)) {
+						dirs = [folder.name, ...dirs]
+					}
+
 					nestedFileIds.push({ id, path: dirs.join('/') })
 				}
 
-				nestedFolderIds = getNestedFolderIds(
-					isFolder($moveToDialog.target) ? [$moveToDialog.target] : []
-				)
+				let folderIds = getNestedFolderIds(isFolder(target) ? [target] : [])
+
+				for (const id of folderIds) {
+					let dirs = getFoldersToFolderPos([target as Folder], id).map((i) => i.name)
+
+					if (!rootFolders.some((f) => f.id === folder.id)) {
+						dirs = [folder.name, ...dirs]
+					}
+
+					nestedFolderIds.push({ id, path: dirs.join('/') })
+				}
 			}
 
 			const body: z.infer<typeof moveToSchema> = {

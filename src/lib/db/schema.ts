@@ -137,7 +137,7 @@ export const githubFileTable = pgTable('github_file', {
 	id: uuid('id')
 		.primaryKey()
 		.default(sql`gen_random_uuid()`),
-	sha: text('sha').notNull(),
+	sha: text('sha'),
 	path: text('path'),
 	repositoryId: integer('repository_id')
 		.notNull()
@@ -149,7 +149,7 @@ export const githubFolderTable = pgTable('github_folder', {
 	id: uuid('id')
 		.primaryKey()
 		.default(sql`gen_random_uuid()`),
-	sha: text('sha').notNull(),
+	sha: text('sha'),
 	path: text('path'),
 	repositoryId: integer('repository_id')
 		.notNull()

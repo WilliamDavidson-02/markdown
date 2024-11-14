@@ -263,7 +263,7 @@ export const getGithubRepoDataByFolderId = async (folderId: string, userId: stri
 
 export const updateGithubFolderShaAndPath = async (folders: GithubShaItemUpdate[]) => {
 	if (folders.length > 0) {
-		const folderShas = folders.map((f) => f.sha)
+		const folderShas = folders.map((f) => f.sha).filter((sha) => sha !== null)
 		await db
 			.update(githubFolderTable)
 			.set({

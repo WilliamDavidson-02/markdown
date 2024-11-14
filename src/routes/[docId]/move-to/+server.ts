@@ -1,18 +1,15 @@
 import { db, dbPool } from '$lib/db/index.js'
 import { fileTable, folderTable, githubFileTable, githubFolderTable } from '$lib/db/schema'
 import { json } from '@sveltejs/kit'
-import { and, eq, inArray, isNull } from 'drizzle-orm'
+import { and, eq, inArray, isNotNull } from 'drizzle-orm'
 import { z } from 'zod'
 import { moveToSchema } from './schema'
-import { getGithubFolderByIds, getGithubRepoDataByFolderId } from '../queries'
-import {
-	createGithubTree,
-	getFullTree,
-	getGithubAccessToken,
-	getGithubCommit,
-	getGithubReference
-} from '$lib/utilts/github'
-import type { GithubTreePushFile } from '$lib/utilts/githubTypes'
+
+/**
+ * For every github folder or file when moved we remove the file/folder id from gh table on the old row
+ * And insert a new row with the same id but setting the sha to null
+ * This way we now what needs to be deleted or added when pushing to github
+ */
 
 export const PATCH = async ({ request, locals }) => {
 	const user = locals.user
@@ -28,18 +25,6 @@ export const PATCH = async ({ request, locals }) => {
 	}
 
 	const { target, movingTo, github } = data
-	let token: string | null = null
-	let installationData: {
-		id: number
-		repoId: number
-	} | null = null
-
-	if (github) {
-		installationData = await getGithubRepoDataByFolderId(movingTo.id, user.id)
-		if (!installationData) return json({ error: 'Installation not found' }, { status: 404 })
-
-		token = await getGithubAccessToken(installationData.id)
-	}
 
 	if (target.type === 'folder') {
 		const folders = await db
@@ -48,12 +33,154 @@ export const PATCH = async ({ request, locals }) => {
 			.where(
 				and(inArray(folderTable.id, [target.id, movingTo.id]), eq(folderTable.userId, user.id))
 			)
+		const files = await db
+			.select({ id: fileTable.id, name: fileTable.name })
+			.from(fileTable)
+			.where(
+				and(
+					inArray(
+						fileTable.id,
+						target.children.fileIds.map((f) => f.id)
+					),
+					eq(fileTable.userId, user.id)
+				)
+			)
 
-		if (folders.length !== 2) {
-			return json({ error: 'Invalid request' }, { status: 400 })
+		if (github) {
+			await dbPool.transaction(async (tx) => {
+				const oldFiles = await tx
+					.select({
+						fileId: githubFileTable.fileId,
+						sha: githubFileTable.sha,
+						repositoryId: githubFileTable.repositoryId
+					})
+					.from(githubFileTable)
+					.where(
+						inArray(
+							githubFileTable.fileId,
+							target.children.fileIds.map((f) => f.id)
+						)
+					)
+
+				await Promise.all(
+					target.children.fileIds.map((f) =>
+						tx
+							.update(githubFileTable)
+							.set({
+								fileId: null
+							})
+							.where(and(eq(githubFileTable.fileId, f.id), isNotNull(githubFileTable.sha)))
+					)
+				)
+
+				if (oldFiles.length > 0) {
+					const movedBefore = target.children.fileIds.filter((f) =>
+						oldFiles.find((gh) => gh.fileId === f.id && gh.sha === null)
+					)
+					const neverMoved = target.children.fileIds.filter((f) =>
+						oldFiles.find((gh) => gh.fileId === f.id && gh.sha !== null)
+					)
+
+					if (movedBefore.length > 0) {
+						await Promise.all(
+							movedBefore.map((f) => {
+								const file = files.find((file) => file.id === f.id)
+								const name = file ? file.name + '.md' : ''
+								const path = [...f.path.split('/'), name]
+								return tx
+									.update(githubFileTable)
+									.set({ path: path.join('/'), fileId: f.id })
+									.where(eq(githubFileTable.fileId, f.id))
+							})
+						)
+					}
+
+					if (neverMoved.length > 0) {
+						await tx.insert(githubFileTable).values(
+							neverMoved.map((f) => {
+								const file = files.find((file) => file.id === f.id)
+								const name = file ? file.name + '.md' : ''
+								const path = [...f.path.split('/'), name]
+								return {
+									repositoryId: oldFiles[0].repositoryId,
+									fileId: f.id,
+									path: path.join('/')
+								}
+							})
+						)
+					}
+				}
+
+				const oldFolders = await tx
+					.select({
+						folderId: githubFolderTable.folderId,
+						sha: githubFolderTable.sha,
+						repositoryId: githubFolderTable.repositoryId
+					})
+					.from(githubFolderTable)
+					.where(
+						inArray(
+							githubFolderTable.folderId,
+							target.children.folderIds.map((f) => f.id)
+						)
+					)
+
+				await Promise.all(
+					target.children.folderIds.map((f) =>
+						tx
+							.update(githubFolderTable)
+							.set({
+								folderId: null
+							})
+							.where(and(eq(githubFolderTable.folderId, f.id), isNotNull(githubFolderTable.sha)))
+					)
+				)
+
+				if (oldFolders.length > 0) {
+					const movedBefore = target.children.folderIds.filter((f) =>
+						oldFolders.find((gh) => gh.folderId === f.id && gh.sha === null)
+					)
+					const neverMoved = target.children.folderIds.filter((f) =>
+						oldFolders.find((gh) => gh.folderId === f.id && gh.sha !== null)
+					)
+
+					if (movedBefore.length > 0) {
+						await Promise.all(
+							movedBefore.map((f) =>
+								tx
+									.update(githubFolderTable)
+									.set({ path: f.path, folderId: f.id })
+									.where(eq(githubFolderTable.folderId, f.id))
+							)
+						)
+					}
+
+					if (neverMoved.length > 0) {
+						await tx.insert(githubFolderTable).values(
+							neverMoved.map((f) => {
+								const folder = folders.find((folder) => folder.id === f.id)
+								const path = [...f.path.split('/'), folder?.name ?? '']
+								return {
+									repositoryId: oldFolders[0].repositoryId,
+									folderId: f.id,
+									path: path.join('/')
+								}
+							})
+						)
+					}
+				}
+			})
+
+			await db
+				.update(folderTable)
+				.set({ parentId: movingTo.id })
+				.where(eq(folderTable.id, target.id))
+		} else {
+			await db
+				.update(folderTable)
+				.set({ parentId: movingTo.id })
+				.where(eq(folderTable.id, target.id))
 		}
-
-		await db.update(folderTable).set({ parentId: movingTo.id }).where(eq(folderTable.id, target.id))
 	} else {
 		const folder = await db.select().from(folderTable).where(eq(folderTable.id, movingTo.id))
 		const file = await db.select().from(fileTable).where(eq(fileTable.id, target.id))
@@ -62,77 +189,42 @@ export const PATCH = async ({ request, locals }) => {
 			return json({ error: 'Invalid request' }, { status: 400 })
 		}
 
-		if (github && token && installationData) {
-			const rootFolder = await db
-				.select({ sha: githubFolderTable.sha, name: folderTable.name })
-				.from(githubFolderTable)
-				.where(
-					and(
-						eq(githubFolderTable.repositoryId, installationData.repoId),
-						isNull(githubFolderTable.path)
-					)
-				)
-				.innerJoin(folderTable, eq(githubFolderTable.folderId, folderTable.id))
-				.limit(1)
-
-			if (rootFolder.length === 0) {
-				return json({ error: 'Root folder not found' }, { status: 404 })
-			}
-
-			const [owner, repo] = rootFolder[0].name?.split('/') ?? ['', '']
-			const files: GithubTreePushFile[] = [
-				{
-					...file[0],
-					path: movingTo.path,
-					content: file[0].doc
-				}
-			]
-
-			const newTree = await createGithubTree(owner, repo, [], files, rootFolder[0].sha, token)
-
-			// Update the effected tree items sha's
-			if (newTree) {
-				await dbPool.transaction(async (tx) => {
-					// Remove fk for old gh file, (The row will be deleted when pushing)
-					const oldGhFile = await tx
-						.update(githubFileTable)
-						.set({ fileId: null })
-						.where(eq(githubFileTable.fileId, target.id))
-						.returning()
-
-					await tx.insert(githubFileTable).values(
-						newTree.tree.map((t) => ({
-							repositoryId: oldGhFile[0].repositoryId,
-							fileId: target.id,
-							sha: t.sha,
-							path: movingTo.path
-						}))
-					)
-
-					// Update moved to folder sha
-					const movedToFolder = newTree.tree.find((t) => t.type === 'tree')
-					if (!movedToFolder) tx.rollback()
+		if (github) {
+			await dbPool.transaction(async (tx) => {
+				const oldGhFile = (
 					await tx
-						.update(githubFolderTable)
-						.set({ sha: movedToFolder?.sha })
-						.where(eq(githubFolderTable.folderId, movingTo.id))
-				})
-			}
-		}
+						.select()
+						.from(githubFileTable)
+						.where(eq(githubFileTable.fileId, target.id))
+						.limit(1)
+				)[0]
 
-		await db.update(fileTable).set({ folderId: movingTo.id }).where(eq(fileTable.id, target.id))
+				if (!oldGhFile) tx.rollback()
+
+				await tx
+					.update(githubFileTable)
+					.set({ fileId: null })
+					.where(and(eq(githubFileTable.fileId, target.id), isNotNull(githubFileTable.sha)))
+
+				if (oldGhFile.sha === null) {
+					await tx
+						.update(githubFileTable)
+						.set({ path: movingTo.path, fileId: target.id })
+						.where(eq(githubFileTable.fileId, target.id))
+				} else {
+					await tx.insert(githubFileTable).values({
+						repositoryId: oldGhFile.repositoryId,
+						fileId: target.id,
+						path: movingTo.path
+					})
+				}
+
+				await tx.update(fileTable).set({ folderId: movingTo.id }).where(eq(fileTable.id, target.id))
+			})
+		} else {
+			await db.update(fileTable).set({ folderId: movingTo.id }).where(eq(fileTable.id, target.id))
+		}
 	}
 
 	return json({ success: true })
 }
-
-/**
- * Moving files create new blob insert new row with new path and sha, and update the previous row to remove fileId so it gets deleted when pushing
- * Moving a folder with out any files with in it then update the path but clear the sha for the new row
- * Moving a folder with files in it creates a new tree with all the nested folder and files with in the selected folder
- */
-
-/**
- * To Create a new folder there must be atleast one files with in the children of the selected folder
- * If there is not just allow the move and create a new row with out a sha
- */

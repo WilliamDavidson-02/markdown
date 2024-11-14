@@ -102,7 +102,7 @@ export const updateFolderAndFilePaths = async (
 	folders: GithubShaItemUpdate[]
 ) => {
 	if (files.length > 0) {
-		const fileShas = files.map((f) => f.sha)
+		const fileShas = files.map((f) => f.sha).filter((sha) => sha !== null)
 		await db
 			.update(githubFileTable)
 			.set({ path: generateCaseThen(files, 'sha', 'path') })
@@ -110,7 +110,7 @@ export const updateFolderAndFilePaths = async (
 	}
 
 	if (folders.length > 0) {
-		const folderShas = folders.map((f) => f.sha)
+		const folderShas = folders.map((f) => f.sha).filter((sha) => sha !== null)
 		await db
 			.update(githubFolderTable)
 			.set({ path: generateCaseThen(folders, 'sha', 'path') })
@@ -190,8 +190,7 @@ export const deleteFoldersAndFiles = async (
 ) => {
 	return await dbPool.transaction(async (tx) => {
 		if (folders.length > 0) {
-			const folderShas = folders.map((f) => f.sha)
-			const folderPaths = folders.map((f) => f.path)
+			const folderShas = folders.map((f) => f.sha).filter((sha) => sha !== null)
 			const folderIds = folders.map((f) => f.id).filter((id) => id !== null)
 			await tx
 				.delete(githubFolderTable)
@@ -206,7 +205,7 @@ export const deleteFoldersAndFiles = async (
 				.where(and(inArray(folderTable.id, folderIds), eq(folderTable.userId, userId)))
 		}
 		if (files.length > 0) {
-			const fileShas = files.map((f) => f.sha)
+			const fileShas = files.map((f) => f.sha).filter((sha) => sha !== null)
 			const fileIds = files.map((f) => f.id).filter((id) => id !== null)
 			await tx
 				.delete(fileTable)

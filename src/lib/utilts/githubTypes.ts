@@ -54,7 +54,7 @@ export type GithubFormatedFile = {
 
 export type GithubShaItem = {
 	id: string | null
-	sha: string
+	sha: string | null
 	path: string | null | undefined
 }
 
