@@ -158,12 +158,10 @@ export const PATCH = async ({ request, locals }) => {
 					if (neverMoved.length > 0) {
 						await tx.insert(githubFolderTable).values(
 							neverMoved.map((f) => {
-								const folder = folders.find((folder) => folder.id === f.id)
-								const path = [...f.path.split('/'), folder?.name ?? '']
 								return {
 									repositoryId: oldFolders[0].repositoryId,
 									folderId: f.id,
-									path: path.join('/')
+									path: f.path
 								}
 							})
 						)

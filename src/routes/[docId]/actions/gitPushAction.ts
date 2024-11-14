@@ -1,21 +1,9 @@
-import type { Action } from '@sveltejs/kit'
-import { fail, superValidate } from 'sveltekit-superforms'
-import { zod } from 'sveltekit-superforms/adapters'
-import { repositoryBranchesSchema } from '../schemas'
-import {
-	deleteGithubFiles,
-	deleteGithubFolders,
-	getGithubFileByIds,
-	getGithubFolderByIds,
-	getGithubRepoDataByFileId,
-	getGithubRepoDataByFolderId,
-	updateGithubFolderShaAndPath
-} from '../queries'
 import {
 	createGithubCommit,
 	createGithubPullRequest,
 	createGithubTree,
 	createOrUpdateGithubFile,
+	getFullTree,
 	getGithubAccessToken,
 	getGithubCommit,
 	getGithubReference,
@@ -31,7 +19,22 @@ import type {
 	GithubShaItemUpdate,
 	GithubTreePushFile
 } from '$lib/utilts/githubTypes'
-import { updateGithubFileShaAndPath } from '../../github/git-pull/queries'
+import type { Action } from '@sveltejs/kit'
+import { fail, superValidate } from 'sveltekit-superforms'
+import { zod } from 'sveltekit-superforms/adapters'
+import { updateGithubFileShaAndPath, updateRootFolderSha } from '../../github/git-pull/queries'
+import {
+	deleteGithubFiles,
+	deleteGithubFolders,
+	getGithubFileByIds,
+	getGithubFolderByIds,
+	getGithubRepoDataByFileId,
+	getGithubRepoDataByFolderId,
+	updateGithubFolderShaAndPath,
+	updateMovedGithubFiles,
+	updateMovedGithubFolders
+} from '../queries'
+import { repositoryBranchesSchema } from '../schemas'
 
 export const gitPushAction: Action = async ({ request, locals }) => {
 	const form = await superValidate(request, zod(repositoryBranchesSchema))
@@ -136,6 +139,16 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		)
 		if (!newTree) return fail(400, { form })
 
+		// We need to fetch the new tree because the tree returned from createGithubTree
+		// does not contain created files and folders, it only contains items that already exists
+		const fetchedNewTree = await getFullTree(
+			installationData.id,
+			`${owner}/${repo}`,
+			token,
+			newTree.sha
+		)
+		if (!fetchedNewTree) return fail(400, { form })
+
 		const bodyParams: CreateGithubCommitBodyParams = {
 			message: commitMessage,
 			tree: newTree.sha,
@@ -147,19 +160,35 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		const updatedReference = await updateGithubReference(owner, repo, branch, newCommit.sha, token)
 		if (!updatedReference) return fail(400, { form })
 
-		const [treeFilesToUpdate, treeFilesToDelete] = files.reduce(
+		const [treeFilesToUpdate, treeFilesToDelete, movedFiles] = files.reduce(
 			(prev, cur) => {
-				prev[cur.sha ? 0 : 1].push(cur)
+				prev[cur.sha ? 0 : cur.id === null ? 1 : 2].push(cur)
 				return prev
 			},
-			[[], []] as GithubTreePushFile[][]
+			[[], [], []] as GithubTreePushFile[][]
 		)
 
 		await deleteGithubFiles(treeFilesToDelete.map((f) => f.ghRowId ?? ''))
+		await updateMovedGithubFiles(
+			movedFiles.map((f) => {
+				const name = f.path?.split('/').pop()?.replace('.md', '')
+				const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
+				const sha = f.sha ?? ''
+				return {
+					...f,
+					name: name ?? '',
+					sha,
+					path: f.path ?? '',
+					content: f.content ?? '',
+					newSha: newSha ?? sha,
+					id: f.ghRowId ?? ''
+				}
+			})
+		)
 
 		fileDataToUpdate = treeFilesToUpdate.map((f) => {
 			const name = f.path?.split('/').pop()?.replace('.md', '')
-			const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+			const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
 			const sha = f.sha ?? ''
 			return {
 				sha,
@@ -171,19 +200,34 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 			}
 		})
 
-		const [treeFoldersToUpdate, treeFoldersToDelete] = folders.reduce(
+		const [treeFoldersToUpdate, treeFoldersToDelete, movedFolders] = folders.reduce(
 			(prev, cur) => {
-				prev[cur.sha ? 0 : 1].push(cur)
+				prev[cur.sha ? 0 : cur.id === null ? 1 : 2].push(cur)
 				return prev
 			},
-			[[], []] as GithubFolderData[][]
+			[[], [], []] as GithubFolderData[][]
 		)
 
 		await deleteGithubFolders(treeFoldersToDelete.map((f) => f.ghRowId ?? ''))
+		await updateMovedGithubFolders(
+			movedFolders.map((f) => {
+				const name = f.path?.split('/').pop()
+				const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
+				const sha = f.sha ?? ''
+				return {
+					...f,
+					name: name ?? '',
+					sha,
+					path: f.path ?? '',
+					newSha: newSha ?? sha,
+					id: f.ghRowId ?? ''
+				}
+			})
+		)
 
 		folderDataToUpdate = treeFoldersToUpdate.map((f) => {
 			const name = f.path?.split('/').pop()
-			const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
+			const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
 			const sha = f.sha ?? ''
 			return {
 				sha,
@@ -200,7 +244,15 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		// Since we are pulling from the default branch
 		// we only want to update the sha if we are pushing to the default branch
 		await updateGithubFileShaAndPath(fileDataToUpdate)
-		await updateGithubFolderShaAndPath(folderDataToUpdate)
+		await updateGithubFolderShaAndPath(
+			folderDataToUpdate.filter((f) => f.path && f.path?.length > 0)
+		)
+
+		// We do not want to update the root path, that is why we are updating it separately from the function above
+		const rootFolder = folderDataToUpdate.find((f) => !f.path || f.path.length === 0)
+		if (rootFolder) {
+			await updateRootFolderSha(rootFolder.id ?? '', rootFolder.newSha ?? '')
+		}
 	}
 
 	if (repository && repository.default_branch !== branch && createPullRequest) {

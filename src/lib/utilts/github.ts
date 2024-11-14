@@ -114,7 +114,8 @@ export const getAvailableRepositories = async (
 export const getFullTree = async (
 	installationId: number,
 	repository: string,
-	token?: string
+	token?: string,
+	sha?: string
 ): Promise<GithubTree | null> => {
 	let tokenData = token
 
@@ -125,7 +126,7 @@ export const getFullTree = async (
 	}
 
 	const response = await fetch(
-		`https://api.github.com/repos/${repository}/git/trees/main?recursive=1`,
+		`https://api.github.com/repos/${repository}/git/trees/${sha ?? 'main'}?recursive=1`,
 		{
 			headers: {
 				Authorization: `Bearer ${tokenData}`,
@@ -543,12 +544,11 @@ export const createGithubTree = async (
 ): Promise<GithubTree | null> => {
 	if (!token) return null
 
-	const formatedFolders = folders.map((f) => ({
-		path: f.path ?? '',
-		mode: '040000',
-		type: 'tree',
-		sha: f.sha
-	}))
+	// const formatedFolders = folders.map((f) => ({
+	// 	path: f.path ?? '',
+	// 	mode: '040000',
+	// 	type: 'tree'
+	// }))
 
 	const formatedFiles = files.map((f) => {
 		const base: CreateGithubTreeItem = {
@@ -563,7 +563,7 @@ export const createGithubTree = async (
 	})
 
 	const tree: CreateGithubTree = {
-		tree: [...formatedFolders, ...formatedFiles],
+		tree: [...formatedFiles],
 		base_tree: baseTreeSha
 	}
 

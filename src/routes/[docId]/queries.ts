@@ -11,9 +11,9 @@ import {
 	trashTable,
 	userTable
 } from '$lib/db/schema'
-import { and, desc, eq, inArray, notInArray, or, like, isNull } from 'drizzle-orm'
+import { and, desc, eq, inArray, notInArray, or, isNull } from 'drizzle-orm'
 import { generateCaseThen } from '../github/git-pull/queries'
-import type { GithubShaItemUpdate } from '$lib/utilts/githubTypes'
+import type { GithubFileUpdate, GithubShaItemUpdate } from '$lib/utilts/githubTypes'
 import { defaultEditorSettings } from '$lib/components/settings/defaultSettings'
 
 export const getCurrentDocById = async (userId: string, docId: string, trashIds: string[]) => {
@@ -335,4 +335,30 @@ export const deleteKeybinding = async (name: string, userId: string) => {
 	await db
 		.delete(keybindingTable)
 		.where(and(eq(keybindingTable.name, name), eq(keybindingTable.userId, userId)))
+}
+
+export const updateMovedGithubFiles = async (files: GithubFileUpdate[]) => {
+	if (files.length > 0) {
+		await Promise.all(
+			files.map((f) =>
+				db
+					.update(githubFileTable)
+					.set({ sha: f.newSha })
+					.where(eq(githubFileTable.id, f.id ?? ''))
+			)
+		)
+	}
+}
+
+export const updateMovedGithubFolders = async (folders: GithubShaItemUpdate[]) => {
+	if (folders.length > 0) {
+		await Promise.all(
+			folders.map((f) =>
+				db
+					.update(githubFolderTable)
+					.set({ sha: f.newSha })
+					.where(eq(githubFolderTable.id, f.id ?? ''))
+			)
+		)
+	}
 }
