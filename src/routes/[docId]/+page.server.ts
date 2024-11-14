@@ -1,29 +1,10 @@
 import { superValidate } from 'sveltekit-superforms'
 import { zod } from 'sveltekit-superforms/adapters'
 import { z } from 'zod'
-import { fail, redirect, type Actions } from '@sveltejs/kit'
+import { redirect, type Actions } from '@sveltejs/kit'
 import { fileTable, folderTable } from '$lib/db/schema.js'
 import { buildTree, sortTreeByDate } from '$lib/utilts/tree'
-import {
-	createGithubCommit,
-	createGithubPullRequest,
-	createGithubTree,
-	createOrUpdateGithubFile,
-	formatGithubFiles,
-	formatGithubFolders,
-	getAvailableRepositories,
-	getFileIdsByRepositoryIds,
-	getFolderIdsByRepositoryIds,
-	getGithubAccessToken,
-	getGithubCommit,
-	getGithubReference,
-	getGithubRepository,
-	getGithubRepositoryContent,
-	getRepositoryFilesAndFolders,
-	mergeReposWithInstallation,
-	updateGithubReference,
-	type CreatePullRequestBodyParams
-} from '$lib/utilts/github'
+import { getAvailableRepositories, mergeReposWithInstallation } from '$lib/utilts/github'
 import {
 	editorSettingsSchema,
 	emailSchema,
@@ -34,48 +15,29 @@ import {
 	repositoriesSchema,
 	repositoryBranchesSchema
 } from './schemas'
-import { v4 as uuid } from 'uuid'
 import {
 	getAllFiles,
 	getAllFolders,
 	getCurrentDocById,
-	getGithubFileByIds,
 	getGithubFilesAndFoldersIds,
-	getGithubFolderByIds,
-	getGithubRepoDataByFileId,
-	getGithubRepoDataByFolderId,
 	getGithubInstallations,
 	getSelectedRepositories,
 	getTrash,
 	getUpdatedAtDoc,
-	getUserByEmail,
 	getEditorSettings,
-	insertNewFile,
-	insertNewFolder,
-	insertNewRepository,
-	removeRepository,
-	updateGithubFolderShaAndPath,
-	updateUserEmail,
-	updateUserPassword,
-	updateEditorSettings,
-	findKeybinding,
-	updateKeybinding,
-	insertKeybinding,
-	deleteKeybinding,
-	getKeybindings,
-	deleteGithubFiles,
-	deleteGithubFolders
+	getKeybindings
 } from './queries'
 import type { File } from '$lib/components/file-tree/treeStore'
-import type {
-	CreateGithubCommitBodyParams,
-	GithubFileUpdate,
-	GithubFolderData,
-	GithubShaItemUpdate,
-	GithubTreePushFile
-} from '$lib/utilts/githubTypes'
-import { updateGithubFileShaAndPath } from '../github/git-pull/queries'
-import { hash, verify } from '@node-rs/argon2'
+import {
+	changeEmailAction,
+	editorSettingsAction,
+	fileAction,
+	folderAction,
+	gitPushAction,
+	keybindingAction,
+	passwordResetAction,
+	repositoriesAction
+} from './actions'
 
 export const load = async ({ locals, params }) => {
 	if (!locals.user) {
@@ -222,380 +184,12 @@ export const load = async ({ locals, params }) => {
 }
 
 export const actions: Actions = {
-	file: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(fileSchema))
-		const userId = locals.user?.id
-
-		// The page is protected, so there should always be a user but just in case there isn't
-		if (!userId || !form.valid) return fail(400, { form })
-
-		const fileData = { ...form.data, userId, name: form.data.name.trim() }
-		const file = await insertNewFile(fileData)
-
-		return { form, id: file[0].id }
-	},
-	folder: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(folderSchema))
-		const userId = locals.user?.id
-
-		// The page is protected, so there should always be a user but just in case there isn't
-		if (!userId || !form.valid) return fail(400, { form })
-
-		const { name, parentId } = form.data
-
-		const folderData = { userId, name: name.trim(), parentId }
-		const folder = await insertNewFolder(folderData)
-
-		return { form, id: folder[0].id }
-	},
-	repositories: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(repositoriesSchema))
-		const userId = locals.user?.id
-
-		if (!userId || !form.valid) return fail(400, { form })
-
-		const { installations } = form.data
-
-		for (const installation of installations) {
-			const { repositories, installationId, removedRepositories } = installation
-
-			if (!installationId) continue
-
-			if (repositories.length > 0) {
-				for (const repository of repositories) {
-					const repoFolder = { id: uuid(), name: repository.full_name }
-					const { files, folders, rootSha } = await getRepositoryFilesAndFolders(
-						installationId,
-						repository
-					)
-
-					let { formatedFolders, formatedGithubFoldersData } = formatGithubFolders(
-						folders,
-						repoFolder.id,
-						repository.id
-					)
-
-					const foldersToInsert = [
-						{ ...repoFolder, userId },
-						...formatedFolders.map((f) => ({
-							userId,
-							id: f.id,
-							name: f.name,
-							parentId: f.parentId
-						}))
-					]
-
-					formatedGithubFoldersData = [
-						{ sha: rootSha, repositoryId: repository.id, folderId: repoFolder.id },
-						...formatedGithubFoldersData
-					]
-
-					const { formatedFiles, formatedGithubFilesData } = formatGithubFiles(
-						files,
-						formatedFolders,
-						repoFolder.id,
-						repository.id
-					)
-
-					const filesToInsert = formatedFiles.map((f) => ({ ...f, userId }))
-
-					const repositoryData = {
-						id: repository.id,
-						name: repository.full_name,
-						fullName: repository.full_name,
-						htmlUrl: repository.html_url,
-						installationId,
-						userId
-					}
-
-					await insertNewRepository(
-						repositoryData,
-						foldersToInsert,
-						filesToInsert,
-						formatedGithubFoldersData,
-						formatedGithubFilesData
-					)
-				}
-			}
-
-			if (removedRepositories.length > 0) {
-				const folderIds = await getFolderIdsByRepositoryIds(removedRepositories)
-				const fileIds = await getFileIdsByRepositoryIds(removedRepositories)
-
-				await removeRepository(userId, removedRepositories, folderIds, fileIds)
-			}
-		}
-
-		return { form }
-	},
-	gitPush: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(repositoryBranchesSchema))
-		const userId = locals.user?.id
-
-		if (!userId || !form.valid) return fail(400, { form })
-
-		const {
-			owner,
-			repo,
-			commitMessage,
-			branch,
-			createPullRequest,
-			prDescription,
-			prTitle,
-			selectedItem
-		} = form.data
-
-		const installationData =
-			selectedItem.type === 'file'
-				? await getGithubRepoDataByFileId(selectedItem.id, userId)
-				: await getGithubRepoDataByFolderId(selectedItem.id, userId)
-		if (!installationData) return fail(404, { form })
-
-		const token = await getGithubAccessToken(installationData.id)
-		if (!token) return fail(400, { form })
-
-		const fileIds =
-			selectedItem.type === 'folder' && selectedItem.childIds
-				? selectedItem.childIds
-				: [selectedItem.id]
-		let files = await getGithubFileByIds(fileIds, userId, installationData.repoId)
-
-		const folders = await getGithubFolderByIds(
-			selectedItem.childIds ?? [],
-			userId,
-			installationData.repoId
-		)
-
-		let fileDataToUpdate: GithubFileUpdate[] = []
-		let folderDataToUpdate: GithubShaItemUpdate[] = []
-
-		if (selectedItem.type === 'file') {
-			const file = files.find((f) => f.id === selectedItem.id)
-			if (!file) return fail(404, { form })
-
-			const pathParams = { owner, repo, path: file.path ?? '' }
-
-			const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
-			if (!branchContent) return fail(400, { form })
-
-			const bodyParams = {
-				message: commitMessage,
-				content: btoa(file.content ?? ''),
-				sha: branchContent.sha ?? file.sha,
-				branch
-			}
-
-			const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
-			if (!updatedFile) return fail(400, { form })
-
-			// File id and sha is possibly null when pushing multiple files
-			// If a folder has been deleted, this is not relevent for a single file push
-			if (file.id && file.sha) {
-				fileDataToUpdate = [
-					{
-						sha: file.sha,
-						path: file.path ?? '',
-						newSha: updatedFile.content.sha,
-						content: file.content ?? '',
-						name: updatedFile.content.name,
-						id: file.id
-					}
-				]
-			}
-		} else {
-			// Get the latest commit sha for the branch
-			const reference = await getGithubReference(owner, repo, branch, token)
-			if (!reference) return fail(400, { form })
-
-			const commit = await getGithubCommit(owner, repo, reference.object.sha, token)
-			if (!commit) return fail(400, { form })
-
-			const selectedFolder = folders.find((f) => f.id === selectedItem.id)
-			const filteredFolders = folders.filter((f) => {
-				if (f.path === null) return false
-				if (selectedFolder?.path === null) return true
-				return f.path.includes(selectedFolder?.path ?? '')
-			})
-			const filteredFiles = files.filter((f) => {
-				if (selectedFolder?.path === null) return true
-				return f.path?.includes(selectedFolder?.path ?? '')
-			})
-
-			const newTree = await createGithubTree(
-				owner,
-				repo,
-				filteredFolders,
-				filteredFiles,
-				commit.tree.sha,
-				token
-			)
-			if (!newTree) return fail(400, { form })
-
-			const bodyParams: CreateGithubCommitBodyParams = {
-				message: commitMessage,
-				tree: newTree.sha,
-				parents: [reference.object.sha]
-			}
-			const newCommit = await createGithubCommit(owner, repo, bodyParams, token)
-			if (!newCommit) return fail(400, { form })
-
-			const updatedReference = await updateGithubReference(
-				owner,
-				repo,
-				branch,
-				newCommit.sha,
-				token
-			)
-			if (!updatedReference) return fail(400, { form })
-
-			const [treeFilesToUpdate, treeFilesToDelete] = files.reduce(
-				(prev, cur) => {
-					prev[cur.sha ? 0 : 1].push(cur)
-					return prev
-				},
-				[[], []] as GithubTreePushFile[][]
-			)
-
-			await deleteGithubFiles(treeFilesToDelete.map((f) => f.ghRowId ?? ''))
-
-			fileDataToUpdate = treeFilesToUpdate.map((f) => {
-				const name = f.path?.split('/').pop()?.replace('.md', '')
-				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
-				const sha = f.sha ?? ''
-				return {
-					sha,
-					path: f.path ?? '',
-					newSha: newSha ?? sha,
-					content: f.content ?? '',
-					name: name ?? '',
-					id: f.id ?? ''
-				}
-			})
-
-			const [treeFoldersToUpdate, treeFoldersToDelete] = folders.reduce(
-				(prev, cur) => {
-					prev[cur.sha ? 0 : 1].push(cur)
-					return prev
-				},
-				[[], []] as GithubFolderData[][]
-			)
-
-			await deleteGithubFolders(treeFoldersToDelete.map((f) => f.ghRowId ?? ''))
-
-			folderDataToUpdate = treeFoldersToUpdate.map((f) => {
-				const name = f.path?.split('/').pop()
-				const newSha = newTree.tree.find((t) => t.path === f.path)?.sha
-				const sha = f.sha ?? ''
-				return {
-					sha,
-					path: f.path ?? '',
-					newSha: newSha ?? sha,
-					name: name ?? '',
-					id: f.id ?? ''
-				}
-			})
-		}
-
-		const repository = await getGithubRepository(owner, repo, token)
-		if (repository && repository.default_branch === branch) {
-			// Since we are pulling from the default branch
-			// we only want to update the sha if we are pushing to the default branch
-			await updateGithubFileShaAndPath(fileDataToUpdate)
-			await updateGithubFolderShaAndPath(folderDataToUpdate)
-		}
-
-		if (repository && repository.default_branch !== branch && createPullRequest) {
-			const body: CreatePullRequestBodyParams = {
-				title: prTitle,
-				head: branch,
-				base: repository.default_branch,
-				body: prDescription
-			}
-			await createGithubPullRequest({ owner, repo }, body, token)
-		}
-
-		return { form }
-	},
-	passwordReset: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(passwordResetSchema))
-
-		if (!locals.user || !form.valid) return fail(400, { form })
-		const { currentPassword, newPassword } = form.data
-
-		const existingUser = await getUserByEmail(locals.user.email)
-		if (existingUser.length === 0) return fail(400, { form })
-
-		const user = existingUser[0]
-		const validPassword = await verify(user.passwordHash ?? '', currentPassword, {
-			memoryCost: 19456,
-			timeCost: 2,
-			outputLen: 32,
-			parallelism: 1
-		})
-		if (!validPassword) {
-			return fail(400, { form, error: 'Incorrect password' })
-		}
-		if (newPassword === currentPassword) {
-			return fail(400, {
-				form,
-				error: 'New password cannot be the same as the current password'
-			})
-		}
-
-		const newPasswordHash = await hash(newPassword, {
-			memoryCost: 19456,
-			timeCost: 2,
-			outputLen: 32,
-			parallelism: 1
-		})
-
-		await updateUserPassword(user.id, newPasswordHash)
-
-		return { form }
-	},
-	changeEmail: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(emailSchema))
-
-		if (!locals.user || !form.valid) return fail(400, { form })
-
-		const email = form.data.email.trim().toLowerCase()
-		if (email === locals.user.email) return fail(400, { form, error: 'Email unchanged' })
-
-		const existingUser = await getUserByEmail(email)
-		if (existingUser.length > 0) return fail(400, { form, error: 'Email unavailable' })
-
-		await updateUserEmail(locals.user.id, email)
-
-		return { form }
-	},
-	editorSettings: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(editorSettingsSchema))
-
-		if (!locals.user || !form.valid) return fail(400, { form })
-
-		await updateEditorSettings(locals.user.id, form.data)
-
-		return { form }
-	},
-	keybinding: async ({ request, locals }) => {
-		const form = await superValidate(request, zod(keybindingSchema))
-		const userId = locals.user?.id
-
-		if (!userId || !form.valid) return fail(400, { form })
-
-		const existingKeybinding = await findKeybinding(form.data.name, userId)
-
-		if (form.data.reset) {
-			if (existingKeybinding) await deleteKeybinding(form.data.name, userId)
-			return { form }
-		}
-
-		if (existingKeybinding) {
-			await updateKeybinding({ ...form.data, userId })
-		} else {
-			await insertKeybinding({ ...form.data, userId })
-		}
-
-		return { form }
-	}
+	file: fileAction,
+	folder: folderAction,
+	repositories: repositoriesAction,
+	gitPush: gitPushAction,
+	passwordReset: passwordResetAction,
+	changeEmail: changeEmailAction,
+	editorSettings: editorSettingsAction,
+	keybinding: keybindingAction
 }
