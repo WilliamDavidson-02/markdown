@@ -14,6 +14,9 @@ export const moveToSchema = z.object({
 			fileIds: z.array(itemSchema)
 		})
 	}),
-	movingTo: itemSchema,
+	movingTo: z.object({
+		id: z.string().uuid().nullable(),
+		path: z.string().nullable()
+	}),
 	github: z.boolean()
 })

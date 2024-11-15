@@ -4,8 +4,10 @@
 	import type { Folder } from '$lib/components/file-tree/treeStore'
 	import { moveToDialog } from '$lib/components/file-tree/treeStore'
 	import MoveToItem from './MoveToItem.svelte'
+	import MoveToRootItem from './MoveToRootItem.svelte'
 
 	export let folders: Folder[]
+	export let isGithub = false
 
 	let searchValue = ''
 	let dialog: HTMLDialogElement
@@ -27,6 +29,9 @@
 		/>
 		<CommandList class="move-to-command-list">
 			<ul>
+				{#if !isGithub}
+					<MoveToRootItem />
+				{/if}
 				{#each folders as folder}
 					{#if folder.id !== $moveToDialog.target?.id}
 						<MoveToItem {folder} />

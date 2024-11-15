@@ -27,12 +27,11 @@ export const PATCH = async ({ request, locals }) => {
 	const { target, movingTo, github } = data
 
 	if (target.type === 'folder') {
+		const ids = [target.id, movingTo.id ?? ''].filter(Boolean)
 		const folders = await db
 			.select()
 			.from(folderTable)
-			.where(
-				and(inArray(folderTable.id, [target.id, movingTo.id]), eq(folderTable.userId, user.id))
-			)
+			.where(and(inArray(folderTable.id, ids), eq(folderTable.userId, user.id)))
 		const files = await db
 			.select({ id: fileTable.id, name: fileTable.name })
 			.from(fileTable)
@@ -180,10 +179,11 @@ export const PATCH = async ({ request, locals }) => {
 				.where(eq(folderTable.id, target.id))
 		}
 	} else {
-		const folder = await db.select().from(folderTable).where(eq(folderTable.id, movingTo.id))
+		const ids = [target.id, movingTo.id ?? ''].filter(Boolean)
+		const folder = await db.select().from(folderTable).where(inArray(folderTable.id, ids))
 		const file = await db.select().from(fileTable).where(eq(fileTable.id, target.id))
 
-		if (folder.length !== 1 || file.length !== 1) {
+		if (movingTo.id && (folder.length !== 1 || file.length !== 1)) {
 			return json({ error: 'Invalid request' }, { status: 400 })
 		}
 

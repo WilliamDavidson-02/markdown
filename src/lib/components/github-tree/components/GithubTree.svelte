@@ -26,7 +26,7 @@
 	}
 </script>
 
-<MoveTo folders={folder ? [folder] : []} />
+<MoveTo folders={folder ? [folder] : []} isGithub={true} />
 
 <ul class="file-tree">
 	{#each $githubTree as group}
