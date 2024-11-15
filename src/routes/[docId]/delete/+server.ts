@@ -82,6 +82,22 @@ export const DELETE = async ({ locals, params, request }) => {
 					)
 				)
 
+			const ghFile = (
+				await tx
+					.select({
+						fileId: githubFileTable.fileId,
+						sha: githubFileTable.sha
+					})
+					.from(githubFileTable)
+					.where(inArray(githubFileTable.fileId, ids))
+					.limit(1)
+			)[0]
+
+			// If file is new and then deleted before push remove it completely form gh table
+			if (ghFile && !ghFile.sha) {
+				await tx.delete(githubFileTable).where(eq(githubFileTable.fileId, ghFile.fileId ?? ''))
+			}
+
 			await tx
 				.delete(fileTable)
 				.where(and(inArray(fileTable.id, ids), eq(fileTable.userId, userId)))
