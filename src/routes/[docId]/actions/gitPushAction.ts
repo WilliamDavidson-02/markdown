@@ -10,6 +10,7 @@ import {
 	getGithubRepository,
 	getGithubRepositoryContent,
 	updateGithubReference,
+	type CreateOrUpdateGithubFileBodyParams,
 	type CreatePullRequestBodyParams
 } from '$lib/utilts/github'
 import type {
@@ -84,20 +85,21 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		const pathParams = { owner, repo, path: file.path ?? '' }
 
 		const branchContent = await getGithubRepositoryContent(pathParams, branch, token)
-		if (!branchContent) return fail(400, { form })
 
-		const bodyParams = {
+		let bodyParams: CreateOrUpdateGithubFileBodyParams = {
 			message: commitMessage,
 			content: btoa(file.content ?? ''),
-			sha: branchContent.sha ?? file.sha,
 			branch
+		}
+
+		if (file.sha) {
+			bodyParams.sha = branchContent?.sha ?? file.sha
 		}
 
 		const updatedFile = await createOrUpdateGithubFile(pathParams, bodyParams, token)
 		if (!updatedFile) return fail(400, { form })
 
-		// File id and sha is possibly null when pushing multiple files
-		// If a folder has been deleted, this is not relevent for a single file push
+		// Only file content is updated
 		if (file.id && file.sha) {
 			fileDataToUpdate = [
 				{
@@ -109,6 +111,18 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 					id: file.id
 				}
 			]
+		} else if (file.id && !file.sha) {
+			// New file
+			await updateMovedOrNewGithubFiles([
+				{
+					id: file.id,
+					sha: file.sha ?? '',
+					path: file.path ?? '',
+					newSha: updatedFile.content.sha,
+					name: updatedFile.content.name,
+					content: file.content ?? ''
+				}
+			])
 		}
 	} else {
 		// Get the latest commit sha for the branch
@@ -181,7 +195,7 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 					path: f.path ?? '',
 					content: f.content ?? '',
 					newSha: newSha ?? sha,
-					id: f.ghRowId ?? ''
+					id: f.id ?? ''
 				}
 			})
 		)
@@ -220,7 +234,7 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 					sha,
 					path: f.path ?? '',
 					newSha: newSha ?? sha,
-					id: f.ghRowId ?? ''
+					id: f.id ?? ''
 				}
 			})
 		)

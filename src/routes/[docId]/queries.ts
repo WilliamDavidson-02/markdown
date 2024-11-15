@@ -406,7 +406,7 @@ export const updateMovedOrNewGithubFiles = async (files: GithubFileUpdate[]) => 
 				db
 					.update(githubFileTable)
 					.set({ sha: f.newSha })
-					.where(eq(githubFileTable.id, f.id ?? ''))
+					.where(eq(githubFileTable.fileId, f.id ?? ''))
 			)
 		)
 	}
@@ -419,7 +419,7 @@ export const updateMovedOrNewGithubFolders = async (folders: GithubShaItemUpdate
 				db
 					.update(githubFolderTable)
 					.set({ sha: f.newSha })
-					.where(eq(githubFolderTable.id, f.id ?? ''))
+					.where(eq(githubFolderTable.folderId, f.id ?? ''))
 			)
 		)
 	}

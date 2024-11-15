@@ -370,7 +370,7 @@ type PathParams = {
 	repo: string
 	path: string
 }
-type BodyParams = {
+export type CreateOrUpdateGithubFileBodyParams = {
 	message: string
 	content: string
 	sha?: string
@@ -378,7 +378,7 @@ type BodyParams = {
 }
 export const createOrUpdateGithubFile = async (
 	pathParams: PathParams,
-	bodyParams: BodyParams,
+	bodyParams: CreateOrUpdateGithubFileBodyParams,
 	token: string | null
 ): Promise<CreateOrUpdateGithubFile | null> => {
 	if (!token) return null
@@ -393,7 +393,9 @@ export const createOrUpdateGithubFile = async (
 		body: JSON.stringify(bodyParams)
 	})
 
-	return res.ok ? await res.json() : null
+	const data = await res.json()
+
+	return res.ok ? data : null
 }
 
 export const getGithubRepositoryContent = async (
@@ -415,7 +417,9 @@ export const getGithubRepositoryContent = async (
 		}
 	)
 
-	return res.ok ? await res.json() : null
+	const data = await res.json()
+
+	return res.ok ? data : null
 }
 
 export const getGithubRepository = async (
