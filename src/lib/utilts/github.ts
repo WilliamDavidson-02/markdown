@@ -328,6 +328,13 @@ export const filterTreeIntoStatus = (
 
 	const validTreeItems = [...mdFolders, ...mdFiles]
 
+	/**
+	 * If the path and sha from db is not in the tree
+	 * Then the items has been removed
+	 *
+	 * Removed items also includes localy trashed items but still existing in the tree
+	 * Meaning the old row will be deleted and it will be reinserted again as a new item
+	 */
 	const removedItems = [...folders, ...files].filter(
 		(item) =>
 			!validTreeItems.some((t) => t.sha === item.sha || t.path === item.path) || item.id === null

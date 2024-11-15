@@ -98,10 +98,10 @@ export const trashTable = pgTable('trash', {
 		.notNull()
 		.references(() => userTable.id, { onDelete: 'cascade' }),
 	folderId: uuid('folder_id')
-		.references(() => folderTable.id, { onDelete: 'set null' })
+		.references(() => folderTable.id, { onDelete: 'cascade' })
 		.unique(),
 	fileId: uuid('file_id')
-		.references(() => fileTable.id, { onDelete: 'set null' })
+		.references(() => fileTable.id, { onDelete: 'cascade' })
 		.unique(),
 	createdAt: timestamp('created_at', {
 		withTimezone: true,

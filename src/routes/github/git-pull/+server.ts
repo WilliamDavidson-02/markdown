@@ -118,6 +118,21 @@ export const PUT = async ({ request, locals }) => {
 			}
 		}
 
+		if (filteredTree.removedItems.length > 0) {
+			const folders = filteredTree.removedItems.filter(
+				(item) =>
+					!item.path?.endsWith('.md') &&
+					(selectedFolders.some((f) => f.id === item.id) || item.id === null)
+			)
+			const files = filteredTree.removedItems.filter(
+				(item) =>
+					item.path?.endsWith('.md') &&
+					(selectedFiles.some((f) => f.id === item.id) || item.id === null)
+			)
+
+			await deleteFoldersAndFiles(folders, files, userId, installation.repositoryId)
+		}
+
 		if (filteredTree.newItems.length > 0) {
 			const newFolders = filteredTree.newItems
 				.filter(
@@ -172,21 +187,6 @@ export const PUT = async ({ request, locals }) => {
 				formatedGithubFoldersData,
 				formatedGithubFilesData
 			)
-		}
-
-		if (filteredTree.removedItems.length > 0) {
-			const folders = filteredTree.removedItems.filter(
-				(item) =>
-					!item.path?.endsWith('.md') &&
-					(selectedFolders.some((f) => f.id === item.id) || item.id === null)
-			)
-			const files = filteredTree.removedItems.filter(
-				(item) =>
-					item.path?.endsWith('.md') &&
-					(selectedFiles.some((f) => f.id === item.id) || item.id === null)
-			)
-
-			await deleteFoldersAndFiles(folders, files, userId, installation.repositoryId)
 		}
 
 		await updateRootFolderSha(rootFolder.id, treeData.sha)
