@@ -197,7 +197,10 @@ export const deleteFoldersAndFiles = async (
 				.delete(githubFolderTable)
 				.where(
 					and(
-						inArray(githubFolderTable.sha, folderShas),
+						or(
+							inArray(githubFolderTable.sha, folderShas),
+							inArray(githubFolderTable.folderId, folderIds)
+						),
 						eq(githubFolderTable.repositoryId, repositoryId)
 					)
 				)
@@ -209,16 +212,16 @@ export const deleteFoldersAndFiles = async (
 			const fileShas = files.map((f) => f.sha).filter((sha) => sha !== null)
 			const fileIds = files.map((f) => f.id).filter((id) => id !== null)
 			await tx
-				.delete(fileTable)
-				.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
-			await tx
 				.delete(githubFileTable)
 				.where(
 					and(
-						inArray(githubFileTable.sha, fileShas),
+						or(inArray(githubFileTable.sha, fileShas), inArray(githubFileTable.fileId, fileIds)),
 						eq(githubFileTable.repositoryId, repositoryId)
 					)
 				)
+			await tx
+				.delete(fileTable)
+				.where(and(inArray(fileTable.id, fileIds), eq(fileTable.userId, userId)))
 		}
 	})
 }
