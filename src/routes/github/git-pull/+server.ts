@@ -133,12 +133,12 @@ export const PUT = async ({ request, locals }) => {
 			const folders = filteredTree.removedItems.filter(
 				(item) =>
 					!item.path?.endsWith('.md') &&
-					(selectedFolders.some((f) => f.id === item.id) || item.id === null)
+					(selectedFolders.some((f) => f.id === item.id) || item.id === null || item.sha === null)
 			)
 			const files = filteredTree.removedItems.filter(
 				(item) =>
 					item.path?.endsWith('.md') &&
-					(selectedFiles.some((f) => f.id === item.id) || item.id === null)
+					(selectedFiles.some((f) => f.id === item.id) || item.id === null || item.sha === null)
 			)
 
 			await deleteFoldersAndFiles(folders, files, userId, installation.repositoryId)
