@@ -55,6 +55,7 @@
 			<Button
 				variant="ghost"
 				icon
+				disabled={isLoading}
 				on:click={(ev) => {
 					ev.stopPropagation()
 					handleSelect()

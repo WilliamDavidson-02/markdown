@@ -3,7 +3,7 @@
 	import { ChevronRight, Folder as ClosedFolder, FolderOpen, Loader2 } from 'lucide-svelte'
 	import { CommandItem } from '$lib/components/command'
 	import { getState } from '$lib/components/command/command'
-	import { getNestedIds } from '$lib/utilts/helpers'
+	import { getNestedFolderIds, getNestedIds } from '$lib/utilts/helpers'
 	import { slide } from 'svelte/transition'
 	import { Button } from '$lib/components/button'
 	import { moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
@@ -11,6 +11,7 @@
 	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
 	import { githubIds } from '$lib/components/github-tree/githubTreeStore'
 	import { formatMoveTo } from '../formatMoveTo'
+	import { isFolder } from '$lib/utilts/tree'
 
 	export let folder: Folder
 	let isOpen = false
@@ -48,6 +49,17 @@
 		}
 	}
 
+	// Prevent moving to the same dir that the target alredy is in
+	$: isFolderParentToTarget =
+		$moveToDialog.target &&
+		folder.id ===
+			(isFolder($moveToDialog.target)
+				? $moveToDialog.target.parentId
+				: $moveToDialog.target.folderId)
+	$: isNestedFolder =
+		$moveToDialog.target &&
+		isFolder($moveToDialog.target) &&
+		getNestedFolderIds([$moveToDialog.target]).some((id) => id === folder.id)
 	$: alwaysRender = isChildSearchValid($state.filtered.items)
 </script>
 
@@ -71,6 +83,7 @@
 				<Button
 					variant="ghost"
 					icon
+					disabled={isLoading || isFolderParentToTarget || isNestedFolder}
 					on:click={(ev) => {
 						ev.stopPropagation()
 						handleSelect(folder)
