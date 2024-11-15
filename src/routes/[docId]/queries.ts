@@ -65,12 +65,74 @@ export const getSelectedRepositories = async (userId: string, ids: number[]) => 
 		.where(and(eq(repositoryTable.userId, userId), inArray(repositoryTable.installationId, ids)))
 }
 
-export const insertNewFile = async (file: typeof fileTable.$inferInsert) => {
-	return await db.insert(fileTable).values(file).returning({ id: fileTable.id })
+export const insertNewFile = async (file: typeof fileTable.$inferInsert, github?: boolean) => {
+	if (github) {
+		const parentFolderPath = (
+			await db
+				.select({ path: githubFolderTable.path, repositoryId: githubFolderTable.repositoryId })
+				.from(githubFolderTable)
+				.where(eq(githubFolderTable.folderId, file.folderId ?? ''))
+				.limit(1)
+		)[0]
+
+		const newPath = [...(parentFolderPath.path?.split('/') ?? []), `${file.name}.md`].join('/')
+
+		return await dbPool.transaction(async (tx) => {
+			const newFile = await tx
+				.insert(fileTable)
+				.values({ ...file, doc: '' })
+				.returning({ id: fileTable.id })
+
+			await tx.insert(githubFileTable).values({
+				repositoryId: parentFolderPath.repositoryId,
+				fileId: newFile[0].id,
+				path: newPath
+			})
+
+			return newFile[0].id
+		})
+	} else {
+		return (
+			await db
+				.insert(fileTable)
+				.values({ ...file, doc: '' })
+				.returning({ id: fileTable.id })
+		)[0].id
+	}
 }
 
-export const insertNewFolder = async (folder: typeof folderTable.$inferInsert) => {
-	return await db.insert(folderTable).values(folder).returning({ id: folderTable.id })
+export const insertNewFolder = async (
+	folder: typeof folderTable.$inferInsert,
+	github?: boolean
+) => {
+	if (github) {
+		const parentFolderPath = (
+			await db
+				.select({ path: githubFolderTable.path, repositoryId: githubFolderTable.repositoryId })
+				.from(githubFolderTable)
+				.where(eq(githubFolderTable.folderId, folder.parentId ?? ''))
+				.limit(1)
+		)[0]
+
+		const newPath = [...(parentFolderPath.path?.split('/') ?? []), folder.name].join('/')
+
+		return await dbPool.transaction(async (tx) => {
+			const newFolder = await tx
+				.insert(folderTable)
+				.values(folder)
+				.returning({ id: folderTable.id })
+
+			await tx.insert(githubFolderTable).values({
+				repositoryId: parentFolderPath.repositoryId,
+				folderId: newFolder[0].id,
+				path: newPath
+			})
+
+			return newFolder[0].id
+		})
+	} else {
+		return await db.insert(folderTable).values(folder).returning({ id: folderTable.id })
+	}
 }
 
 export const insertNewRepository = async (
@@ -337,7 +399,7 @@ export const deleteKeybinding = async (name: string, userId: string) => {
 		.where(and(eq(keybindingTable.name, name), eq(keybindingTable.userId, userId)))
 }
 
-export const updateMovedGithubFiles = async (files: GithubFileUpdate[]) => {
+export const updateMovedOrNewGithubFiles = async (files: GithubFileUpdate[]) => {
 	if (files.length > 0) {
 		await Promise.all(
 			files.map((f) =>
@@ -350,7 +412,7 @@ export const updateMovedGithubFiles = async (files: GithubFileUpdate[]) => {
 	}
 }
 
-export const updateMovedGithubFolders = async (folders: GithubShaItemUpdate[]) => {
+export const updateMovedOrNewGithubFolders = async (folders: GithubShaItemUpdate[]) => {
 	if (folders.length > 0) {
 		await Promise.all(
 			folders.map((f) =>

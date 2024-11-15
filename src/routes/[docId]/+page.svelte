@@ -27,6 +27,7 @@
 	let settingsDialog: HTMLDialogElement
 	let searchDialog: HTMLDialogElement
 	$: isCurrentDocGithub = data.githubIds.fileIds.includes(data.currentDoc?.id ?? '')
+	$: showGithubPanel = isCurrentDocGithub
 	$: initialSettings = {
 		installations: data.installations,
 		availableRepositories: data.availableRepositories,
@@ -83,8 +84,8 @@
 </script>
 
 <main>
-	<FileForm bind:fileDialog form={data.fileForm} />
-	<FolderForm bind:folderDialog form={data.folderForm} />
+	<FileForm bind:fileDialog form={data.fileForm} isGithubTreeShown={showGithubPanel} />
+	<FolderForm bind:folderDialog form={data.folderForm} isGithubTreeShown={showGithubPanel} />
 	<Trash bind:trashDialog />
 	<Settings bind:settingsDialog />
 	<Search bind:searchDialog />
@@ -94,7 +95,7 @@
 		{fileDialog}
 		{folderDialog}
 		{settingsDialog}
-		{isCurrentDocGithub}
+		bind:showGithubPanel
 	/>
 	<Workspace />
 </main>

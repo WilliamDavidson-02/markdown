@@ -559,7 +559,9 @@ export const createGithubTree = async (
 
 		// If content is provided, use content. Otherwise, use sha
 		// It's not possible to propvide both sha and content, you will get a 422 response
-		return f.content ? { ...base, content: f.content } : { ...base, sha: f.sha }
+		return f.content !== null && f.content !== undefined
+			? { ...base, content: f.content }
+			: { ...base, sha: f.sha }
 	})
 
 	const tree: CreateGithubTree = {

@@ -14,22 +14,19 @@
 	export let trashDialog: HTMLDialogElement
 	export let settingsDialog: HTMLDialogElement
 	export let searchDialog: HTMLDialogElement
-	export let isCurrentDocGithub: boolean
+	export let showGithubPanel: boolean
 
 	const settings = getSettings()
 	const navContext = getNavContext()
 
 	let isResizing = false
 	let showOutlinePanel = false
-	let showGithubPanel = isCurrentDocGithub ? true : false
 
 	onMount(() => {
 		const localNavContext = window.localStorage.getItem(NAV_CONTEXT_NAME)
 		if (localNavContext) {
 			navContext.update((state) => ({ ...state, ...JSON.parse(localNavContext) }))
 		}
-
-		// navWidth = parseInt(window.localStorage.getItem('navWidth') || '400')
 
 		const handleMove = (ev: PointerEvent) => {
 			if (!isResizing) return

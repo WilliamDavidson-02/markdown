@@ -13,12 +13,14 @@ export const fileSchema = z.object({
 		.string()
 		.refine((value) => iconColors.map(({ color }) => color).includes(value))
 		.default(iconColors[0].color),
-	folderId: z.string().uuid().optional()
+	folderId: z.string().uuid().optional(),
+	github: z.boolean().optional()
 })
 
 export const folderSchema = z.object({
 	name: z.string().max(256, { message: 'Name must be at most 256 characters' }),
-	parentId: z.string().uuid().optional()
+	parentId: z.string().uuid().optional(),
+	github: z.boolean().optional()
 })
 
 export const repositorySchema = z.object({

@@ -31,8 +31,8 @@ import {
 	getGithubRepoDataByFileId,
 	getGithubRepoDataByFolderId,
 	updateGithubFolderShaAndPath,
-	updateMovedGithubFiles,
-	updateMovedGithubFolders
+	updateMovedOrNewGithubFiles,
+	updateMovedOrNewGithubFolders
 } from '../queries'
 import { repositoryBranchesSchema } from '../schemas'
 
@@ -160,7 +160,7 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		const updatedReference = await updateGithubReference(owner, repo, branch, newCommit.sha, token)
 		if (!updatedReference) return fail(400, { form })
 
-		const [treeFilesToUpdate, treeFilesToDelete, movedFiles] = files.reduce(
+		const [treeFilesToUpdate, treeFilesToDelete, movedOrNewFiles] = files.reduce(
 			(prev, cur) => {
 				prev[cur.sha ? 0 : cur.id === null ? 1 : 2].push(cur)
 				return prev
@@ -169,8 +169,8 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		)
 
 		await deleteGithubFiles(treeFilesToDelete.map((f) => f.ghRowId ?? ''))
-		await updateMovedGithubFiles(
-			movedFiles.map((f) => {
+		await updateMovedOrNewGithubFiles(
+			movedOrNewFiles.map((f) => {
 				const name = f.path?.split('/').pop()?.replace('.md', '')
 				const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
 				const sha = f.sha ?? ''
@@ -200,7 +200,7 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 			}
 		})
 
-		const [treeFoldersToUpdate, treeFoldersToDelete, movedFolders] = folders.reduce(
+		const [treeFoldersToUpdate, treeFoldersToDelete, movedOrNewFolders] = folders.reduce(
 			(prev, cur) => {
 				prev[cur.sha ? 0 : cur.id === null ? 1 : 2].push(cur)
 				return prev
@@ -209,8 +209,8 @@ export const gitPushAction: Action = async ({ request, locals }) => {
 		)
 
 		await deleteGithubFolders(treeFoldersToDelete.map((f) => f.ghRowId ?? ''))
-		await updateMovedGithubFolders(
-			movedFolders.map((f) => {
+		await updateMovedOrNewGithubFolders(
+			movedOrNewFolders.map((f) => {
 				const name = f.path?.split('/').pop()
 				const newSha = fetchedNewTree.tree.find((t) => t.path === f.path)?.sha
 				const sha = f.sha ?? ''

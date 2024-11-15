@@ -13,9 +13,11 @@
 	import { treeStore, type Tree } from '$lib/components/file-tree/treeStore'
 	import { isFolder } from '$lib/utilts/tree'
 	import { getAllFolders } from '$lib/utilts/helpers'
+	import { githubTree } from '$lib/components/github-tree/githubTreeStore'
 
 	export let folderDialog: HTMLDialogElement
 	export let form: PageData['folderForm']
+	export let isGithubTreeShown: boolean
 	let isFolderPopoverOpen = false
 
 	const {
@@ -29,7 +31,18 @@
 				folderDialog.close()
 				await invalidateAll()
 			}
-		}
+		},
+		onSubmit: ({ cancel }) => {
+			if (isGithubTreeShown && !$folderForm.parentId) {
+				cancel()
+				return
+			}
+
+			folderForm.update((form) => ({ ...form, github: isGithubTreeShown }), {
+				taint: 'untaint-all'
+			})
+		},
+		dataType: 'json'
 	})
 
 	const handleFolderSelect = (folderId: string) => {
@@ -51,12 +64,11 @@
 		}))
 	}
 
-	$: folders = getFolders($treeStore)
+	$: folders = getFolders(isGithubTreeShown ? $githubTree : $treeStore)
 </script>
 
 <Dialog bind:dialog={folderDialog} on:close={resetForm} class="folder-form-dialog">
 	<form method="POST" action="?/folder" use:enhance>
-		<input type="hidden" name="parentId" bind:value={$folderForm.parentId} />
 		<DialogHeader>Create new folder</DialogHeader>
 		<div class="fields-container">
 			<div class="form-field">
@@ -109,8 +121,13 @@
 			</div>
 		</div>
 		<DialogFooter>
-			<Button variant="outline" on:click={() => folderDialog.close()}>Cancel</Button>
-			<Button type="submit">
+			<Button
+				variant="outline"
+				type="button"
+				disabled={$submitting}
+				on:click={() => folderDialog.close()}>Cancel</Button
+			>
+			<Button type="submit" disabled={$submitting || (isGithubTreeShown && !$folderForm.parentId)}>
 				{#if $submitting}
 					<Loader2 class="animate-spin" size={20} />
 				{/if}
