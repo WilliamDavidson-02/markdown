@@ -38,9 +38,16 @@
 				return
 			}
 
-			folderForm.update((form) => ({ ...form, github: isGithubTreeShown }), {
-				taint: 'untaint-all'
-			})
+			folderForm.update(
+				(form) => ({
+					...form,
+					name: form.name.replace(/[\s\/]/g, ''),
+					github: isGithubTreeShown
+				}),
+				{
+					taint: 'untaint-all'
+				}
+			)
 		},
 		dataType: 'json'
 	})
@@ -64,6 +71,12 @@
 		}))
 	}
 
+	const handleFolderNameChange = (ev: Event) => {
+		const target = ev.target as HTMLInputElement
+		const name = target.value.replace(/[\s\/]/g, '')
+		folderForm.update((form) => ({ ...form, name }), { taint: 'untaint-all' })
+	}
+
 	$: folders = getFolders(isGithubTreeShown ? $githubTree : $treeStore)
 </script>
 
@@ -77,9 +90,10 @@
 					type="text"
 					id="name"
 					name="name"
-					bind:value={$folderForm.name}
+					value={$folderForm.name}
 					placeholder="Enter a folder name"
 					autofocus={folderDialog?.open}
+					on:input={handleFolderNameChange}
 				/>
 				<ErrorMessage error={$errors.name} />
 			</div>

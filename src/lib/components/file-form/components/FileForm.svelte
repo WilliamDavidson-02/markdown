@@ -42,9 +42,16 @@
 				return
 			}
 
-			fileForm.update((form) => ({ ...form, github: isGithubTreeShown }), {
-				taint: 'untaint-all'
-			})
+			fileForm.update(
+				(form) => ({
+					...form,
+					name: form.name.replace(/[\s\/]/g, ''),
+					github: isGithubTreeShown
+				}),
+				{
+					taint: 'untaint-all'
+				}
+			)
 		},
 		dataType: 'json'
 	})
@@ -82,6 +89,12 @@
 	const selectIconColor = (color: string) => {
 		fileForm.update((form) => ({ ...form, iconColor: color }), { taint: 'untaint-all' })
 		isIconColorPopoverOpen = false
+	}
+
+	const handleFileNameChange = (ev: Event) => {
+		const target = ev.target as HTMLInputElement
+		const name = target.value.replace(/[\s\/]/g, '')
+		fileForm.update((form) => ({ ...form, name }), { taint: 'untaint-all' })
 	}
 
 	$: folders = getFolders(isGithubTreeShown ? $githubTree : $treeStore)
@@ -168,9 +181,10 @@
 					id="name"
 					name="name"
 					class="file-icon-input"
-					bind:value={$fileForm.name}
+					value={$fileForm.name}
 					placeholder="Enter a file name"
 					autofocus={fileDialog?.open}
+					on:input={handleFileNameChange}
 				/>
 				<ErrorMessage class="file-icon-error" error={$errors.name} />
 			</div>

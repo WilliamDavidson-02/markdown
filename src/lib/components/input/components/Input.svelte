@@ -22,6 +22,7 @@
 	on:focus
 	on:blur
 	on:change
+	on:input
 />
 
 <style>
