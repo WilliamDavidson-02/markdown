@@ -73,7 +73,7 @@ export const fileTable = pgTable('file', {
 	name: text('name').default('New File'),
 	icon: text('icon').default('File'),
 	iconColor: text('icon_color'),
-	doc: text('doc'),
+	doc: text('doc').default(''),
 	userId: text('user_id')
 		.notNull()
 		.references(() => userTable.id, { onDelete: 'cascade' }),

@@ -162,6 +162,13 @@
       "when": 1731675457297,
       "tag": "0022_far_jack_power",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1731678585878,
+      "tag": "0023_red_wong",
+      "breakpoints": true
     }
   ]
 }
