@@ -7,6 +7,7 @@ import {
 	getRepositoryFiles,
 	getRepositoryFolders,
 	insertNewFilesAndFolders,
+	restoreExistingItemsFromTrash,
 	updateFileContents,
 	updateFolderAndFileNames,
 	updateFolderAndFilePaths,
@@ -116,6 +117,16 @@ export const PUT = async ({ request, locals }) => {
 				await updateFileContents(formatedFiles)
 				await updateGithubFileShaAndPath(formatedFiles)
 			}
+
+			// Restore items that exist but are in the trash and has not yet bin deleted
+			const ids = filteredTree.existingItems
+				.map((item) => {
+					const file = repoFiles.find((f) => f.sha === item.sha || f.path === item.path)
+					const folder = repoFolders.find((f) => f.sha === item.sha || f.path === item.path)
+					return file?.id ?? folder?.id ?? ''
+				})
+				.filter((id) => id !== '')
+			await restoreExistingItemsFromTrash(ids)
 		}
 
 		if (filteredTree.removedItems.length > 0) {

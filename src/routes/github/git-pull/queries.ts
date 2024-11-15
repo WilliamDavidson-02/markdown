@@ -4,7 +4,8 @@ import {
 	folderTable,
 	githubFileTable,
 	githubFolderTable,
-	repositoryTable
+	repositoryTable,
+	trashTable
 } from '$lib/db/schema'
 import type {
 	GithubFile,
@@ -13,7 +14,7 @@ import type {
 	GithubShaItem,
 	GithubShaItemUpdate
 } from '$lib/utilts/githubTypes'
-import { and, eq, inArray, sql, SQL } from 'drizzle-orm'
+import { and, eq, inArray, or, sql, SQL } from 'drizzle-orm'
 
 export const getFileSha = async (fileIds: string[], userId: string): Promise<GithubShaItem[]> => {
 	return await db
@@ -251,4 +252,10 @@ export const getRepositoryFiles = async (repositoryId: number) => {
 		.from(githubFileTable)
 		.leftJoin(fileTable, eq(githubFileTable.fileId, fileTable.id))
 		.where(eq(githubFileTable.repositoryId, repositoryId))
+}
+
+export const restoreExistingItemsFromTrash = async (ids: string[]) => {
+	return await db
+		.delete(trashTable)
+		.where(or(inArray(trashTable.folderId, ids), inArray(trashTable.fileId, ids)))
 }
