@@ -146,10 +146,13 @@ export const PUT = async ({ request, locals }) => {
 
 		if (filteredTree.newItems.length > 0) {
 			const newFolders = filteredTree.newItems
-				.filter(
-					(item) =>
-						item.type === 'tree' && (item.path.includes(target.path) || target.path.length === 0)
-				)
+				.filter((item) => {
+					if (item.type !== 'tree') return false
+					// Renamed folders
+					if (filteredTree.removedItems.some((f) => f.sha === item.sha)) return true
+					if (item.path.includes(target.path) || target.path.length === 0) return true
+					return false
+				})
 				.map((f) => ({
 					sha: f.sha,
 					path: f.path
@@ -164,10 +167,13 @@ export const PUT = async ({ request, locals }) => {
 				installation.repositoryId
 			)
 
-			const newFiles = filteredTree.newItems.filter(
-				(item) =>
-					item.type === 'blob' && (item.path.includes(target.path) || target.path.length === 0)
-			)
+			const newFiles = filteredTree.newItems.filter((item) => {
+				if (item.type !== 'blob') return false
+				// Renamed files
+				if (filteredTree.removedItems.some((f) => f.sha === item.sha)) return true
+				if (item.path.includes(target.path) || target.path.length === 0) return true
+				return false
+			})
 			const blobs: GithubBlob[] = (
 				await Promise.all(newFiles.map((item) => getGithubFileContent(item.url, token)))
 			).filter((blob) => blob !== null)

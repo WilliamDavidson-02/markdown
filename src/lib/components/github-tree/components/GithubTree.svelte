@@ -6,6 +6,7 @@
 	import { moveToDialog, type Folder } from '$lib/components/file-tree/treeStore'
 	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { MoveTo } from '$lib/components/move-to'
+	import { Rename } from '$lib/components/rename'
 
 	let folder: Folder | null = null
 
@@ -27,6 +28,7 @@
 </script>
 
 <MoveTo folders={folder ? [folder] : []} isGithub={true} />
+<Rename isGithub={true} />
 
 <ul class="file-tree">
 	{#each $githubTree as group}

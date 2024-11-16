@@ -85,5 +85,12 @@ export const renameSchema = z.object({
 	name: z.string().min(1).max(256),
 	icon: z.string().optional(),
 	iconColor: z.string().optional(),
-	type: z.enum(['file', 'folder'])
+	type: z.enum(['file', 'folder']),
+	github: z.boolean(),
+	children: z
+		.object({
+			fileIds: z.array(z.string().uuid()),
+			folderIds: z.array(z.string().uuid())
+		})
+		.optional()
 })

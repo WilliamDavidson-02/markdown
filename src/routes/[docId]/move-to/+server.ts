@@ -27,11 +27,6 @@ export const PATCH = async ({ request, locals }) => {
 	const { target, movingTo, github } = data
 
 	if (target.type === 'folder') {
-		const ids = [target.id, movingTo.id ?? ''].filter(Boolean)
-		const folders = await db
-			.select()
-			.from(folderTable)
-			.where(and(inArray(folderTable.id, ids), eq(folderTable.userId, user.id)))
 		const files = await db
 			.select({ id: fileTable.id, name: fileTable.name })
 			.from(fileTable)

@@ -7,14 +7,28 @@
 	import { renameDialog } from '$lib/components/file-tree/treeStore'
 	import { Input } from '$lib/components/input'
 	import { Label } from '$lib/components/label'
+	import { getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { Loader2 } from 'lucide-svelte'
 	import { superForm } from 'sveltekit-superforms'
 
 	export let folder: Folder
+	export let isGithub: boolean = false
 
 	const { form, errors, submitting, enhance } = superForm($renameDialog.form!, {
 		onSubmit: () => {
-			form.update((f) => ({ ...f, type: 'folder', id: folder.id }), { taint: 'untaint-all' })
+			form.update(
+				(f) => ({
+					...f,
+					type: 'folder',
+					id: folder.id,
+					github: isGithub,
+					children: {
+						fileIds: getNestedFileIds([folder]),
+						folderIds: getNestedFolderIds([folder])
+					}
+				}),
+				{ taint: 'untaint-all' }
+			)
 		},
 		onResult: async ({ result }) => {
 			if (result.type === 'success') {

@@ -9,14 +9,20 @@
 		Trash2,
 		CornerUpRight,
 		ArrowDownToLine,
-		ArrowUpToLine
+		ArrowUpToLine,
+		Pencil
 	} from 'lucide-svelte'
 	import { slide } from 'svelte/transition'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
 	import { getFoldersToFolderPos, getNestedFileIds, getNestedFolderIds } from '$lib/utilts/helpers'
 	import { invalidateAll } from '$app/navigation'
-	import { type Folder, moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
+	import {
+		type Folder,
+		moveToDialog,
+		renameDialog,
+		selectedFile
+	} from '$lib/components/file-tree/treeStore'
 	import GithubTreeFile from './GithubTreeFile.svelte'
 	import { Divider } from '$lib/components/divider'
 	import { isFolder } from '$lib/utilts/tree'
@@ -69,6 +75,13 @@
 		if (!$moveToDialog?.element) return
 		moveToDialog.update((m) => ({ ...m, target: folder }))
 		$moveToDialog.element.showModal()
+		isMenuOpen = false
+	}
+
+	const handleRename = () => {
+		if (!$renameDialog?.element) return
+		renameDialog.update((r) => ({ ...r, target: folder }))
+		$renameDialog.element.showModal()
 		isMenuOpen = false
 	}
 
@@ -129,6 +142,17 @@
 			</PopoverTrigger>
 			<PopoverContent>
 				<Dropdown>
+					{#if folder.parentId}
+						<DropdownGroup>
+							<DropdownItem on:click={handleRename} on:keydown={handleRename}>
+								<div class="dropdown-item">
+									<Pencil size={16} stroke-width={1.5} />
+									<span>Rename</span>
+								</div>
+							</DropdownItem>
+						</DropdownGroup>
+						<Divider />
+					{/if}
 					<DropdownGroup>
 						{#if folder.parentId}
 							<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>

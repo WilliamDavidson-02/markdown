@@ -5,6 +5,7 @@
 	import RenameFile from './RenameFile.svelte'
 	import RenameFolder from './RenameFolder.svelte'
 
+	export let isGithub: boolean = false
 	let dialog: HTMLDialogElement
 
 	$: renameDialog.update((r) => ({ ...r, element: dialog }))
@@ -17,9 +18,9 @@
 <Dialog bind:dialog on:close={handleClose} class="rename-dialog">
 	{#if $renameDialog.target}
 		{#if isFolder($renameDialog.target)}
-			<RenameFolder folder={$renameDialog.target} />
+			<RenameFolder folder={$renameDialog.target} {isGithub} />
 		{:else}
-			<RenameFile file={$renameDialog.target} />
+			<RenameFile file={$renameDialog.target} {isGithub} />
 		{/if}
 	{/if}
 </Dialog>

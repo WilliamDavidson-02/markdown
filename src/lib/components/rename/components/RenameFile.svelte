@@ -10,10 +10,13 @@
 	import { invalidateAll } from '$app/navigation'
 
 	export let file: File
+	export let isGithub: boolean = false
 
 	const { form, errors, submitting, enhance } = superForm($renameDialog.form!, {
 		onSubmit: () => {
-			form.update((f) => ({ ...f, type: 'file', id: file.id }), { taint: 'untaint-all' })
+			form.update((f) => ({ ...f, type: 'file', id: file.id, github: isGithub }), {
+				taint: 'untaint-all'
+			})
 		},
 		onResult: async ({ result }) => {
 			if (result.type === 'success') {
