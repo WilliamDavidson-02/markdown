@@ -235,7 +235,7 @@ const setSel = (
 	state: EditorState,
 	selection: EditorSelection | { anchor: number; head?: number }
 ) => {
-	return state.update({ selection, scrollIntoView: true, userEvent: 'select' })
+	return state.update({ selection, scrollIntoView: false, userEvent: 'select' })
 }
 
 const gt = (rangeA: SelectionRange, rangeB: SelectionRange) => {

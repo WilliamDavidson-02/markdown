@@ -22,7 +22,9 @@
 			const response = await fetch('/sign-out', { method: 'POST' })
 			if (response.ok) {
 				selectedFile.set(null)
-				editorStore.set(null)
+				$editorStore?.dispatch({
+					changes: { from: 0, to: $editorStore.state.doc.length, insert: '' }
+				})
 				await goto('/')
 			}
 		} catch (error) {

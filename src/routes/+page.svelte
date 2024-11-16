@@ -1,29 +1,9 @@
 <script lang="ts">
 	import { Button } from '$lib/components/button'
-	import { Command, CommandInput, CommandList, CommandItem } from '$lib/components/command'
-	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
-	import { Check } from 'lucide-svelte'
+	import { Editor } from '$lib/components/editor'
+	import { homePageDoc } from '$lib/homePageDoc'
 
-	let selected = ''
-
-	const items = [
-		{
-			label: 'Learning svelte',
-			value: 'learning svelte'
-		},
-		{
-			label: 'Learning typescript',
-			value: 'learning typescript'
-		},
-		{
-			label: 'Learning rust',
-			value: 'learning rust'
-		},
-		{
-			label: 'Learning python',
-			value: 'learning python'
-		}
-	]
+	let editorElement: HTMLDivElement
 </script>
 
 <main>
@@ -36,29 +16,7 @@
 	</header>
 	<section>
 		<h1>Markdown</h1>
-		<Popover>
-			<PopoverTrigger>
-				<Button>Open</Button>
-			</PopoverTrigger>
-			<PopoverContent>
-				<Command label="Search for a topic">
-					<CommandInput placeholder="Search..." autofocus />
-					<CommandList>
-						{#each items as item}
-							<CommandItem
-								value={item.value}
-								onSelect={(currentValue) => (selected = currentValue)}
-							>
-								{item.label}
-								{#if selected === item.value}
-									<Check size={16} />
-								{/if}
-							</CommandItem>
-						{/each}
-					</CommandList>
-				</Command>
-			</PopoverContent>
-		</Popover>
+		<Editor bind:editorElement class="home-page-editor" initDoc={homePageDoc} />
 	</section>
 </main>
 
@@ -66,6 +24,7 @@
 	main {
 		display: flex;
 		max-height: 100svh;
+		height: 100svh;
 		max-width: 1440px;
 		margin: 0 auto;
 		color: var(--foreground-dk);
@@ -92,15 +51,45 @@
 	}
 
 	section {
-		flex: 1;
 		display: flex;
+		flex-direction: column;
+		gap: var(--space-4xl);
 		justify-content: center;
 		align-items: center;
+		width: 100%;
+		height: 100%;
+	}
+
+	h1 {
+		font-size: 4rem;
+		font-weight: 600;
+		background-image: linear-gradient(to left, #008fff, #96d1ff);
+		color: transparent;
+		background-clip: text;
+		-webkit-background-clip: text;
+	}
+
+	:global(.home-page-editor) {
+		width: 100%;
+		height: 100%;
+		max-width: 800px !important;
+		max-height: 500px !important;
+		border-radius: var(--border-radius-md);
+		box-shadow: var(--shadow-overlay);
+		border: 1px solid var(--secondary-dk);
+		overflow: hidden;
 	}
 
 	@media (min-width: 768px) {
 		main {
 			padding: var(--space-xl) var(--space-2xl);
+		}
+	}
+
+	@media (min-width: 1500px) {
+		:global(.home-page-editor) {
+			max-width: 1024px !important;
+			max-height: 768px !important;
 		}
 	}
 </style>

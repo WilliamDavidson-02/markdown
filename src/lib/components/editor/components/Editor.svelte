@@ -4,16 +4,24 @@
 	import { state } from '../state'
 	import { editorStore } from '../editorStore'
 	import { getSettings } from '$lib/components/settings/settingsContext'
+	import { editorKeymaps } from '../commands'
 
 	export let editorElement: HTMLDivElement
+	export let initDoc: string | undefined = undefined
 
 	const settings = getSettings()
 
 	onMount(() => {
 		const view = new EditorView({
-			state: state($settings?.editorSettings!, $settings?.editorKeymaps ?? []),
+			state: state($settings?.editorSettings!, $settings?.editorKeymaps ?? editorKeymaps()),
 			parent: editorElement
 		})
+
+		if (initDoc) {
+			view.dispatch({
+				changes: { from: 0, to: view.state.doc.length, insert: initDoc }
+			})
+		}
 
 		view.focus()
 		editorStore.set(view)
