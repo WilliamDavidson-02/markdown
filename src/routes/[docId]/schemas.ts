@@ -79,3 +79,11 @@ export const keybindingSchema = z.object({
 	name: z.string(),
 	reset: z.boolean().default(false)
 })
+
+export const renameSchema = z.object({
+	id: z.string().uuid(),
+	name: z.string().min(1).max(256),
+	icon: z.string().optional(),
+	iconColor: z.string().optional(),
+	type: z.enum(['file', 'folder'])
+})

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { TreeFile, TreeFolder, TreeLabel } from '$lib/components/file-tree'
 	import { MoveTo } from '$lib/components/move-to'
+	import { Rename } from '$lib/components/rename'
 	import { isFolder } from '$lib/utilts/tree'
 	import { treeStore } from '../treeStore'
 
@@ -8,6 +9,7 @@
 </script>
 
 <MoveTo {folders} />
+<Rename />
 
 <ul class="file-tree">
 	{#each $treeStore as group}

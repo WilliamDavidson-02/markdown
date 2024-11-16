@@ -3,14 +3,15 @@
 
 	import { type ComponentType } from 'svelte'
 	import { fileIcons, iconColors } from '$lib/fileIcons'
-	import { selectedFile, moveToDialog, type File } from '../treeStore'
-	import { Ellipsis, Loader2, Trash2, CornerUpRight } from 'lucide-svelte'
+	import { selectedFile, moveToDialog, type File, renameDialog } from '../treeStore'
+	import { Ellipsis, Loader2, Trash2, CornerUpRight, Pencil } from 'lucide-svelte'
 	import { Popover, PopoverContent, PopoverTrigger } from '$lib/components/popover'
 	import { Dropdown, DropdownGroup, DropdownItem } from '$lib/components/dropdown'
 	import { goto, invalidateAll } from '$app/navigation'
 	import { editorSave } from '$lib/components/editor/editorStore'
 	import { handleSave } from '$lib/components/editor/save'
 	import { editorStore } from '$lib/components/editor/editorStore'
+	import { Divider } from '$lib/components/divider'
 
 	export let file: File
 
@@ -62,6 +63,13 @@
 		isOpen = false
 	}
 
+	const handleRename = () => {
+		if (!$renameDialog?.element) return
+		renameDialog.update((r) => ({ ...r, target: file }))
+		$renameDialog.element.showModal()
+		isOpen = false
+	}
+
 	$: iconName = fileIcons.find((i) => i.name === file.icon)?.icon as ComponentType
 	$: color = iconColors.find((c) => c.color === file.iconColor)?.color ?? iconColors[0].color
 </script>
@@ -94,6 +102,15 @@
 		</PopoverTrigger>
 		<PopoverContent>
 			<Dropdown>
+				<DropdownGroup>
+					<DropdownItem on:click={handleRename} on:keydown={handleRename}>
+						<div class="dropdown-item">
+							<Pencil size={16} stroke-width={1.5} />
+							<span>Rename</span>
+						</div>
+					</DropdownItem>
+				</DropdownGroup>
+				<Divider />
 				<DropdownGroup>
 					<DropdownItem on:click={handleMoveTo} on:keydown={handleMoveTo}>
 						<div class="dropdown-item">

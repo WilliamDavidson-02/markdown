@@ -6,7 +6,7 @@
 	import { page } from '$app/stores'
 	import { goto } from '$app/navigation'
 	import { editorStore } from '$lib/components/editor/editorStore'
-	import { selectedFile, treeStore } from '$lib/components/file-tree/treeStore.js'
+	import { renameDialog, selectedFile, treeStore } from '$lib/components/file-tree/treeStore.js'
 	import type { fileTable } from '$lib/db/schema.js'
 	import { Trash } from '$lib/components/trash'
 	import { trashStore } from '$lib/components/trash/trashStore.js'
@@ -81,6 +81,7 @@
 	$: settings.set(initialSettings)
 	$: repositoryBranchesFormStore.set(data.repositoryBranchesForm)
 	$: githubIds.set(data.githubIds)
+	$: renameDialog.update((dialog) => ({ ...dialog, form: data.renameForm }))
 </script>
 
 <main>

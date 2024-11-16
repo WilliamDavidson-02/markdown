@@ -12,6 +12,7 @@ import {
 	folderSchema,
 	keybindingSchema,
 	passwordResetSchema,
+	renameSchema,
 	repositoriesSchema,
 	repositoryBranchesSchema
 } from './schemas'
@@ -36,6 +37,7 @@ import {
 	gitPushAction,
 	keybindingAction,
 	passwordResetAction,
+	renameAction,
 	repositoriesAction
 } from './actions'
 
@@ -160,6 +162,7 @@ export const load = async ({ locals, params }) => {
 	const emailForm = await superValidate(zod(emailSchema))
 	const editorSettingsForm = await superValidate(zod(editorSettingsSchema.default(editorSettings)))
 	const keybindingForm = await superValidate(zod(keybindingSchema))
+	const renameForm = await superValidate(zod(renameSchema))
 
 	return {
 		currentDoc: currentDoc && currentDoc.length > 0 ? currentDoc[0] : null,
@@ -179,7 +182,8 @@ export const load = async ({ locals, params }) => {
 		emailForm,
 		editorSettingsForm,
 		keybindingForm,
-		keybindings
+		keybindings,
+		renameForm
 	}
 }
 
@@ -191,5 +195,6 @@ export const actions: Actions = {
 	passwordReset: passwordResetAction,
 	changeEmail: changeEmailAction,
 	editorSettings: editorSettingsAction,
-	keybinding: keybindingAction
+	keybinding: keybindingAction,
+	rename: renameAction
 }
