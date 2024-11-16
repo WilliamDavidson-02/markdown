@@ -10,11 +10,12 @@
 		Eye,
 		PanelsTopLeft,
 		Check,
-		Save
+		Save,
+		Pencil
 	} from 'lucide-svelte'
 	import { Divider } from '$lib/components/divider'
 	import { editorSave, editorStore } from '../editorStore'
-	import { moveToDialog, selectedFile } from '$lib/components/file-tree/treeStore'
+	import { moveToDialog, renameDialog, selectedFile } from '$lib/components/file-tree/treeStore'
 	import { getCharacterCount, getWordCount } from '$lib/utilts/helpers'
 	import { formatDateWithTime } from '$lib/utilts/date'
 	import { invalidateAll } from '$app/navigation'
@@ -80,6 +81,13 @@
 		isOpen = false
 	}
 
+	const handleRename = () => {
+		if (!$renameDialog?.element) return
+		renameDialog.update((r) => ({ ...r, target: $selectedFile }))
+		$renameDialog.element.showModal()
+		isOpen = false
+	}
+
 	onMount(() => {
 		const saveOnKey = (ev: KeyboardEvent) => {
 			if (ev.key === 's' && ev.metaKey) {
@@ -106,8 +114,8 @@
 	</PopoverTrigger>
 	<PopoverContent>
 		<Dropdown>
-			{#if !$settings?.editorSettings.autoSave}
-				<DropdownGroup>
+			<DropdownGroup>
+				{#if !$settings?.editorSettings.autoSave}
 					<DropdownItem
 						on:click={saveDoc}
 						on:keydown={saveDoc}
@@ -121,9 +129,15 @@
 							<Loader2 class="animate-spin" size={14} color="var(--foreground-dk)" />
 						{/if}
 					</DropdownItem>
-				</DropdownGroup>
-				<Divider />
-			{/if}
+				{/if}
+				<DropdownItem on:click={handleRename} on:keydown={handleRename}>
+					<div class="dropdown-item">
+						<Pencil size={16} stroke-width={1.5} />
+						<span>Rename</span>
+					</div>
+				</DropdownItem>
+			</DropdownGroup>
+			<Divider />
 			<DropdownGroup>
 				<DropdownItem on:click={handleMoveTo}>
 					<div class="dropdown-item">
