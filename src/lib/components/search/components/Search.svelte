@@ -54,7 +54,7 @@
 			<ul>
 				{#each files as file}
 					<CommandItem
-						value={file.id ?? 'Untitled'}
+						value={file.name ?? 'Untitled'}
 						class="search-file-item"
 						onSelect={() => handleSelect(file)}
 					>
