@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Command, CommandInput, CommandItem, CommandList } from '$lib/components/command'
+	import { keymapNames } from '$lib/components/editor/keymapNames'
 	import { getSettings } from '../settingsContext'
 	import ShortcutKeysItem from './ShortcutKeysItem.svelte'
 
@@ -9,6 +10,11 @@
 		$settings?.editorKeymaps
 			.filter((keymap) => keymap.run?.name)
 			.map((k) => ({ ...k, key: k.key ?? '' })) ?? []
+
+	const getKeymapName = (runName: string) => {
+		const keymapName = keymapNames.find((name) => name.nameMini === runName)
+		return keymapName ? keymapName.name : runName
+	}
 </script>
 
 <div>
@@ -16,7 +22,7 @@
 		<CommandInput placeholder="Search keybindings" />
 		<CommandList class="keybindings-list">
 			{#each keybindings as keybinding}
-				<CommandItem value={`${keybinding.run?.name} ${keybinding.key}`}>
+				<CommandItem value={`${getKeymapName(keybinding.run?.name ?? '')} ${keybinding.key}`}>
 					<ShortcutKeysItem {keybinding} />
 				</CommandItem>
 			{/each}
