@@ -18,7 +18,9 @@ export const fileSchema = z.object({
 })
 
 export const folderSchema = z.object({
-	name: z.string().max(256, { message: 'Name must be at most 256 characters' }),
+	name: z.string().min(1, { message: 'Name is required' }).max(256, {
+		message: 'Name must be at most 256 characters'
+	}),
 	parentId: z.string().uuid().optional(),
 	github: z.boolean().optional()
 })
