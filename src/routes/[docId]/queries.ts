@@ -131,7 +131,7 @@ export const insertNewFolder = async (
 			return newFolder[0].id
 		})
 	} else {
-		return await db.insert(folderTable).values(folder).returning({ id: folderTable.id })
+		return (await db.insert(folderTable).values(folder).returning({ id: folderTable.id }))[0].id
 	}
 }
 
