@@ -12,6 +12,7 @@
 	import { state } from '$lib/components/editor/state'
 	import { editorKeymaps } from '$lib/components/editor/commands'
 	import { nanoid } from 'nanoid'
+	import { keymapNames } from '$lib/components/editor/keymapNames'
 
 	export let keybinding: KeyBinding
 
@@ -62,6 +63,8 @@
 	let keyInputElement: HTMLInputElement
 	let keyInput = keybinding.key ?? ''
 	let keyError: string | undefined = undefined
+
+	const minifiedName = keymapNames.find((name) => name.nameMini === keybinding.run?.name)
 
 	const formatName = (name: string) => {
 		const lowerName = name
@@ -168,7 +171,7 @@
 	role="button"
 	class="keybinding-item"
 >
-	<span>{formatName(keybinding.run?.name ?? '')}</span>
+	<span>{formatName(minifiedName ? minifiedName.name : (keybinding.run?.name ?? ''))}</span>
 	<ShortcutKeybinding keybinding={keybinding.key ?? ''} />
 </div>
 
