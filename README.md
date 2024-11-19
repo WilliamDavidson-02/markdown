@@ -1,82 +1,63 @@
 # Markdown
 
-<img src="./static/logo_banner_full.svg" alt="Markdown" width="100%" />
+![Typing](https://i.giphy.com/iFU36VwXUd2O43gdcr.webp)
+
+This project is a markdown editor built with Svelte and SvelteKit, using tools like Drizzle ORM, Neon DB, Lucia Auth, and CodeMirror. It allows users to connect to their GitHub repositories to create, edit, and manage markdown files and folders, while also supporting standalone markdown files not linked to GitHub.
+It features helper functions that simplify markdown formatting by automatically applying it as you type.
 
 ## Table of Contents
 
 - [Markdown](#markdown)
   - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-    - [Auto resize table](#auto-resize-table)
-    - [Table rows \& columns](#table-rows--columns)
-    - [Extend selection](#extend-selection)
-    - [Checkbox](#checkbox)
-    - [Links](#links)
+  - [Installation](#installation)
 
-## Features
+## Installation
 
-This markdown editor has your standard editor features, like syntax highlighting, bracket matching, multiple cursors and more. But there are some unique features that makes your markdown experience better and that is:
+`Step 1:` Clone and install dependencies
 
-### Auto resize table
+```bash
+git clone https://github.com/WilliamDavidson-02/markdown.git
+cd markdown
+npm install
+```
 
-It can be frustrating to manually resize tables. This editor will automatically resize the table to fit the content as you are typing.
+`Step 2:` Connect to a neon database (get the neon connection string for both pooled and non-pooled)
 
-| Dish Name           |          Ingredients           | Cooking Time |
-| :------------------ | :----------------------------: | -----------: |
-| Spaghetti Carbonara |     Pasta, Eggs, Pecorino      |   20 minutes |
-| Chicken Stir Fry    | Chicken, Vegetables, Soy Sauce |   30 minutes |
-| Caesar Salad        |  Romaine, Croutons, Parmesan   |   15 minutes |
-| Beef Tacos          | Ground Beef, Tortillas, Cheese |   25 minutes |
-| Apple Pie           |    Apples, Cinnamon, Pastry    |   45 minutes |
+```bash
+# Add the connection strings to the .env
+NEON_DB_URL=
+NEON_DB_URL_POOL=
+```
 
-### Table rows & columns
+`Step 3:` One connected to the database, run the migration with drizzle kit
 
-You can add new rows to a table by typing a pipe character (`|`) at the end of the header row.
+```bash
+npm run db:migrate
+```
 
-| Dish Name           |          Ingredients           |
-| :------------------ | :----------------------------: |
-| Spaghetti Carbonara |     Pasta, Eggs, Pecorino      |
-| Chicken Stir Fry    | Chicken, Vegetables, Soy Sauce |
+`Step 4:` Create a [OAuth app](https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app) and add the client ID and secret to the .env
 
-You can add new columns to a table by adding a new with in the table rows.
-Press either `Cmd+Enter` or `Shift+Cmd+Enter` to add a new column above or below the current line.
+```bash
+GITHUB_CLIENT_ID=
+GITHUB_CLIENT_SECRET=
+```
 
-| Dish Name           |          Ingredients           |
-| :------------------ | :----------------------------: |
-| Spaghetti Carbonara |     Pasta, Eggs, Pecorino      |
-| Chicken Stir Fry    | Chicken, Vegetables, Soy Sauce |
-| Caesar Salad        |  Romaine, Croutons, Parmesan   |
+`Step 5:` Create a [GitHub app](https://docs.github.com/en/developers/apps/creating-an-app) and add the client ID, secret, and private key to the .env
 
-### Extend selection
+```bash
+GITHUB_APP_SECRET=
+GITHUB_APP_ID=
+GITHUB_PRIVATE_KEY=
+```
 
-You can extend or contract your selection using keyboard shortcuts. This is particularly useful when working with nested markdown structures like lists or headings.
+`Step 6:` Add the public GitHub installation URL to the .env
 
-- Keybinding:
-  - `Ctrl+Alt+ArrowUp`: Extends the selection to include the parent element
-  - `Ctrl+Alt+ArrowDown`: Contracts the selection to the child element
+```bash
+PUBLIC_GITHUB_INSTALLATION_URL=https://github.com/apps/<app-name>/installations/select_target
+```
 
-This makes it easy to select and manipulate nested markdown structures without having to manually drag your cursor.
+`Step 7:` Run the development server
 
-### Checkbox
-
-The editor provides a convenient way to toggle checkboxes in markdown lists. When your cursor is on a line with a checkbox, simply press `Cmd+Enter` to toggle it between checked and unchecked states.
-
-For example:
-
-- [ ] Unchecked item
-- [x] Checked item
-- [ ] Another unchecked item
-
-You can also toggle multiple checkboxes at once by selecting multiple lines:
-
-- [ ] Task 1
-- [ ] Task 2
-- [ ] Task 3
-
-This makes it easy to manage task lists without having to manually edit the markdown syntax. Just place your cursor on a line or select multiple lines and use the keyboard shortcut to toggle the checkbox states.
-
-### Links
-
-The editor automatically formats pasted URLs into markdown links. When you paste a URL, it will be converted into a markdown link format `[title](url)`.
-
-For example, if you paste: https://www.google.com
+```bash
+npm run dev
+```
