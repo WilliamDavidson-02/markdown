@@ -12,7 +12,7 @@
 	import { state } from '$lib/components/editor/state'
 	import { editorKeymaps } from '$lib/components/editor/commands'
 	import { nanoid } from 'nanoid'
-	import { keymapNames } from '$lib/components/editor/keymapNames'
+	import { formatKeymapName, getKeymapName } from '$lib/components/editor/keymapNames'
 
 	export let keybinding: KeyBinding
 
@@ -29,7 +29,7 @@
 			)
 
 			if (existingKeybinding) {
-				keyError = `This keybinding is already used by ${formatName(existingKeybinding.run?.name ?? '')}`
+				keyError = `This keybinding is already used by ${formatKeymapName(existingKeybinding.run?.name ?? '')}`
 				keyInputElement.focus()
 				cancel()
 				return
@@ -63,17 +63,6 @@
 	let keyInputElement: HTMLInputElement
 	let keyInput = keybinding.key ?? ''
 	let keyError: string | undefined = undefined
-
-	const minifiedName = keymapNames.find((name) => name.nameMini === keybinding.run?.name)
-
-	const formatName = (name: string) => {
-		const lowerName = name
-			.split(/(?=[A-Z])/)
-			.join(' ')
-			.toLowerCase()
-		const firstChar = lowerName.charAt(0).toUpperCase()
-		return firstChar + lowerName.slice(1)
-	}
 
 	const handleChange = (ev: KeyboardEvent) => {
 		if (keyError) keyError = undefined
@@ -171,7 +160,7 @@
 	role="button"
 	class="keybinding-item"
 >
-	<span>{formatName(minifiedName ? minifiedName.name : (keybinding.run?.name ?? ''))}</span>
+	<span>{formatKeymapName(getKeymapName(keybinding.run) ?? '')}</span>
 	<ShortcutKeybinding keybinding={keybinding.key ?? ''} />
 </div>
 

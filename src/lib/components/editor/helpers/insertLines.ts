@@ -15,6 +15,11 @@ const createBlankTableLine = (delimiter: string) => {
 	)
 }
 
+export const handleInsertBlankLineAbove = (editor: EditorView) => {
+	// This function is used to map to a spesific name in keymapNames
+	return insertNewBlankLine(editor, 'above')
+}
+
 export const insertNewBlankLine = (
 	{ state, dispatch }: EditorView,
 	direction: 'above' | 'below' = 'above'
