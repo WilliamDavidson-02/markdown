@@ -79,8 +79,13 @@ export const theme = (editorSettings: typeof defaultEditorSettings) => {
 		},
 
 		'.cm-tooltip': {
-			border: 'none',
-			backgroundColor: colors.secondary
+			border: '1px solid var(--secondary-dk)',
+			borderRadius: '4px',
+			padding: '4px',
+			boxShadow: 'var(--shadow-overlay)',
+			backgroundColor: colors.base,
+			color: colors.foregroundDk,
+			fontSize: '1rem'
 		},
 		'.cm-tooltip .cm-tooltip-arrow:before': {
 			borderTopColor: 'transparent',
@@ -93,7 +98,12 @@ export const theme = (editorSettings: typeof defaultEditorSettings) => {
 		'.cm-tooltip-autocomplete': {
 			'& > ul > li[aria-selected]': {
 				backgroundColor: colors.interactive,
-				color: colors.interactiveActive
+				color: colors.foregroundDk,
+				borderRadius: '4px'
+			},
+			'& > ul > li': {
+				margin: '4px 0 !important',
+				padding: '4px !important'
 			}
 		}
 	})

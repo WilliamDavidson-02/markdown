@@ -30,7 +30,7 @@ import { theme, themeHighlightStyle } from './theme'
 import { editorSave, editorStore, type EditorSave } from './editorStore'
 import { defaultEditorSettings } from '../settings/defaultSettings'
 import { handleAutoSave, handleDocChange } from './save'
-import { resizeTable, completions, handleLinks } from './helpers'
+import { resizeTable, completions, handleLinks, slashCompletions } from './helpers'
 
 export const state = (
 	editorSettings: typeof defaultEditorSettings = defaultEditorSettings,
@@ -76,6 +76,9 @@ export const state = (
 		}),
 		markdownLanguage.data.of({
 			autocomplete: completions
+		}),
+		markdownLanguage.data.of({
+			autocomplete: slashCompletions
 		}),
 		syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
 		indentUnit.of(' '.repeat(editorSettings.tabSize))
