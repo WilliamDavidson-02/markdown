@@ -90,10 +90,8 @@ export const PUT = async ({ request, locals }) => {
 			await updateFolderAndFilePaths(itemsPathChanged.files, itemsPathChanged.folders)
 
 			const toRequestNewContent = filteredTree.existingItems.filter((item) => {
-				// Only checking for blob, since (md) files is alredy filtered from filterTreeIntoStatus
 				if (item.type !== 'blob') return false
-				// If the files path is the same but the sha is different, that means that the content with in the file has changed
-				return selectedFiles.find((f) => f.path === item.path && f.sha !== item.sha)
+				return item.path.startsWith(target.path) || target.path.length === 0
 			})
 
 			if (toRequestNewContent.length > 0) {
@@ -104,7 +102,7 @@ export const PUT = async ({ request, locals }) => {
 				).filter((blob) => blob !== null) as GithubBlob[]
 				const formatedFiles = blobs.map((blob: GithubBlob, index) => {
 					const item = toRequestNewContent[index]
-					const file = selectedFiles.find((f) => f.path === item.path && f.sha !== item.sha)
+					const file = selectedFiles.find((f) => f.path === item.path)
 					const formatedFile = formatGithubFileBlob(blob, item)
 					return {
 						...formatedFile,
@@ -210,6 +208,7 @@ export const PUT = async ({ request, locals }) => {
 
 		return json({ success: true })
 	} catch (error) {
+		console.log(error)
 		return json({ success: false }, { status: 500 })
 	}
 }
